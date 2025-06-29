@@ -6,6 +6,7 @@ requires-python = ">=3.13"
 dependencies = [
     "aiohttp>=3.12.13",
     "funpayparsers",
+    "pydantic>=2.11.7",
 ]
 
 [tool.uv.sources]
