@@ -1,9 +1,12 @@
 from funpaybotengine.client.bot import Bot
+from pydantic import BaseModel, PrivateAttr
 
 
-class BindableObject:
-    def __init__(self, bot: Bot | None = None) -> None:
-        self._bot = bot
+class BindableObject(BaseModel):
+    _bot: Bot | None = PrivateAttr()
+
+    def model_post_init(self, __context) -> None:
+        self._bot = __context.get("bot") if __context else None
 
     def as_(self, bot: Bot, /) -> 'BindableObject':
         self.bind_to(bot)
