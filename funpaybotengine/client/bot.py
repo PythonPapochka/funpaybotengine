@@ -8,7 +8,6 @@ class Bot:
         self._golden_key = golden_key
         self._session = session or BaseSession()
 
-
     @property
     def golden_key(self) -> str:
         return self._golden_key
