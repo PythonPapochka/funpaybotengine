@@ -1,3 +1,5 @@
+__all__ = ('Bot', )
+
 from funpaybotengine.client.session.base import BaseSession
 
 
