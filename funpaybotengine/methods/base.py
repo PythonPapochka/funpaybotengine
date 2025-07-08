@@ -1,4 +1,4 @@
-__all__ = ('FunPayMethod', )
+__all__ = ('FunPayMethod', 'MethodReturnType')
 
 from pydantic import BaseModel, Field
 from funpaybotengine.base import BindableObject
@@ -8,10 +8,10 @@ from http import HTTPMethod, HTTPStatus
 from abc import ABC, abstractmethod
 
 
-ReturnType = TypeVar('ReturnType', bound=Any)
+MethodReturnType = TypeVar('MethodReturnType', bound=Any)
 
 
-class FunPayMethod(BindableObject, BaseModel, Generic[ReturnType], ABC):
+class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
     url: str
     method: HTTPMethod = HTTPMethod.GET
     headers: dict[str, str] = Field(default_factory=dict)
@@ -20,6 +20,8 @@ class FunPayMethod(BindableObject, BaseModel, Generic[ReturnType], ABC):
 
     parser_cls: Type[FunPayObjectParser] | None = None
     parser_options: ParsingOptions | None = None
+
+    timeout: int | float = 10.0
 
     def model_post_init(self, context: Any, /) -> None:
         super(BindableObject, self).model_post_init(context)
@@ -33,4 +35,4 @@ class FunPayMethod(BindableObject, BaseModel, Generic[ReturnType], ABC):
         return self.parser(response, options=self.parser_options).parse()
 
     @abstractmethod
-    def transform_result(self, result: Any) -> ReturnType: ...
+    def transform_result(self, result: Any) -> MethodReturnType: ...
