@@ -5,8 +5,8 @@ from pydantic import BaseModel, PrivateAttr
 class BindableObject(BaseModel):
     _bot: Bot | None = PrivateAttr()
 
-    def model_post_init(self, __context) -> None:
-        self._bot = __context.get("bot") if __context else None
+    def model_post_init(self, context) -> None:
+        self._bot = context.get("bot") if context else None
 
     def as_(self, bot: Bot, /) -> 'BindableObject':
         self.bind_to(bot)

@@ -22,6 +22,7 @@ class FunPayMethod(BindableObject, BaseModel, Generic[ReturnType], ABC):
     parser_options: ParsingOptions | None = None
 
     def model_post_init(self, context: Any, /) -> None:
+        super(BindableObject, self).model_post_init(context)
         if self.parser and self.parser_options is None:
             self.parser_options = self.parser.get_options_cls()()
 
