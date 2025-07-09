@@ -13,3 +13,12 @@ class FunPayObject(BindableObject, BaseModel):
     )
 
     raw_source: str
+
+
+class FunPayMutableObject(FunPayObject, BaseModel):
+    model_config = ConfigDict(
+        frozen=False,
+        validate_assignment=True,
+        arbitrary_types_allowed=True,
+        populate_by_name=True,
+    )
