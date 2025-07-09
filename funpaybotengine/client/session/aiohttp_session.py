@@ -35,7 +35,9 @@ class AioHttpSession(BaseSession):
             # https://docs.aiohttp.org/en/stable/client_advanced.html#graceful-shutdown
             await asyncio.sleep(0.25)
 
-    async def make_request(self, method: FunPayMethod[MethodReturnType], timeout: float | None = None) -> MethodReturnType:
+    async def make_request(self,
+                           method: FunPayMethod[MethodReturnType],
+                           timeout: float | None = None) -> MethodReturnType:
         session = await self.session()
         timeout = replace(session.timeout, total=timeout if timeout is not None else method.timeout)
 
@@ -46,19 +48,9 @@ class AioHttpSession(BaseSession):
         else:
             raise Exception('Unsupported HTTP method')  # todo: Custom exception
 
-        self.check_status_code(method.expected_status_codes, response.status)
+        self.check_status_code(method, response.status)
         result = method.parse_result(await response.text())
         return method.transform_result(result)
-
-    def check_status_code(self, expected: list[int | HTTPStatus], status_code: int | HTTPStatus):
-        if status_code in expected:
-            return
-
-        # todo: custom exceptions for status codes like 429, 404, etc.
-
-        if status_code >= HTTPStatus.INTERNAL_SERVER_ERROR:
-            raise Exception('FunPay internal error')  # todo: custom exceptions
-
 
     @property
     def proxy_str(self) -> str:
