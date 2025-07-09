@@ -4,13 +4,15 @@ __all__ = ('Bot', )
 
 from typing import TYPE_CHECKING
 from funpaybotengine.client.session.aiohttp_session import AioHttpSession
+from funpaybotengine.methods.get_chat_history import GetChatHistory
+from funpaybotengine.client.base_bot import BaseBot
 
 if TYPE_CHECKING:
     from funpaybotengine.client.session.base import BaseSession
 
 
 
-class Bot:
+class Bot(BaseBot):
     def __init__(self,
                  golden_key: str,
                  session: BaseSession | None = None):
@@ -23,4 +25,11 @@ class Bot:
 
     @property
     def session(self) -> BaseSession:
-        return self.session
+        return self._session
+
+    async def get_chat_history(self,
+                               chat_id: int | str,
+                               last_message_id: int = 999999999999):
+        method = GetChatHistory(chat_id=chat_id,
+                                last_message_id=last_message_id).as_(self)
+        return await self.session.make_request(method)

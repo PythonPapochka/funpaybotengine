@@ -1,6 +1,6 @@
 __all__ = ('FunPayObject', )
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, PrivateAttr
 from funpaybotengine.base import BindableObject
 from typing import Any
 
@@ -14,9 +14,7 @@ class FunPayObject(BindableObject, BaseModel):
     )
 
     raw_source: str
-    _cache_: dict[str, Any] = Field(default_factory=dict,
-                                    exclude=True,
-                                    repr=False,)
+    _cache_: dict[str, Any] = PrivateAttr(default=dict)
 
 
 class FunPayMutableObject(FunPayObject, BaseModel):

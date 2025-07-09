@@ -25,14 +25,14 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
 
     def model_post_init(self, context: Any, /) -> None:
         super(BindableObject, self).model_post_init(context)
-        if self.parser and self.parser_options is None:
-            self.parser_options = self.parser.get_options_cls()()
+        if self.parser_cls and self.parser_options is None:
+            self.parser_options = self.parser_cls.get_options_cls()()
 
     def parse_result(self, response: str):  # todo: response is not a str, but Response obj. Implement Response obj.
-        if self.parser is None:
+        if self.parser_cls is None:
             return response
 
-        return self.parser(response, options=self.parser_options).parse()
+        return self.parser_cls(response, options=self.parser_options).parse()
 
     @abstractmethod
     def transform_result(self, result: Any) -> MethodReturnType: ...

@@ -1,27 +1,28 @@
-from funpaybotengine.client.bot import Bot
+from __future__ import annotations
 from pydantic import BaseModel, PrivateAttr
+from funpaybotengine.client.base_bot import BaseBot
 
 
 class BindableObject(BaseModel):
-    _bot: Bot | None = PrivateAttr()
+    _bot: BaseBot | None = PrivateAttr()
 
     def model_post_init(self, context) -> None:
         self._bot = context.get("bot") if context else None
 
-    def as_(self, bot: Bot, /) -> 'BindableObject':
+    def as_(self, bot: BaseBot, /) -> 'BindableObject':
         self.bind_to(bot)
         return self
 
     def unbind(self) -> None:
         self._bot = None
 
-    def bind_to(self, bot: Bot, /) -> None:
-        if not isinstance(bot, Bot):
+    def bind_to(self, bot: BaseBot, /) -> None:
+        if not isinstance(bot, BaseBot):
             raise TypeError(f'{bot} is not a bot instance.')
         self._bot = bot
 
     @property
-    def bot(self) -> Bot | None:
+    def bot(self) -> BaseBot | None:
         return self._bot
 
 

@@ -25,7 +25,7 @@ class UnexpectedHTTPStatus(FunPayRequestException):
     def __init__(self, method: FunPayMethod[Any], status: int):
         super().__init__(method=method)
         self.status = status
-        self.expected_status = method.expected_status_code
+        self.expected_status_codes = method.expected_status_codes
 
     def __str__(self):
         return (

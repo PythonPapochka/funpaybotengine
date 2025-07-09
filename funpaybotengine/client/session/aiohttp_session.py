@@ -3,22 +3,28 @@ from __future__ import annotations
 __all__ = ('AioHttpSession',)
 
 
-from dataclasses import replace
-from aiohttp import ClientSession
 import asyncio
+from aiohttp import ClientSession, ClientTimeout
+from aiohttp.hdrs import USER_AGENT
 from funpaybotengine.client.session.base import BaseSession
 from typing import TYPE_CHECKING
-from http import HTTPStatus, HTTPMethod
+from http import HTTPMethod
 if TYPE_CHECKING:
     from funpaybotengine.methods.base import FunPayMethod, MethodReturnType
 
 
 class AioHttpSession(BaseSession):
-    def __init__(self, proxy: str | None, golden_key: str):
+    def __init__(self,
+                 proxy: str | None,
+                 golden_key: str,
+                 default_headers: dict[str, str] | None = None):
         super().__init__()
 
         self._proxy = proxy
         self._golden_key = golden_key
+        self._default_headers = default_headers if default_headers is not None else {
+            USER_AGENT: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0',
+        }
 
         self._session = None
 
@@ -39,16 +45,23 @@ class AioHttpSession(BaseSession):
                            method: FunPayMethod[MethodReturnType],
                            timeout: float | None = None) -> MethodReturnType:
         session = await self.session()
-        timeout = replace(session.timeout, total=timeout if timeout is not None else method.timeout)
+        timeout = ClientTimeout(total=timeout if timeout is not None else method.timeout)
 
         if method.method == HTTPMethod.GET:
-            response = await session.get(method.url, params=method.data, timeout=timeout)
+            response = await session.get(method.url,
+                                         params=method.data,
+                                         timeout=timeout,
+                                         headers=self._default_headers | method.headers)
         elif method.method == HTTPMethod.POST:
-            response = await session.post(method.url, data=method.data, timeout=timeout)
+            response = await session.post(method.url,
+                                          data=method.data,
+                                          timeout=timeout,
+                                          headers=self._default_headers | method.headers)
         else:
             raise Exception('Unsupported HTTP method')  # todo: Custom exception
 
         self.check_status_code(method, response.status)
+
         result = method.parse_result(await response.text())
         return method.transform_result(result)
 
