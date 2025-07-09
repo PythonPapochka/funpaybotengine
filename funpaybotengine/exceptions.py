@@ -1,4 +1,16 @@
 from __future__ import annotations
+
+__all__ = (
+    'FunPayRequestException',
+    'UnexpectedHTTPStatus',
+    'RateLimitExceeded',
+    'Unauthorized',
+    'Forbidden',
+    'BadRequest',
+    'NotFound',
+    'FunPayServerError'
+)
+
 from typing import Any, TYPE_CHECKING
 if TYPE_CHECKING:
     from funpaybotengine.methods.base import FunPayMethod
