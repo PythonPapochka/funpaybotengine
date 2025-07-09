@@ -14,17 +14,17 @@ if TYPE_CHECKING:
 
 
 class AioHttpSession(BaseSession):
-    def __init__(self, proxy: str, golden_key: str):
+    def __init__(self, proxy: str | None, golden_key: str):
         super().__init__()
 
-        self._proxy_str = proxy
+        self._proxy = proxy
         self._golden_key = golden_key
 
         self._session = None
 
     async def session(self) -> ClientSession:
         if self._session is None or self._session.closed:
-            self._session = ClientSession(proxy=self.proxy_str)
+            self._session = ClientSession(proxy=self.proxy)
             self._session.cookie_jar.update_cookies({'golden_key': self.golden_key})
         return self._session
 
@@ -53,8 +53,8 @@ class AioHttpSession(BaseSession):
         return method.transform_result(result)
 
     @property
-    def proxy_str(self) -> str:
-        return self._proxy_str
+    def proxy(self) -> str | None:
+        return self._proxy
 
     @property
     def golden_key(self) -> str:
