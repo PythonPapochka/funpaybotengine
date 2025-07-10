@@ -89,6 +89,13 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
     Defaults to ``10.0``.
     """
 
+    context: dict[str, Any] = Field(default_factory=dict)
+    """
+    Context for final object.
+    
+    Defaults to empty dict.
+    """
+
     if TYPE_CHECKING:
 
         def __init__(
@@ -103,6 +110,7 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
             parser_cls: Type[FunPayObjectParser] | None = None,
             parser_options: ParsingOptions | None = None,
             timeout: float = 10.0,
+            context: dict[str, Any] = {},
         ):
             """
             :param url: Method URL.
@@ -128,6 +136,8 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
                 Defaults to ``None``.
             :param timeout: Request timeout.
                 Defaults to ``10.0``.
+            :param context: Context for final object.
+                Defaults to empty dict.
             """
             ...
 
