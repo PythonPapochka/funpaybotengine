@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 __all__ = ('FunPayMethod', 'MethodReturnType')
 
 from pydantic import BaseModel, Field
 from funpaybotengine.base import BindableObject
-from typing import Generic, TypeVar, Any, Type
+from typing import Generic, TypeVar, Any, Type, TYPE_CHECKING
 from funpayparsers.parsers.base import FunPayObjectParser, ParsingOptions
 from http import HTTPMethod, HTTPStatus
 from abc import ABC, abstractmethod
@@ -22,6 +24,17 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
     parser_options: ParsingOptions | None = None
 
     timeout: int | float = 10.0
+
+    if TYPE_CHECKING:
+        def __init__(self,
+                     url: str,
+                     method: HTTPMethod = HTTPMethod.GET,
+                     headers: dict[str, str] = {},
+                     data: dict[str, str] = {},
+                     parser_cls: Type[FunPayObjectParser] | None = None,
+                     parser_options: ParsingOptions | None = None,
+                     timeout: float = 10.0):
+            ...
 
     def model_post_init(self, context: Any, /) -> None:
         super(BindableObject, self).model_post_init(context)
