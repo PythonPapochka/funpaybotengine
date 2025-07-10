@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 
-__all__ = ('FunPayObject',)
+__all__ = ('FunPayObject', 'FunPayMutableObject')
 
 from typing import Any
 
@@ -19,6 +19,11 @@ class FunPayObject(BindableObject, BaseModel):
     )
 
     raw_source: str
+    """
+    Raw source of an object.
+    Typically a HTML string, but in rare cases can be a JSON string.
+    """
+
     _cache_: dict[str, Any] = PrivateAttr(default=dict)
 
 

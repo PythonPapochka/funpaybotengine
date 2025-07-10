@@ -8,13 +8,13 @@ from abc import ABC, abstractmethod
 from http import HTTPStatus
 
 from funpaybotengine.exceptions import (
-    NotFound,
-    Forbidden,
-    BadRequest,
-    Unauthorized,
+    NotFoundError,
+    ForbiddenError,
+    BadRequestError,
     FunPayServerError,
-    RateLimitExceeded,
-    UnexpectedHTTPStatus,
+    UnauthorizedError,
+    RateLimitExceededError,
+    UnexpectedHTTPStatusError,
 )
 
 
@@ -23,11 +23,11 @@ if TYPE_CHECKING:
 
 
 _exceptions = {
-    HTTPStatus.TOO_MANY_REQUESTS: RateLimitExceeded,
-    HTTPStatus.UNAUTHORIZED: Unauthorized,
-    HTTPStatus.FORBIDDEN: Forbidden,
-    HTTPStatus.NOT_FOUND: NotFound,
-    HTTPStatus.BAD_REQUEST: BadRequest,
+    HTTPStatus.TOO_MANY_REQUESTS: RateLimitExceededError,
+    HTTPStatus.UNAUTHORIZED: UnauthorizedError,
+    HTTPStatus.FORBIDDEN: ForbiddenError,
+    HTTPStatus.NOT_FOUND: NotFoundError,
+    HTTPStatus.BAD_REQUEST: BadRequestError,
 }
 
 
@@ -50,7 +50,7 @@ class BaseSession(ABC):
             raise FunPayServerError(method=method)
 
         if status_code not in _exceptions:
-            raise UnexpectedHTTPStatus(method=method, status=status_code)
+            raise UnexpectedHTTPStatusError(method=method, status=status_code)
 
         raise _exceptions[status_code](method=method)
 

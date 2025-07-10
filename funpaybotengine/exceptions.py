@@ -2,13 +2,13 @@ from __future__ import annotations
 
 
 __all__ = (
-    'FunPayRequestException',
-    'UnexpectedHTTPStatus',
-    'RateLimitExceeded',
-    'Unauthorized',
-    'Forbidden',
-    'BadRequest',
-    'NotFound',
+    'FunPayRequestError',
+    'UnexpectedHTTPStatusError',
+    'RateLimitExceededError',
+    'UnauthorizedError',
+    'ForbiddenError',
+    'BadRequestError',
+    'NotFoundError',
     'FunPayServerError',
 )
 
@@ -19,12 +19,12 @@ if TYPE_CHECKING:
     from funpaybotengine.methods.base import FunPayMethod
 
 
-class FunPayRequestException(Exception):
+class FunPayRequestError(Exception):
     def __init__(self, method: FunPayMethod[Any]) -> None:
         self.method = method
 
 
-class UnexpectedHTTPStatus(FunPayRequestException):
+class UnexpectedHTTPStatusError(FunPayRequestError):
     def __init__(self, method: FunPayMethod[Any], status: int):
         super().__init__(method=method)
         self.status = status
@@ -37,31 +37,31 @@ class UnexpectedHTTPStatus(FunPayRequestException):
         )
 
 
-class RateLimitExceeded(UnexpectedHTTPStatus):
+class RateLimitExceededError(UnexpectedHTTPStatusError):
     def __init__(self, method: FunPayMethod[Any], status: int = 429):
         super().__init__(method=method, status=status)
 
 
-class Unauthorized(UnexpectedHTTPStatus):
+class UnauthorizedError(UnexpectedHTTPStatusError):
     def __init__(self, method: FunPayMethod[Any], status: int = 401):
         super().__init__(method=method, status=status)
 
 
-class Forbidden(UnexpectedHTTPStatus):
+class ForbiddenError(UnexpectedHTTPStatusError):
     def __init__(self, method: FunPayMethod[Any], status: int = 403):
         super().__init__(method=method, status=status)
 
 
-class BadRequest(UnexpectedHTTPStatus):
+class BadRequestError(UnexpectedHTTPStatusError):
     def __init__(self, method: FunPayMethod[Any], status: int = 400):
         super().__init__(method=method, status=status)
 
 
-class NotFound(UnexpectedHTTPStatus):
+class NotFoundError(UnexpectedHTTPStatusError):
     def __init__(self, method: FunPayMethod[Any], status: int = 404):
         super().__init__(method=method, status=status)
 
 
-class FunPayServerError(UnexpectedHTTPStatus):
+class FunPayServerError(UnexpectedHTTPStatusError):
     def __init__(self, method: FunPayMethod[Any], status: int = 500):
         super().__init__(method=method, status=status)
