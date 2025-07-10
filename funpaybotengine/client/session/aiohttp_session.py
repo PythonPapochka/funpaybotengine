@@ -22,13 +22,11 @@ class AioHttpSession(BaseSession):
     def __init__(
         self,
         proxy: str | None,
-        golden_key: str,
         default_headers: dict[str, str] | None = None,
     ):
         super().__init__()
 
         self._proxy = proxy
-        self._golden_key = golden_key
         self._default_headers = (
             default_headers
             if default_headers is not None
@@ -42,8 +40,9 @@ class AioHttpSession(BaseSession):
 
     async def session(self) -> ClientSession:
         if self._session is None or self._session.closed:
-            self._session = ClientSession(proxy=self.proxy)
-            self._session.cookie_jar.update_cookies({'golden_key': self.golden_key})
+            self._session = ClientSession(
+                proxy=self.proxy, base_url='https://funpay.com'
+            )
         return self._session
 
     async def close(self):
@@ -57,6 +56,7 @@ class AioHttpSession(BaseSession):
         self, method: FunPayMethod[MethodReturnType], timeout: float | None = None
     ) -> MethodReturnType:
         session = await self.session()
+        session.cookie_jar.update_cookies({'golden_key': method.bot.golden_key})
         timeout = ClientTimeout(
             total=timeout if timeout is not None else method.timeout
         )
@@ -86,7 +86,3 @@ class AioHttpSession(BaseSession):
     @property
     def proxy(self) -> str | None:
         return self._proxy
-
-    @property
-    def golden_key(self) -> str:
-        return self._golden_key

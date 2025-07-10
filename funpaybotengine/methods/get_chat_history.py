@@ -13,17 +13,53 @@ from funpaybotengine.types.messages import Message
 
 
 class GetChatHistory(FunPayMethod[list[Message]], BaseModel):
-    chat_id: int | str
-    last_message_id: int = 9999999999
+    """
+    Get chat history method (``https://funpay.com/chat/history``).
 
-    def __init__(self, chat_id: int | str, last_message_id: int = 9999999999):
+    Returns max. 50 messages before ``before_message_id``.
+    """
+
+    chat_id: int | str
+    """Chat ID."""
+
+    before_message_id: int = 99999999999
+    """
+    Message ID to paginate history **backwards from** (exclusive).
+
+    Messages with IDs **less than** this one will be returned,
+    i.e. history will be fetched in reverse order *before* this message.
+    
+    Defaults to ``99999999999``
+    """
+
+    locale: str = ''
+    """
+    FunPay locale (``'en'`` / ``'uk'``).
+
+    Defaults to ``''`` (Russian).
+    """
+
+    def __init__(
+        self, chat_id: int | str, before_message_id: int = 99999999999, locale: str = ''
+    ):
+        """
+        :param chat_id: Chat ID.
+        :param before_message_id: Message ID to paginate history **backwards from**
+            (exclusive).
+            Messages with IDs **less than** this one will be returned,
+            i.e. history will be fetched in reverse order *before* this message.
+        :param locale: FunPay locale (``'en'`` / ``'uk'``).
+            Defaults to ``''`` (Russian).
+        """
         super().__init__(
-            url='https://funpay.com/chat/history',
-            data={'node': str(chat_id), 'last_message': str(last_message_id)},
+            url='chat/history',
+            locale=locale,
+            data={'node': str(chat_id), 'last_message': str(before_message_id)},
             headers={'X-Requested-With': 'XMLHttpRequest'},
             parser_cls=MessagesParser,
             chat_id=chat_id,
-            last_message_id=last_message_id,
+            before_message_id=before_message_id,
+            context={'chat_id': chat_id},
         )
 
     def parse_result(self, response: str):
@@ -34,6 +70,8 @@ class GetChatHistory(FunPayMethod[list[Message]], BaseModel):
 
     def transform_result(self, messages) -> list[Message]:
         return [
-            Message.model_validate(i.as_dict(), context={'bot': self._bot})
+            Message.model_validate(
+                i.as_dict(), context={'bot': self._bot} | self.context
+            )
             for i in messages
         ]

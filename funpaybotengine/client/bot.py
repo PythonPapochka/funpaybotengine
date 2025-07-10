@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 class Bot(BaseBot):
     def __init__(self, golden_key: str, session: BaseSession | None = None):
         self._golden_key = golden_key
-        self._session = session or AioHttpSession(golden_key=golden_key, proxy=None)
+        self._session = session or AioHttpSession(proxy=None)
 
     @property
     def golden_key(self) -> str:
@@ -30,7 +30,7 @@ class Bot(BaseBot):
     async def get_chat_history(
         self, chat_id: int | str, last_message_id: int = 999999999999
     ):
-        method = GetChatHistory(chat_id=chat_id, last_message_id=last_message_id).as_(
+        method = GetChatHistory(chat_id=chat_id, before_message_id=last_message_id).as_(
             self
         )
         return await self.session.make_request(method)

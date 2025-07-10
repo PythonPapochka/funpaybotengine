@@ -1,4 +1,9 @@
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 
-class BaseBot: ...
+
+class BaseBot(ABC):
+    @property
+    @abstractmethod
+    def golden_key(self) -> str: ...
