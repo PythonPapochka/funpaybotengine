@@ -30,7 +30,6 @@ class Category(FunPayObject, BaseModel):
         return f'{self.name} ({self.location})'
 
 
-
 class Subcategory(FunPayObject, BaseModel):
     """Represents a subcategory from FunPay main page."""
 

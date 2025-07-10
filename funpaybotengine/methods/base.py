@@ -29,6 +29,24 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
     Defaults to ``HTTPMethod.GET``.
     """
 
+    locale: str = ''
+    """
+    FunPay locale (``'en'`` / ``'uk'``).
+
+    If specified and ``FunPayMethod.ignore_locale`` is ``False``,
+    it will be considered when constructing the final URL via the
+    ``full_url`` property.
+
+    Defaults to ``''`` (Russian).
+    """
+
+    ignore_locale: bool = False
+    """
+    Whether to ignore locale or not.
+    
+    If ``True``, ``FunPayMethod.locale`` will be ignored.
+    """
+
     headers: dict[str, str] = Field(default_factory=dict)
     """
     Headers.
@@ -77,6 +95,8 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
             self,
             url: str,
             method: HTTPMethod = HTTPMethod.GET,
+            locale: str = '',
+            ignore_locale: bool = False,
             headers: dict[str, str] = {},
             data: dict[str, str] = {},
             expected_status_codes: list[int | HTTPStatus] = [HTTPStatus.OK],
@@ -88,6 +108,13 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
             :param url: Method URL.
             :param method: HTTP Method.
                 Defaults to ``HTTPMethod.GET``.
+            :param locale: FunPay locale (``'en'`` / ``'uk'``).
+                If specified and ``FunPayMethod.ignore_locale`` is ``False``,
+                it will be considered when constructing the final URL via the
+                ``full_url`` property.
+                Defaults to ``''`` (Russian).
+            :param ignore_locale: Whether to ignore locale or not.
+                If ``True``, ``FunPayMethod.locale`` will be ignored.
             :param headers: Headers.
                 Defaults to empty dict.
             :param data: Additional data.
@@ -102,6 +129,7 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
             :param timeout: Request timeout.
                 Defaults to ``10.0``.
             """
+            ...
 
     def model_post_init(self, context: Any, /) -> None:
         super(BindableObject, self).model_post_init(context)
@@ -137,3 +165,11 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
         (``MethodReturnType``).
         """
         ...
+
+    @property
+    def full_url(self) -> str:
+        """URL with locale."""
+
+        if self.ignore_locale or not self.locale:
+            return self.url
+        return f'{self.locale}/{self.url[1 if self.url.startswith("/") else 0 :]}'
