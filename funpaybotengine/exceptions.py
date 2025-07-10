@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+
 __all__ = (
     'FunPayRequestException',
     'UnexpectedHTTPStatus',
@@ -8,10 +9,12 @@ __all__ = (
     'Forbidden',
     'BadRequest',
     'NotFound',
-    'FunPayServerError'
+    'FunPayServerError',
 )
 
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+
+
 if TYPE_CHECKING:
     from funpaybotengine.methods.base import FunPayMethod
 
@@ -30,7 +33,8 @@ class UnexpectedHTTPStatus(FunPayRequestException):
     def __str__(self):
         return (
             f'Unexpected response status code {self.status} for {self.method.url!r} '
-            f'(expected: {self.method.expected_status_codes!r})')
+            f'(expected: {self.method.expected_status_codes!r})'
+        )
 
 
 class RateLimitExceeded(UnexpectedHTTPStatus):

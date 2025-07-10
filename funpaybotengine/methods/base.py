@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+
 __all__ = ('FunPayMethod', 'MethodReturnType')
 
 from typing import TYPE_CHECKING, Any, Type, Generic, TypeVar
@@ -10,6 +11,7 @@ from pydantic import Field, BaseModel
 from funpayparsers.parsers.base import ParsingOptions, FunPayObjectParser
 
 from funpaybotengine.base import BindableObject
+
 
 MethodReturnType = TypeVar('MethodReturnType', bound=Any)
 
@@ -70,15 +72,18 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
     """
 
     if TYPE_CHECKING:
-        def __init__(self,
-                     url: str,
-                     method: HTTPMethod = HTTPMethod.GET,
-                     headers: dict[str, str] = {},
-                     data: dict[str, str] = {},
-                     expected_status_codes: list[int | HTTPStatus] = [HTTPStatus.OK],
-                     parser_cls: Type[FunPayObjectParser] | None = None,
-                     parser_options: ParsingOptions | None = None,
-                     timeout: float = 10.0):
+
+        def __init__(
+            self,
+            url: str,
+            method: HTTPMethod = HTTPMethod.GET,
+            headers: dict[str, str] = {},
+            data: dict[str, str] = {},
+            expected_status_codes: list[int | HTTPStatus] = [HTTPStatus.OK],
+            parser_cls: Type[FunPayObjectParser] | None = None,
+            parser_options: ParsingOptions | None = None,
+            timeout: float = 10.0,
+        ):
             """
             :param url: Method URL.
             :param method: HTTP Method.

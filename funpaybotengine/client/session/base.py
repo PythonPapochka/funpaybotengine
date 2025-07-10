@@ -1,19 +1,22 @@
 from __future__ import annotations
 
+
 __all__ = ('BaseSession',)
 
-from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any
+from abc import ABC, abstractmethod
 from http import HTTPStatus
+
 from funpaybotengine.exceptions import (
-    UnexpectedHTTPStatus,
-    RateLimitExceeded,
-    Unauthorized,
+    NotFound,
     Forbidden,
     BadRequest,
-    NotFound,
-    FunPayServerError
+    Unauthorized,
+    FunPayServerError,
+    RateLimitExceeded,
+    UnexpectedHTTPStatus,
 )
+
 
 if TYPE_CHECKING:
     from funpaybotengine.methods.base import FunPayMethod, MethodReturnType
@@ -30,14 +33,16 @@ _exceptions = {
 
 class BaseSession(ABC):
     @abstractmethod
-    async def close(self) -> None:
-        ...
+    async def close(self) -> None: ...
 
     @abstractmethod
-    async def make_request(self, method: FunPayMethod[MethodReturnType], timeout: float | None = None) -> MethodReturnType:
-        ...
+    async def make_request(
+        self, method: FunPayMethod[MethodReturnType], timeout: float | None = None
+    ) -> MethodReturnType: ...
 
-    def check_status_code(self, method: FunPayMethod[Any], status_code: int | HTTPStatus):
+    def check_status_code(
+        self, method: FunPayMethod[Any], status_code: int | HTTPStatus
+    ):
         if status_code in method.expected_status_codes:
             return
 
@@ -48,7 +53,6 @@ class BaseSession(ABC):
             raise UnexpectedHTTPStatus(method=method, status=status_code)
 
         raise _exceptions[status_code](method=method)
-
 
     async def __aenter__(self) -> BaseSession:
         return self

@@ -1,21 +1,21 @@
 from __future__ import annotations
 
-__all__ = ('Bot', )
+
+__all__ = ('Bot',)
 
 from typing import TYPE_CHECKING
-from funpaybotengine.client.session.aiohttp_session import AioHttpSession
-from funpaybotengine.methods.get_chat_history import GetChatHistory
+
 from funpaybotengine.client.base_bot import BaseBot
+from funpaybotengine.methods.get_chat_history import GetChatHistory
+from funpaybotengine.client.session.aiohttp_session import AioHttpSession
+
 
 if TYPE_CHECKING:
     from funpaybotengine.client.session.base import BaseSession
 
 
-
 class Bot(BaseBot):
-    def __init__(self,
-                 golden_key: str,
-                 session: BaseSession | None = None):
+    def __init__(self, golden_key: str, session: BaseSession | None = None):
         self._golden_key = golden_key
         self._session = session or AioHttpSession(golden_key=golden_key, proxy=None)
 
@@ -27,9 +27,10 @@ class Bot(BaseBot):
     def session(self) -> BaseSession:
         return self._session
 
-    async def get_chat_history(self,
-                               chat_id: int | str,
-                               last_message_id: int = 999999999999):
-        method = GetChatHistory(chat_id=chat_id,
-                                last_message_id=last_message_id).as_(self)
+    async def get_chat_history(
+        self, chat_id: int | str, last_message_id: int = 999999999999
+    ):
+        method = GetChatHistory(chat_id=chat_id, last_message_id=last_message_id).as_(
+            self
+        )
         return await self.session.make_request(method)

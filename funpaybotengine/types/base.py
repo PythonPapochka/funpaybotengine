@@ -1,8 +1,13 @@
-__all__ = ('FunPayObject', )
+from __future__ import annotations
+
+
+__all__ = ('FunPayObject',)
+
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, PrivateAttr
+
 from funpaybotengine.base import BindableObject
-from typing import Any
 
 
 class FunPayObject(BindableObject, BaseModel):

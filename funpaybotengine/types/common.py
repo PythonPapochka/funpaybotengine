@@ -1,7 +1,17 @@
-__all__ = ('MoneyValue', 'UserBadge', 'UserPreview', 'UserRating', 'Achievement',)
+from __future__ import annotations
+
+
+__all__ = (
+    'MoneyValue',
+    'UserBadge',
+    'UserPreview',
+    'UserRating',
+    'Achievement',
+)
 
 
 from pydantic import BaseModel
+
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.enums import Currency, BadgeType
 

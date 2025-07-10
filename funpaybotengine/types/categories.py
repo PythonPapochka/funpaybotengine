@@ -1,6 +1,10 @@
+from __future__ import annotations
+
+
 __all__ = ('Category', 'Subcategory')
 
 from pydantic import BaseModel
+
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.enums import SubcategoryType
 
@@ -9,6 +13,7 @@ class Category(FunPayObject, BaseModel):
     """
     Represents a category from FunPay main page.
     """
+
     id: int
     """Category ID."""
 

@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-__all__ = ('GetChatHistory', )
+
+__all__ = ('GetChatHistory',)
+
+import json
 
 from pydantic import BaseModel
-from funpaybotengine.types.messages import Message
-from funpaybotengine.methods.base import FunPayMethod
 from funpayparsers.parsers import MessagesParser
-import json
+
+from funpaybotengine.methods.base import FunPayMethod
+from funpaybotengine.types.messages import Message
 
 
 class GetChatHistory(FunPayMethod[list[Message]], BaseModel):
@@ -30,5 +33,7 @@ class GetChatHistory(FunPayMethod[list[Message]], BaseModel):
         return self.parser_cls(html, options=self.parser_options).parse()
 
     def transform_result(self, messages) -> list[Message]:
-        return [Message.model_validate(i.as_dict(), context={'bot': self._bot})
-                for i in messages]
+        return [
+            Message.model_validate(i.as_dict(), context={'bot': self._bot})
+            for i in messages
+        ]

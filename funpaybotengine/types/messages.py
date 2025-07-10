@@ -1,7 +1,11 @@
-__all__ = ('Message', )
+from __future__ import annotations
+
+
+__all__ = ('Message',)
 
 
 from pydantic import BaseModel
+
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.common import UserBadge
 
@@ -74,16 +78,16 @@ class Message(FunPayObject, BaseModel):
     """
 
     async def reply(self):
-        raise NotImplemented
+        raise NotImplementedError
 
     async def chat(self, update: bool = False):
-        raise NotImplemented
+        raise NotImplementedError
 
     async def chat_page(self, update: bool = False):
-        raise NotImplemented
+        raise NotImplementedError
 
     async def sender_profile_page(self, update: bool = False):
-        raise NotImplemented
+        raise NotImplementedError
 
     @property
     def type(self):
