@@ -5,6 +5,7 @@ __all__ = ('GetChatHistory',)
 
 import json
 from typing import TYPE_CHECKING
+
 from pydantic import BaseModel
 from funpayparsers.parsers import MessagesParser
 
