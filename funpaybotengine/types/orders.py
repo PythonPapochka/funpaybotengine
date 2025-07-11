@@ -4,16 +4,11 @@ from __future__ import annotations
 __all__ = ('OrderPreview', 'OrderPreviewsBatch')
 
 
-from typing import TYPE_CHECKING
-
 from pydantic import BaseModel
 
 from funpaybotengine.types.base import FunPayObject
-
-
-if TYPE_CHECKING:
-    from funpaybotengine.types.enums import OrderStatus
-    from funpaybotengine.types.common import MoneyValue, UserPreview
+from funpaybotengine.types.enums import OrderStatus
+from funpaybotengine.types.common import MoneyValue, UserPreview
 
 
 class OrderPreview(FunPayObject, BaseModel):

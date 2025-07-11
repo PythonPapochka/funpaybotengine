@@ -3,15 +3,11 @@ from __future__ import annotations
 
 __all__ = ('OfferPreview', 'OfferSeller', 'OfferFields')
 
-from typing import TYPE_CHECKING
 
 from pydantic import Field, BaseModel
 
 from funpaybotengine.types.base import FunPayObject, FunPayMutableObject
-
-
-if TYPE_CHECKING:
-    from funpaybotengine.types.common import MoneyValue
+from funpaybotengine.types.common import MoneyValue
 
 
 class OfferSeller(FunPayObject, BaseModel):

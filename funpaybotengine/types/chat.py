@@ -3,16 +3,12 @@ from __future__ import annotations
 
 __all__ = ('PrivateChatPreview', 'Chat', 'PrivateChatInfo')
 
-from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
 from funpaybotengine.types.base import FunPayObject
-
-
-if TYPE_CHECKING:
-    from funpaybotengine.types import Message, UserPreview
-    from funpaybotengine.types.updates import CurrentlyViewingOfferInfo
+from funpaybotengine.types.common import UserPreview, CurrentlyViewingOfferInfo
+from funpaybotengine.types.messages import Message
 
 
 class PrivateChatPreview(FunPayObject, BaseModel):

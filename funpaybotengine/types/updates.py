@@ -6,24 +6,21 @@ __all__ = (
     'ChatBookmarks',
     'ChatCounter',
     'NodeInfo',
-    'CurrentlyViewingOfferInfo',
     'ChatNode',
     'ActionResponse',
     'UpdateObject',
     'UpdatesPack',
 )
 
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import Generic, TypeVar
 
 from pydantic import BaseModel
 
 from funpaybotengine.types.base import FunPayObject
-
-
-if TYPE_CHECKING:
-    from funpaybotengine.types.chat import PrivateChatPreview
-    from funpaybotengine.types.enums import UpdateType
-    from funpaybotengine.types.messages import Message
+from funpaybotengine.types.chat import PrivateChatPreview
+from funpaybotengine.types.enums import UpdateType
+from funpaybotengine.types.common import CurrentlyViewingOfferInfo
+from funpaybotengine.types.messages import Message
 
 
 UpdateData = TypeVar('UpdateData')
@@ -73,12 +70,6 @@ class ChatCounter(FunPayObject, BaseModel):
     If there are new messages in multiple chats, 
     this field contains the ID of the most recent message among all of them.
     """
-
-
-# ------ C-P-U ------
-class CurrentlyViewingOfferInfo(FunPayObject, BaseModel):
-    id: int | str
-    name: str
 
 
 # ------ Nodes ------

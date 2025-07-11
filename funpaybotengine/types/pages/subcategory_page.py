@@ -3,16 +3,12 @@ from __future__ import annotations
 
 __all__ = ('SubcategoryPage',)
 
-from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
+from funpayparsers.types.enums import SubcategoryType
+from funpayparsers.types.offers import OfferPreview
+from funpayparsers.types.categories import Subcategory
 from funpayparsers.types.pages.base import FunPayPage
-
-
-if TYPE_CHECKING:
-    from funpayparsers.types.enums import SubcategoryType
-    from funpayparsers.types.offers import OfferPreview
-    from funpayparsers.types.categories import Subcategory
 
 
 class SubcategoryPage(FunPayPage, BaseModel):

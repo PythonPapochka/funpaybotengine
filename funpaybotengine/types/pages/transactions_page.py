@@ -3,15 +3,11 @@ from __future__ import annotations
 
 __all__ = ('TransactionsPage',)
 
-from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
+from funpayparsers.types.common import MoneyValue
+from funpayparsers.types.finances import TransactionPreviewsBatch
 from funpayparsers.types.pages.base import FunPayPage
-
-
-if TYPE_CHECKING:
-    from funpayparsers.types.common import MoneyValue
-    from funpayparsers.types.finances import TransactionPreviewsBatch
 
 
 class TransactionsPage(FunPayPage, BaseModel):

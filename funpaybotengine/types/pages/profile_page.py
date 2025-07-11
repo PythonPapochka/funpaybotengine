@@ -4,19 +4,14 @@ from __future__ import annotations
 __all__ = ('ProfilePage',)
 
 
-from typing import TYPE_CHECKING
-
 from pydantic import BaseModel
 
+from funpaybotengine.types.chat import Chat
+from funpaybotengine.types.enums import SubcategoryType
+from funpaybotengine.types.common import UserBadge, UserRating, Achievement
+from funpaybotengine.types.offers import OfferPreview
+from funpaybotengine.types.reviews import ReviewsBatch
 from funpaybotengine.types.pages.base import FunPayPage
-
-
-if TYPE_CHECKING:
-    from funpaybotengine.types.chat import Chat
-    from funpaybotengine.types.enums import SubcategoryType
-    from funpaybotengine.types.common import UserBadge, UserRating, Achievement
-    from funpaybotengine.types.offers import OfferPreview
-    from funpaybotengine.types.reviews import ReviewsBatch
 
 
 class ProfilePage(FunPayPage, BaseModel):

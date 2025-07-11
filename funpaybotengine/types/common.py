@@ -7,6 +7,7 @@ __all__ = (
     'UserPreview',
     'UserRating',
     'Achievement',
+    'CurrentlyViewingOfferInfo',
 )
 
 
@@ -132,3 +133,8 @@ class Achievement(FunPayObject, BaseModel):
 
     text: str
     """Achievement text."""
+
+
+class CurrentlyViewingOfferInfo(FunPayObject, BaseModel):
+    id: int | str
+    name: str

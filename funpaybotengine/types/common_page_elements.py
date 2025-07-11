@@ -4,16 +4,11 @@ from __future__ import annotations
 __all__ = ('AppData', 'WebPush', 'PageHeader')
 
 
-from typing import TYPE_CHECKING
-
 from pydantic import BaseModel
 
 from funpaybotengine.types.base import FunPayObject
-
-
-if TYPE_CHECKING:
-    from funpaybotengine.types.enums import Currency, Language
-    from funpaybotengine.types.common import MoneyValue
+from funpaybotengine.types.enums import Currency, Language
+from funpaybotengine.types.common import MoneyValue
 
 
 class WebPush(FunPayObject, BaseModel):

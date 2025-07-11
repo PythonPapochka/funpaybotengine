@@ -4,16 +4,11 @@ from __future__ import annotations
 __all__ = ('TransactionPreview', 'Transaction', 'TransactionPreviewsBatch')
 
 
-from typing import TYPE_CHECKING
-
 from pydantic import BaseModel
 
 from funpaybotengine.types.base import FunPayObject
-
-
-if TYPE_CHECKING:
-    from funpaybotengine.types.enums import PaymentMethod, TransactionStatus
-    from funpaybotengine.types.common import MoneyValue
+from funpaybotengine.types.enums import PaymentMethod, TransactionStatus
+from funpaybotengine.types.common import MoneyValue
 
 
 class TransactionPreview(FunPayObject, BaseModel):

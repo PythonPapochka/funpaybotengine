@@ -6,6 +6,7 @@ __all__ = ('Bot',)
 from typing import TYPE_CHECKING
 
 from funpaybotengine.client.base_bot import BaseBot
+from funpaybotengine.methods.get_main_page import GetMainPage
 from funpaybotengine.methods.get_chat_history import GetChatHistory
 from funpaybotengine.client.session.aiohttp_session import AioHttpSession
 
@@ -33,4 +34,8 @@ class Bot(BaseBot):
         method = GetChatHistory(chat_id=chat_id, before_message_id=last_message_id).as_(
             self
         )
+        return await self.session.make_request(method)
+
+    async def get_main_page(self):
+        method = GetMainPage().as_(self)
         return await self.session.make_request(method)
