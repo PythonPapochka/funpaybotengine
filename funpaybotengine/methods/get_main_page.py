@@ -17,6 +17,12 @@ if TYPE_CHECKING:
 
 
 class GetMainPage(FunPayMethod[MainPage], BaseModel):
+    """
+    Get the main page method (``https://funpay.com/``).
+
+    Returns ``funpaybotengine.types.pages.MainPage`` obj.
+    """
+
     def __init__(self, locale: str = ''):
         super().__init__(
             url='',
