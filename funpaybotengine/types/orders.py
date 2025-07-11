@@ -6,6 +6,8 @@ __all__ = ('OrderPreview', 'OrderPreviewsBatch')
 
 from typing import TYPE_CHECKING
 
+from pydantic import BaseModel
+
 from funpaybotengine.types.base import FunPayObject
 
 
@@ -14,7 +16,7 @@ if TYPE_CHECKING:
     from funpaybotengine.types.common import MoneyValue, UserPreview
 
 
-class OrderPreview(FunPayObject):
+class OrderPreview(FunPayObject, BaseModel):
     """Represents an order preview."""
 
     id: str
@@ -39,7 +41,7 @@ class OrderPreview(FunPayObject):
     """Associated counterparty info."""
 
 
-class OrderPreviewsBatch(FunPayObject):
+class OrderPreviewsBatch(FunPayObject, BaseModel):
     """
     Represents a single batch of order previews.
 

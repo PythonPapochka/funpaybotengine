@@ -6,6 +6,8 @@ __all__ = ('Review', 'ReviewsBatch')
 
 from typing import TYPE_CHECKING
 
+from pydantic import BaseModel
+
 from funpaybotengine.types.base import FunPayObject
 
 
@@ -13,7 +15,7 @@ if TYPE_CHECKING:
     from funpaybotengine.types.common import MoneyValue
 
 
-class Review(FunPayObject):
+class Review(FunPayObject, BaseModel):
     """
     Represents a review.
 
@@ -77,7 +79,7 @@ class Review(FunPayObject):
     """Sellers reply to this review."""
 
 
-class ReviewsBatch(FunPayObject):
+class ReviewsBatch(FunPayObject, BaseModel):
     """
     Represents a single batch of reviews.
 

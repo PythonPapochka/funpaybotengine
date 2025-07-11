@@ -5,6 +5,8 @@ __all__ = ('PrivateChatPreview', 'Chat', 'PrivateChatInfo')
 
 from typing import TYPE_CHECKING
 
+from pydantic import BaseModel
+
 from funpaybotengine.types.base import FunPayObject
 
 
@@ -13,7 +15,7 @@ if TYPE_CHECKING:
     from funpaybotengine.types.updates import CurrentlyViewingOfferInfo
 
 
-class PrivateChatPreview(FunPayObject):
+class PrivateChatPreview(FunPayObject, BaseModel):
     """Represents a private chat preview."""
 
     id: int
@@ -57,7 +59,7 @@ class PrivateChatPreview(FunPayObject):
     """
 
 
-class Chat(FunPayObject):
+class Chat(FunPayObject, BaseModel):
     """Represents a chat."""
 
     id: int | None
@@ -92,7 +94,7 @@ class Chat(FunPayObject):
     """
 
 
-class PrivateChatInfo(FunPayObject):
+class PrivateChatInfo(FunPayObject, BaseModel):
     """
     Represents a private chat info.
 

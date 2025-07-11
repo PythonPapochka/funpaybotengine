@@ -6,6 +6,8 @@ __all__ = ('AppData', 'WebPush', 'PageHeader')
 
 from typing import TYPE_CHECKING
 
+from pydantic import BaseModel
+
 from funpaybotengine.types.base import FunPayObject
 
 
@@ -14,7 +16,7 @@ if TYPE_CHECKING:
     from funpaybotengine.types.common import MoneyValue
 
 
-class WebPush(FunPayObject):
+class WebPush(FunPayObject, BaseModel):
     """Represents a WebPush data extracted from an AppData dict."""
 
     app: str
@@ -27,7 +29,7 @@ class WebPush(FunPayObject):
     """Whether HWID is required or not."""
 
 
-class AppData(FunPayObject):
+class AppData(FunPayObject, BaseModel):
     """
     Represents an AppData dict.
     """
@@ -45,7 +47,7 @@ class AppData(FunPayObject):
     """WebPush info."""
 
 
-class PageHeader(FunPayObject):
+class PageHeader(FunPayObject, BaseModel):
     """
     Represents the header section of a FunPay page.
 

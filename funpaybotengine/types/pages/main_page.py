@@ -4,6 +4,8 @@ from __future__ import annotations
 __all__ = ('MainPage',)
 from typing import TYPE_CHECKING
 
+from pydantic import BaseModel
+
 from funpaybotengine.types.pages.base import FunPayPage
 
 
@@ -12,7 +14,7 @@ if TYPE_CHECKING:
     from funpaybotengine.types.categories import Category
 
 
-class MainPage(FunPayPage):
+class MainPage(FunPayPage, BaseModel):
     """Represents the main page (https://funpay.com)."""
 
     last_categories: list[Category]

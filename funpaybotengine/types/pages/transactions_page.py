@@ -5,6 +5,7 @@ __all__ = ('TransactionsPage',)
 
 from typing import TYPE_CHECKING
 
+from pydantic import BaseModel
 from funpayparsers.types.pages.base import FunPayPage
 
 
@@ -13,7 +14,7 @@ if TYPE_CHECKING:
     from funpayparsers.types.finances import TransactionPreviewsBatch
 
 
-class TransactionsPage(FunPayPage):
+class TransactionsPage(FunPayPage, BaseModel):
     """Represents the transactions page (https://funpay.com/account/balance)."""
 
     rub_balance: MoneyValue | None

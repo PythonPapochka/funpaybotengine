@@ -15,6 +15,8 @@ __all__ = (
 
 from typing import TYPE_CHECKING, Generic, TypeVar
 
+from pydantic import BaseModel
+
 from funpaybotengine.types.base import FunPayObject
 
 
@@ -28,7 +30,7 @@ UpdateData = TypeVar('UpdateData')
 
 
 # ------ Simple objects ------
-class OrdersCounters(FunPayObject):
+class OrdersCounters(FunPayObject, BaseModel):
     """Represents an order counters data from updates object."""
 
     purchases: int
@@ -37,7 +39,7 @@ class OrdersCounters(FunPayObject):
     """Active sales amount (``seller`` field)."""
 
 
-class ChatBookmarks(FunPayObject):
+class ChatBookmarks(FunPayObject, BaseModel):
     """Represents a chat bookmarks data from updates object."""
 
     counter: int
@@ -58,7 +60,7 @@ class ChatBookmarks(FunPayObject):
     """List of chat previews."""
 
 
-class ChatCounter(FunPayObject):
+class ChatCounter(FunPayObject, BaseModel):
     """Represents a chat counter data from updates object."""
 
     counter: int
@@ -74,26 +76,26 @@ class ChatCounter(FunPayObject):
 
 
 # ------ C-P-U ------
-class CurrentlyViewingOfferInfo(FunPayObject):
+class CurrentlyViewingOfferInfo(FunPayObject, BaseModel):
     id: int | str
     name: str
 
 
 # ------ Nodes ------
-class NodeInfo(FunPayObject):
+class NodeInfo(FunPayObject, BaseModel):
     id: int
     name: str
     silent: bool
 
 
-class ChatNode(FunPayObject):
+class ChatNode(FunPayObject, BaseModel):
     node: NodeInfo
     messages: list[Message]
     has_history: bool
 
 
 # ------ Response to action ------
-class ActionResponse(FunPayObject):
+class ActionResponse(FunPayObject, BaseModel):
     """Represents an action response data from updates object."""
 
     error: str | None
@@ -101,7 +103,7 @@ class ActionResponse(FunPayObject):
 
 
 # ------ Update obj ------
-class UpdateObject(FunPayObject, Generic[UpdateData]):
+class UpdateObject(FunPayObject, Generic[UpdateData], BaseModel):
     """Represents a single update data from updates object."""
 
     type: UpdateType
@@ -117,7 +119,7 @@ class UpdateObject(FunPayObject, Generic[UpdateData]):
     """Update data."""
 
 
-class UpdatesPack(FunPayObject):
+class UpdatesPack(FunPayObject, BaseModel):
     """Represents an updates object, returned by runner."""
 
     orders_counters: UpdateObject[OrdersCounters] | None

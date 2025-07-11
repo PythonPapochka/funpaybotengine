@@ -5,7 +5,7 @@ __all__ = ('OfferPreview', 'OfferSeller', 'OfferFields')
 
 from typing import TYPE_CHECKING
 
-from pydantic import Field
+from pydantic import Field, BaseModel
 
 from funpaybotengine.types.base import FunPayObject, FunPayMutableObject
 
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from funpaybotengine.types.common import MoneyValue
 
 
-class OfferSeller(FunPayObject):
+class OfferSeller(FunPayObject, BaseModel):
     """Represents the seller of an offer."""
 
     id: int
@@ -39,7 +39,7 @@ class OfferSeller(FunPayObject):
     """The total number of reviews received by the seller."""
 
 
-class OfferPreview(FunPayObject):
+class OfferPreview(FunPayObject, BaseModel):
     """Represents an offer preview."""
 
     id: int | str
@@ -78,7 +78,7 @@ class OfferPreview(FunPayObject):
     """
 
 
-class OfferFields(FunPayMutableObject):
+class OfferFields(FunPayMutableObject, BaseModel):
     """
     Represents the full set of form fields used to construct or update
     an offer on FunPay.

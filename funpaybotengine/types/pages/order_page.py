@@ -6,6 +6,8 @@ __all__ = ('OrderPage',)
 import re
 from typing import TYPE_CHECKING
 
+from pydantic import BaseModel
+
 from funpaybotengine.types.pages.base import FunPayPage
 
 
@@ -16,7 +18,7 @@ if TYPE_CHECKING:
     from funpaybotengine.types.reviews import Review
 
 
-class OrderPage(FunPayPage):
+class OrderPage(FunPayPage, BaseModel):
     """Represents an order page (`https://funpay.com/orders/<order_id>/`)."""
 
     order_id: str

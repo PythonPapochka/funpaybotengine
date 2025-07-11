@@ -6,6 +6,8 @@ __all__ = ('ProfilePage',)
 
 from typing import TYPE_CHECKING
 
+from pydantic import BaseModel
+
 from funpaybotengine.types.pages.base import FunPayPage
 
 
@@ -17,7 +19,7 @@ if TYPE_CHECKING:
     from funpaybotengine.types.reviews import ReviewsBatch
 
 
-class ProfilePage(FunPayPage):
+class ProfilePage(FunPayPage, BaseModel):
     """Represents a user profile page (`https://funpay.com/users/<user_id>`)."""
 
     user_id: int

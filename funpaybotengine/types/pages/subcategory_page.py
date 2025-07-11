@@ -5,6 +5,7 @@ __all__ = ('SubcategoryPage',)
 
 from typing import TYPE_CHECKING
 
+from pydantic import BaseModel
 from funpayparsers.types.pages.base import FunPayPage
 
 
@@ -14,7 +15,7 @@ if TYPE_CHECKING:
     from funpayparsers.types.categories import Subcategory
 
 
-class SubcategoryPage(FunPayPage):
+class SubcategoryPage(FunPayPage, BaseModel):
     """
     Represents a subcategory offers list page
     (`https://funpay.com/<lots/chips>/<subcategory_id>/`)

@@ -6,6 +6,8 @@ __all__ = ('TransactionPreview', 'Transaction', 'TransactionPreviewsBatch')
 
 from typing import TYPE_CHECKING
 
+from pydantic import BaseModel
+
 from funpaybotengine.types.base import FunPayObject
 
 
@@ -14,7 +16,7 @@ if TYPE_CHECKING:
     from funpaybotengine.types.common import MoneyValue
 
 
-class TransactionPreview(FunPayObject):
+class TransactionPreview(FunPayObject, BaseModel):
     """Represents a transaction preview."""
 
     id: int
@@ -39,12 +41,12 @@ class TransactionPreview(FunPayObject):
     """Withdrawal card / phone / wallet number, if applicable."""
 
 
-class Transaction(FunPayObject):
+class Transaction(FunPayObject, BaseModel):
     status: TransactionStatus
     data: dict[str, str]
 
 
-class TransactionPreviewsBatch(FunPayObject):
+class TransactionPreviewsBatch(FunPayObject, BaseModel):
     """
     Represents a single batch of transaction previews returned by FunPay.
 
