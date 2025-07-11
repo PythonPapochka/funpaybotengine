@@ -58,6 +58,12 @@ class Message(FunPayObject, BaseModel):
     Will be ``None`` if the message contains text.
     """
 
+    chat_id: int | str | None = None
+    """Chat ID where this message was sent."""
+
+    chat_name: str | None = None
+    """Chat name (also ID) where this message was sent."""
+
     async def reply(self):
         raise NotImplementedError
 
