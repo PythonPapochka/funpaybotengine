@@ -4,7 +4,7 @@ from __future__ import annotations
 __all__ = ('Message',)
 
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator, ValidationInfo
 
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.common import UserBadge
@@ -63,6 +63,16 @@ class Message(FunPayObject, BaseModel):
 
     chat_name: str | None = None
     """Chat name (also ID) where this message was sent."""
+
+    @field_validator('chat_id', mode='before')
+    @classmethod
+    def get_chat_id_from_context(cls, value, info: ValidationInfo):
+        return info.context.get('chat_id')
+
+    @field_validator('chat_name', mode='before')
+    @classmethod
+    def get_chat_name_from_context(cls, value, info: ValidationInfo):
+        return info.context.get('chat_name')
 
     async def reply(self):
         raise NotImplementedError

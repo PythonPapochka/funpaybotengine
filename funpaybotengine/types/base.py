@@ -16,6 +16,8 @@ class FunPayObject(BindableObject, BaseModel):
         validate_assignment=True,
         arbitrary_types_allowed=True,
         populate_by_name=True,
+        validate_default=True,
+        from_attributes=True
     )
 
     raw_source: str

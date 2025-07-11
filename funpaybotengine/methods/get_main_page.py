@@ -31,4 +31,4 @@ class GetMainPage(FunPayMethod[MainPage], BaseModel):
         )
 
     def transform_result(self, result: ParserMainPage) -> MainPage:
-        return MainPage.model_validate(result.as_dict(), context={'bot': self._bot})
+        return MainPage.model_validate(result, context={'bot': self._bot})
