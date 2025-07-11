@@ -63,14 +63,14 @@ class AioHttpSession(BaseSession):
 
         if method.method == HTTPMethod.GET:
             response = await session.get(
-                method.url,
+                method.full_url,
                 params=method.data,
                 timeout=timeout,
                 headers=self._default_headers | method.headers,
             )
         elif method.method == HTTPMethod.POST:
             response = await session.post(
-                method.url,
+                method.full_url,
                 data=method.data,
                 timeout=timeout,
                 headers=self._default_headers | method.headers,
