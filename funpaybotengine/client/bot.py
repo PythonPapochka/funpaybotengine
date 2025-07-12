@@ -8,10 +8,10 @@ from io import BytesIO
 
 from funpaybotengine.methods.base import FunPayMethod, MethodReturnType
 from funpaybotengine.client.base_bot import BaseBot
+from funpaybotengine.methods.upload_image import UploadImage
 from funpaybotengine.methods.get_chat_page import GetChatPage
 from funpaybotengine.methods.get_main_page import GetMainPage
 from funpaybotengine.methods.get_chat_history import GetChatHistory
-from funpaybotengine.methods.upload_image import UploadImage
 from funpaybotengine.client.session.aiohttp_session import AioHttpSession
 
 

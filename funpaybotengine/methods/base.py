@@ -29,15 +29,14 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
     Defaults to ``HTTPMethod.GET``.
     """
 
-    locale: str = ''
+    locale: str | None = None
     """
-    FunPay locale (``'en'`` / ``'uk'``).
+    FunPay locale (``''`` (ru) / ``'en'`` / ``'uk'``).
 
     If specified and ``FunPayMethod.ignore_locale`` is ``False``,
-    it will be considered when constructing the final URL via the
-    ``full_url`` property.
+    it will override bots locale when making a request.
 
-    Defaults to ``''`` (Russian).
+    Defaults to ``None``.
     """
 
     ignore_locale: bool = False
@@ -176,10 +175,6 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
         """
         ...
 
-    @property
-    def full_url(self) -> str:
-        """URL with locale."""
-
-        if self.ignore_locale or not self.locale:
-            return self.url
-        return f'{self.locale}/{self.url[1 if self.url.startswith("/") else 0 :]}'
+    def to_obj(self, response) -> MethodReturnType:
+        parsing_result = self.parse_result(response)
+        return self.transform_result(parsing_result)

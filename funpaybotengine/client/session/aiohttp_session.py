@@ -16,12 +16,13 @@ from funpaybotengine.client.session.base import BaseSession
 
 if TYPE_CHECKING:
     from funpaybotengine.methods.base import FunPayMethod, MethodReturnType
+    from funpaybotengine.client.base_bot import BaseBot
 
 
 class AioHttpSession(BaseSession):
     def __init__(
         self,
-        proxy: str | None,
+        proxy: str | None = None,
         default_headers: dict[str, str] | None = None,
     ):
         super().__init__()
@@ -53,24 +54,31 @@ class AioHttpSession(BaseSession):
             await asyncio.sleep(0.25)
 
     async def make_request(
-        self, method: FunPayMethod[MethodReturnType], timeout: float | None = None
+        self,
+        method: FunPayMethod[MethodReturnType],
+        bot: BaseBot | None = None,
+        timeout: float | None = None,
     ) -> MethodReturnType:
+        if bot is not None:
+            method.bind_to(bot)
+
         session = await self.session()
         session.cookie_jar.update_cookies({'golden_key': method.bot.golden_key})
+
         timeout = ClientTimeout(
             total=timeout if timeout is not None else method.timeout
         )
 
         if method.method == HTTPMethod.GET:
             response = await session.get(
-                method.full_url,
+                self.resolve_url(method),
                 params=method.data,
                 timeout=timeout,
                 headers=self._default_headers | method.headers,
             )
         elif method.method == HTTPMethod.POST:
             response = await session.post(
-                method.full_url,
+                self.resolve_url(method),
                 data=method.data,
                 timeout=timeout,
                 headers=self._default_headers | method.headers,
@@ -80,8 +88,17 @@ class AioHttpSession(BaseSession):
 
         self.check_status_code(method, response.status)
 
-        result = method.parse_result(await response.text())
-        return method.transform_result(result)
+        return method.to_obj(await response.text())
+
+    def resolve_url(self, method: FunPayMethod) -> str:
+        if method.ignore_locale:
+            locale = ''
+        elif method.locale is not None:
+            locale = method.locale
+        else:
+            locale = method.bot.locale
+
+        return f'{locale}/{method.url[1 if method.url.startswith("/") else 0 :]}'
 
     @property
     def proxy(self) -> str | None:
