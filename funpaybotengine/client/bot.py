@@ -6,9 +6,12 @@ __all__ = ('Bot',)
 from typing import TYPE_CHECKING
 
 from funpaybotengine.client.base_bot import BaseBot
+from funpaybotengine.client.session.aiohttp_session import AioHttpSession
+
+from funpaybotengine.methods.base import FunPayMethod, MethodReturnType
 from funpaybotengine.methods.get_main_page import GetMainPage
 from funpaybotengine.methods.get_chat_history import GetChatHistory
-from funpaybotengine.client.session.aiohttp_session import AioHttpSession
+from funpaybotengine.methods.get_chat_page import GetChatPage
 
 
 if TYPE_CHECKING:
@@ -31,11 +34,22 @@ class Bot(BaseBot):
     async def get_chat_history(
         self, chat_id: int | str, last_message_id: int = 999999999999
     ):
-        method = GetChatHistory(chat_id=chat_id, before_message_id=last_message_id).as_(
-            self
-        )
+        method = GetChatHistory(
+            chat_id=chat_id,
+            before_message_id=last_message_id
+        ).as_(self)
         return await self.session.make_request(method)
 
     async def get_main_page(self):
         method = GetMainPage().as_(self)
         return await self.session.make_request(method)
+
+    async def get_chat_page(self, chat_id: int | str):
+        method = GetChatPage(chat_id=chat_id).as_(self)
+        return await self.session.make_request(method)
+
+    async def make_request(
+            self,
+            method: FunPayMethod[MethodReturnType]
+    ) -> MethodReturnType:
+        return await self.session.make_request(method.as_(self))
