@@ -4,7 +4,12 @@ from __future__ import annotations
 __all__ = ('ProfilePage',)
 
 
+from typing import Annotated
+from types import MappingProxyType
+from collections.abc import Mapping
+
 from pydantic import BaseModel, BeforeValidator
+from funpayparsers.types.pages import ProfilePage as PProfilePage
 
 from funpaybotengine.types.chat import Chat
 from funpaybotengine.types.enums import SubcategoryType
@@ -12,10 +17,6 @@ from funpaybotengine.types.common import UserBadge, UserRating, Achievement
 from funpaybotengine.types.offers import OfferPreview
 from funpaybotengine.types.reviews import ReviewsBatch
 from funpaybotengine.types.pages.base import FunPayPage
-from funpayparsers.types.pages import ProfilePage as PProfilePage
-from types import MappingProxyType
-from collections.abc import Mapping
-from typing import Annotated
 
 
 class ProfilePage(FunPayPage, BaseModel, PProfilePage):
@@ -32,7 +33,7 @@ class ProfilePage(FunPayPage, BaseModel, PProfilePage):
 
     offers: Annotated[
         Mapping[SubcategoryType, Mapping[int, tuple[OfferPreview, ...]]] | None,
-        BeforeValidator(ProfilePage._convert_to_immutable)
+        BeforeValidator(ProfilePage._convert_to_immutable),
     ]
     """User offers."""
 

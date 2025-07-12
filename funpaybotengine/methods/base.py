@@ -54,7 +54,7 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
     Defaults to empty dict.
     """
 
-    data: dict[str, str] = Field(default_factory=dict)
+    data: dict[str, Any] = Field(default_factory=dict)
     """
     Additional data.
 

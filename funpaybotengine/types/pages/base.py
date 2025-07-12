@@ -5,10 +5,11 @@ __all__ = ('FunPayPage',)
 
 
 from pydantic import BaseModel
+from funpayparsers.types.pages import FunPayPage as PFunPayPage
 
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.common_page_elements import AppData, PageHeader
-from funpayparsers.types.pages import FunPayPage as PFunPayPage
+
 
 class FunPayPage(FunPayObject, BaseModel, PFunPayPage):
     """Base class for FunPay pages."""

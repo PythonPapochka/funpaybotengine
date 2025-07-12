@@ -5,12 +5,12 @@ __all__ = ('SubcategoryPage',)
 
 
 from pydantic import BaseModel
+from funpayparsers.types.pages import SubcategoryPage as PSubcategoryPage
 
 from funpaybotengine.types.enums import SubcategoryType
 from funpaybotengine.types.offers import OfferPreview
 from funpaybotengine.types.categories import Subcategory
 from funpaybotengine.types.pages.base import FunPayPage
-from funpayparsers.types.pages import SubcategoryPage as PSubcategoryPage
 
 
 class SubcategoryPage(FunPayPage, BaseModel, PSubcategoryPage):

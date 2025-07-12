@@ -5,10 +5,10 @@ __all__ = ('ChatPage',)
 
 
 from pydantic import BaseModel
+from funpayparsers.types.pages import ChatPage as PChatPage
 
 from funpaybotengine.types.chat import Chat, PrivateChatInfo, PrivateChatPreview
 from funpaybotengine.types.pages.base import FunPayPage
-from funpayparsers.types.pages import ChatPage as PChatPage
 
 
 class ChatPage(FunPayPage, BaseModel, PChatPage):

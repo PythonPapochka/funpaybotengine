@@ -3,17 +3,17 @@ from __future__ import annotations
 
 __all__ = ('OrderPage',)
 
-import re
+
+from typing import Annotated
+from types import MappingProxyType
+from collections.abc import Mapping
 
 from pydantic import BaseModel, BeforeValidator
+from funpayparsers.types.pages import OrderPage as POrderPage
 
 from funpaybotengine.types.chat import Chat
 from funpaybotengine.types.reviews import Review
 from funpaybotengine.types.pages.base import FunPayPage
-from funpayparsers.types.pages import OrderPage as POrderPage
-from collections.abc import Mapping
-from typing import Annotated
-from types import MappingProxyType
 
 
 class OrderPage(FunPayPage, BaseModel, POrderPage):

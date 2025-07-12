@@ -5,11 +5,11 @@ __all__ = ('TransactionsPage',)
 
 
 from pydantic import BaseModel
+from funpayparsers.types.pages import TransactionsPage as PTransactionsPage
 
 from funpaybotengine.types.common import MoneyValue
 from funpaybotengine.types.finances import TransactionPreviewsBatch
 from funpaybotengine.types.pages.base import FunPayPage
-from funpayparsers.types.pages import TransactionsPage as PTransactionsPage
 
 
 class TransactionsPage(FunPayPage, BaseModel, PTransactionsPage):
