@@ -33,6 +33,10 @@ class Bot(BaseBot):
     def session(self) -> BaseSession:
         return self._session
 
+    @property
+    def locale(self) -> str:
+        return self._locale
+
     async def upload_chat_image(self, file: str | BytesIO) -> int:
         return await self.make_request(UploadImage(file=file))
 
@@ -53,7 +57,3 @@ class Bot(BaseBot):
         self, method: FunPayMethod[MethodReturnType]
     ) -> MethodReturnType:
         return await self.session.make_request(method.as_(self))
-
-    @property
-    def locale(self) -> str:
-        return self._locale
