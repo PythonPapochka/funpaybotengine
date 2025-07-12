@@ -5,12 +5,13 @@ __all__ = ('Review', 'ReviewsBatch')
 
 
 from pydantic import BaseModel
+from funpayparsers.types import Review as PReview, ReviewsBatch as PReviewsBatch
 
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.common import MoneyValue
 
 
-class Review(FunPayObject, BaseModel):
+class Review(FunPayObject, BaseModel, PReview):
     """
     Represents a review.
 
@@ -30,12 +31,6 @@ class Review(FunPayObject, BaseModel):
            the order page (``funpayparsers.types.pages.OrderPage``).
     """
 
-    rating: int | None
-    """Review rating (stars amount)."""
-
-    text: str | None
-    """Review text."""
-
     order_total: MoneyValue | None
     """
     Approximate total amount of the order this review refers to.
@@ -45,36 +40,8 @@ class Review(FunPayObject, BaseModel):
         only as an estimate, not the exact order total.
     """
 
-    category_str: str | None
-    """Category name of the order this review refers to."""
 
-    sender_username: str | None
-    """
-    Review sender username.
-    """
-
-    sender_id: int | None
-    """Review sender ID."""
-
-    sender_avatar_url: str | None
-    """Review sender avatar URL."""
-
-    order_id: str | None
-    """Order ID associated with this review."""
-
-    time_ago_str: str | None
-    """
-    Human-readable relative timestamp indicating when the order that review refers to 
-    was made.
-    
-    Examples: `2 months ago`, `3 years ago`, etc. (depends on selected language).
-    """
-
-    reply: str | None
-    """Sellers reply to this review."""
-
-
-class ReviewsBatch(FunPayObject, BaseModel):
+class ReviewsBatch(FunPayObject, BaseModel, PReviewsBatch):
     """
     Represents a single batch of reviews.
 
@@ -84,28 +51,3 @@ class ReviewsBatch(FunPayObject, BaseModel):
 
     reviews: tuple[Review, ...]
     """List of reviews included in this batch."""
-
-    user_id: int | None
-    """
-    ID of the user to whom all reviews in this batch belong.
-
-    In other words, this is the profile or seller being reviewed,
-    not the individual authors of each review.
-    """
-
-    filter: str | None
-    """
-    The current filter applied to the review list.
-    
-    Known values:
-        - ``''`` (empty string): no filter applied
-        - ``'1'`` to ``'5'``: filters reviews by the given star rating
-    """
-
-    next_review_id: str | None
-    """
-    ID of the next review to use as a cursor for pagination.
-
-    If present, this value should be included in the next request to fetch
-    the following batch of reviews. If ``None``, there are no more reviews to load.
-    """

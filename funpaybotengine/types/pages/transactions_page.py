@@ -5,12 +5,14 @@ __all__ = ('TransactionsPage',)
 
 
 from pydantic import BaseModel
+
 from funpaybotengine.types.common import MoneyValue
 from funpaybotengine.types.finances import TransactionPreviewsBatch
 from funpaybotengine.types.pages.base import FunPayPage
+from funpayparsers.types.pages import TransactionsPage as PTransactionsPage
 
 
-class TransactionsPage(FunPayPage, BaseModel):
+class TransactionsPage(FunPayPage, BaseModel, PTransactionsPage):
     """Represents the transactions page (https://funpay.com/account/balance)."""
 
     rub_balance: MoneyValue | None

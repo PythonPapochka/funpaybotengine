@@ -5,26 +5,18 @@ __all__ = ('OrderPreview', 'OrderPreviewsBatch')
 
 
 from pydantic import BaseModel
+from funpayparsers.types import (
+    OrderPreview as POrderPreview,
+    OrderPreviewsBatch as POrderPreviewsBatch,
+)
 
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.enums import OrderStatus
 from funpaybotengine.types.common import MoneyValue, UserPreview
 
 
-class OrderPreview(FunPayObject, BaseModel):
+class OrderPreview(FunPayObject, BaseModel, POrderPreview):
     """Represents an order preview."""
-
-    id: str
-    """Order ID."""
-
-    date_text: str
-    """Order date (as human-readable text)."""
-
-    desc: str
-    """Order description."""
-
-    category_text: str
-    """Order category and subcategory text."""
 
     status: OrderStatus
     """Order status."""
@@ -36,7 +28,7 @@ class OrderPreview(FunPayObject, BaseModel):
     """Associated counterparty info."""
 
 
-class OrderPreviewsBatch(FunPayObject, BaseModel):
+class OrderPreviewsBatch(FunPayObject, BaseModel, POrderPreviewsBatch):
     """
     Represents a single batch of order previews.
 
@@ -46,13 +38,3 @@ class OrderPreviewsBatch(FunPayObject, BaseModel):
 
     orders: tuple[OrderPreview, ...]
     """List of order previews included in this batch."""
-
-    next_order_id: str | None
-    """
-    ID of the next order to use as a cursor for pagination.
-
-    If present, this value should be included in the next request to fetch the 
-    following batch of order previews. 
-    
-    If ``None``, there are no more orders to load.
-    """

@@ -8,9 +8,10 @@ from pydantic import BaseModel
 from funpaybotengine.types.chat import Chat
 from funpaybotengine.types.categories import Category
 from funpaybotengine.types.pages.base import FunPayPage
+from funpayparsers.types.pages import MainPage as PMainPage
 
 
-class MainPage(FunPayPage, BaseModel):
+class MainPage(FunPayPage, BaseModel, PMainPage):
     """Represents the main page (https://funpay.com)."""
 
     last_categories: tuple[Category, ...]

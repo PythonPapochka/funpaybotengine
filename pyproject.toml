@@ -96,6 +96,7 @@ length-sort = true
 lines-between-types = 0
 lines-after-imports = 2
 split-on-trailing-comma = true
+combine-as-imports = true
 
 [tool.uv.sources]
 funpayparsers = { git = "https://github.com/funpayhub/funpayparsers" }

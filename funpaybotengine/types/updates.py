@@ -12,11 +12,21 @@ __all__ = (
     'UpdatesPack',
 )
 
-from typing import Generic, TypeVar
+from typing import TypeVar
 from types import MappingProxyType
 from collections.abc import Mapping
 
 from pydantic import BaseModel, field_validator
+from funpayparsers.types import (
+    ChatNode as PChatNode,
+    NodeInfo as PNodeInfo,
+    ChatCounter as PChatCounter,
+    UpdatesPack as PUpdatesPack,
+    UpdateObject as PUpdateObject,
+    ChatBookmarks as PChatBookmarks,
+    ActionResponse as PActionResponse,
+    OrdersCounters as POrdersCounters,
+)
 
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.chat import PrivateChatPreview
@@ -29,28 +39,14 @@ UpdateData = TypeVar('UpdateData')
 
 
 # ------ Simple objects ------
-class OrdersCounters(FunPayObject, BaseModel):
+class OrdersCounters(FunPayObject, BaseModel, POrdersCounters):
     """Represents an order counters data from updates object."""
 
-    purchases: int
-    """Active purchases amount (``buyer`` field)."""
-    sales: int
-    """Active sales amount (``seller`` field)."""
+    ...
 
 
-class ChatBookmarks(FunPayObject, BaseModel):
+class ChatBookmarks(FunPayObject, BaseModel, PChatBookmarks):
     """Represents a chat bookmarks data from updates object."""
-
-    counter: int
-    """Unread chats amount."""
-
-    message: int
-    """
-    ID of the latest unread message.
-    
-    If there are new messages in multiple chats, 
-    this field contains the ID of the most recent message among all of them.
-    """
 
     order: tuple[int, ...]
     """Order of chat previews (list of chats IDs)."""
@@ -59,60 +55,40 @@ class ChatBookmarks(FunPayObject, BaseModel):
     """List of chat previews."""
 
 
-class ChatCounter(FunPayObject, BaseModel):
+class ChatCounter(FunPayObject, BaseModel, PChatCounter):
     """Represents a chat counter data from updates object."""
 
-    counter: int
-    """Unread chats amount."""
-
-    message: int
-    """
-    ID of the latest unread message.
-    
-    If there are new messages in multiple chats, 
-    this field contains the ID of the most recent message among all of them.
-    """
+    ...
 
 
 # ------ Nodes ------
-class NodeInfo(FunPayObject, BaseModel):
-    id: int
-    name: str
-    silent: bool
+class NodeInfo(FunPayObject, BaseModel, PNodeInfo): ...
 
 
-class ChatNode(FunPayObject, BaseModel):
+class ChatNode(FunPayObject, BaseModel, PChatNode):
     node: NodeInfo
     messages: tuple[Message, ...]
-    has_history: bool
 
 
 # ------ Response to action ------
-class ActionResponse(FunPayObject, BaseModel):
+class ActionResponse(FunPayObject, BaseModel, PActionResponse):
     """Represents an action response data from updates object."""
 
-    error: str | None
-    """Error text, if an error occurred while processing a request."""
+    ...
 
 
 # ------ Update obj ------
-class UpdateObject(FunPayObject, Generic[UpdateData], BaseModel):
+class UpdateObject(FunPayObject, BaseModel, PUpdateObject[UpdateData]):
     """Represents a single update data from updates object."""
 
     type: UpdateType
     """Update type."""
 
-    id: int | str  # todo: wtf is this? tag = id
-    """Update ID."""
-
-    tag: str
-    """Update tag."""
-
     data: UpdateData
     """Update data."""
 
 
-class UpdatesPack(FunPayObject, BaseModel):
+class UpdatesPack(FunPayObject, BaseModel, PUpdatesPack):
     """Represents an updates object, returned by runner."""
 
     orders_counters: UpdateObject[OrdersCounters] | None
