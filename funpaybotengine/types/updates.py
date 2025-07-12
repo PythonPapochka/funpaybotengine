@@ -13,8 +13,10 @@ __all__ = (
 )
 
 from typing import Generic, TypeVar
+from types import MappingProxyType
+from collections.abc import Mapping
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.chat import PrivateChatPreview
@@ -50,10 +52,10 @@ class ChatBookmarks(FunPayObject, BaseModel):
     this field contains the ID of the most recent message among all of them.
     """
 
-    order: list[int]
+    order: tuple[int, ...]
     """Order of chat previews (list of chats IDs)."""
 
-    chat_previews: list[PrivateChatPreview]
+    chat_previews: tuple[PrivateChatPreview, ...]
     """List of chat previews."""
 
 
@@ -81,7 +83,7 @@ class NodeInfo(FunPayObject, BaseModel):
 
 class ChatNode(FunPayObject, BaseModel):
     node: NodeInfo
-    messages: list[Message]
+    messages: tuple[Message, ...]
     has_history: bool
 
 
@@ -117,6 +119,14 @@ class UpdatesPack(FunPayObject, BaseModel):
     chat_counter: UpdateObject[ChatCounter] | None
     chat_bookmarks: UpdateObject[ChatBookmarks] | None
     cpu: UpdateObject[CurrentlyViewingOfferInfo] | None
-    nodes: list[UpdateObject[ChatNode]] | None
-    unknown_objects: list[dict] | None
+    nodes: tuple[UpdateObject[ChatNode], ...] | None
+    unknown_objects: tuple[Mapping, ...] | None
     response: ActionResponse | None
+
+    @field_validator('unknown_objects', mode='before')
+    @classmethod
+    def convert_to_immutable(cls, value):
+        if value is None:
+            return value
+
+        return tuple(MappingProxyType(i) for i in value)

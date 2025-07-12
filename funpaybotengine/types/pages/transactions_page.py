@@ -5,9 +5,9 @@ __all__ = ('TransactionsPage',)
 
 
 from pydantic import BaseModel
-from funpayparsers.types.common import MoneyValue
-from funpayparsers.types.finances import TransactionPreviewsBatch
-from funpayparsers.types.pages.base import FunPayPage
+from funpaybotengine.types.common import MoneyValue
+from funpaybotengine.types.finances import TransactionPreviewsBatch
+from funpaybotengine.types.pages.base import FunPayPage
 
 
 class TransactionsPage(FunPayPage, BaseModel):

@@ -81,7 +81,7 @@ class Chat(FunPayObject, BaseModel):
     is_blocked: bool | None
     """Whether notifications are enabled or not. Available in private chats only."""
 
-    history: list[Message]
+    history: tuple[Message, ...]
     """
     Messages history.
     

@@ -13,10 +13,10 @@ from funpaybotengine.types.pages.base import FunPayPage
 class MainPage(FunPayPage, BaseModel):
     """Represents the main page (https://funpay.com)."""
 
-    last_categories: list[Category]
+    last_categories: tuple[Category, ...]
     """Last opened categories."""
 
-    categories: list[Category]
+    categories: tuple[Category, ...]
     """List of categories."""
 
     secret_chat: Chat | None

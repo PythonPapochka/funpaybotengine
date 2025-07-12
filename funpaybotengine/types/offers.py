@@ -4,10 +4,13 @@ from __future__ import annotations
 __all__ = ('OfferPreview', 'OfferSeller', 'OfferFields')
 
 
-from pydantic import Field, BaseModel
+from pydantic import Field, BaseModel, BeforeValidator
 
 from funpaybotengine.types.base import FunPayObject, FunPayMutableObject
 from funpaybotengine.types.common import MoneyValue
+from typing import Annotated
+from types import MappingProxyType
+from collections.abc import Mapping
 
 
 class OfferSeller(FunPayObject, BaseModel):
@@ -59,19 +62,29 @@ class OfferPreview(FunPayObject, BaseModel):
     seller: OfferSeller | None
     """Information about the offer seller, if applicable."""
 
-    other_data: dict[str, str | int]
+    other_data: Annotated[
+        Mapping[str, str | int],
+        BeforeValidator(OfferPreview._convert_to_immutable)
+    ]
     """
     Additional data related to the offer, such as server ID, side ID, etc., 
     if applicable.
     """
 
-    other_data_names: dict[str, str]
+    other_data_names: Annotated[
+        Mapping[str, str],
+        BeforeValidator(OfferPreview._convert_to_immutable)
+    ]
     """
     Human-readable names corresponding to entries in ``other_data``, if applicable.
     
     Not all entries, that are exists in ``OfferPreview.other_data`` can be found here
     (not all entries have a name).
     """
+
+    @staticmethod
+    def _convert_to_immutable(value):
+        return MappingProxyType(value)
 
 
 class OfferFields(FunPayMutableObject, BaseModel):
@@ -106,7 +119,7 @@ class OfferFields(FunPayMutableObject, BaseModel):
         {'active': 'on'}
     """
 
-    fields_dict: dict[str, str | int] = Field(default_factory=dict)
+    fields_dict: dict[str, str] = Field(default_factory=dict)
     """All fields as dict."""
 
     def set_field(self, key: str, value: str):
@@ -124,7 +137,7 @@ class OfferFields(FunPayMutableObject, BaseModel):
         if value is None:
             self.fields_dict.pop(key, None)
         else:
-            self.fields_dict[key] = value
+            self.fields_dict[key] = str(value)
 
     @property
     def csrf_token(self) -> str | None:

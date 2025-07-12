@@ -13,7 +13,7 @@ from funpaybotengine.types.pages.base import FunPayPage
 class ChatPage(FunPayPage, BaseModel):
     """Represents a chat page (`https://funpay.com/chat/?node=<chat_id>`)."""
 
-    chat_previews: list[PrivateChatPreview] | None
+    chat_previews: tuple[PrivateChatPreview, ...] | None
     """List of private chat previews."""
 
     chat: Chat | None

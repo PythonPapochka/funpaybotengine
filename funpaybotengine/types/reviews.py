@@ -82,7 +82,7 @@ class ReviewsBatch(FunPayObject, BaseModel):
     along with metadata required to fetch the next batch.
     """
 
-    reviews: list[Review]
+    reviews: tuple[Review, ...]
     """List of reviews included in this batch."""
 
     user_id: int | None

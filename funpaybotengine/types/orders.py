@@ -44,7 +44,7 @@ class OrderPreviewsBatch(FunPayObject, BaseModel):
     along with metadata required to fetch the next batch.
     """
 
-    orders: list[OrderPreview]
+    orders: tuple[OrderPreview, ...]
     """List of order previews included in this batch."""
 
     next_order_id: str | None

@@ -26,7 +26,7 @@ class ProfilePage(FunPayPage, BaseModel):
     badge: UserBadge | None
     """User badge."""
 
-    achievements: list[Achievement]
+    achievements: tuple[Achievement, ...]
     """User achievements."""
 
     avatar_url: str
@@ -47,7 +47,7 @@ class ProfilePage(FunPayPage, BaseModel):
     rating: UserRating | None
     """User rating."""
 
-    offers: dict[SubcategoryType, dict[int, list[OfferPreview]]] | None
+    offers: dict[SubcategoryType, dict[int, tuple[OfferPreview, ...]]] | None
     """User offers."""
 
     chat: Chat | None

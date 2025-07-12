@@ -49,7 +49,7 @@ class TransactionPreviewsBatch(FunPayObject, BaseModel):
     along with metadata required to fetch the next batch.
     """
 
-    transactions: list[TransactionPreview]
+    transactions: tuple[TransactionPreview, ...]
     """List of transaction previews included in this batch."""
 
     user_id: int | None

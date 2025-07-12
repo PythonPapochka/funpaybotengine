@@ -23,10 +23,10 @@ class OrderPage(FunPayPage, BaseModel):
     order_status: OrderStatus
     """Order status."""
 
-    delivered_goods: list[str] | None
+    delivered_goods: tuple[str, ...] | None
     """List of delivered goods."""
 
-    images: list[str] | None
+    images: tuple[str, ...] | None
     """List of attached images."""
 
     order_subcategory_id: int
