@@ -17,7 +17,7 @@ class FunPayObject(BindableObject, BaseModel):
         arbitrary_types_allowed=True,
         populate_by_name=True,
         validate_default=True,
-        from_attributes=True
+        from_attributes=True,
     )
 
     raw_source: str
@@ -26,7 +26,7 @@ class FunPayObject(BindableObject, BaseModel):
     Typically a HTML string, but in rare cases can be a JSON string.
     """
 
-    _cache_: dict[str, Any] = PrivateAttr(default=dict)
+    _cache_: dict[str, Any] = PrivateAttr(default_factory=dict)
 
 
 class FunPayMutableObject(FunPayObject, BaseModel):

@@ -4,7 +4,7 @@ from __future__ import annotations
 __all__ = ('Message',)
 
 
-from pydantic import BaseModel, field_validator, ValidationInfo
+from pydantic import BaseModel, ValidationInfo, field_validator
 
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.common import UserBadge
