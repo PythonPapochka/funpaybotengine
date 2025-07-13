@@ -63,7 +63,10 @@ class AioHttpSession(BaseSession):
             method.bind_to(bot)
 
         session = await self.session()
+        session.cookie_jar.clear()
         session.cookie_jar.update_cookies({'golden_key': method.bot.golden_key})
+        if method.bot.phpsessid:
+            session.cookie_jar.update_cookies({'PHPSESSID': method.bot.phpsessid})
 
         timeout = ClientTimeout(
             total=timeout if timeout is not None else method.timeout
@@ -87,6 +90,9 @@ class AioHttpSession(BaseSession):
             raise Exception('Unsupported HTTP method')  # todo: Custom exception
 
         self.check_status_code(method, response.status)
+
+        if 'PHPSESSID' in response.cookies and method.bot.phpsessid != response.cookies['PHPSESSID']:
+            method.bot.phpsessid = response.cookies['PHPSESSID']
 
         return method.to_obj(await response.text())
 

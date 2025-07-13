@@ -27,12 +27,30 @@ if TYPE_CHECKING:
 class Bot(BaseBot):
     def __init__(self, golden_key: str, session: BaseSession | None = None):
         self._golden_key = golden_key
+        self._csrf_token: str | None = None
+        self._phpsessid: str | None = None
         self._session = session or AioHttpSession(proxy=None)
         self._locale = ''
 
     @property
     def golden_key(self) -> str:
         return self._golden_key
+
+    @property
+    def csrf_token(self) -> str | None:
+        return self._csrf_token
+
+    @csrf_token.setter
+    def csrf_token(self, value: str | None) -> None:
+        self._csrf_token = value
+
+    @property
+    def phpsessid(self) -> str | None:
+        return self._phpsessid
+
+    @phpsessid.setter
+    def phpsessid(self, value: str | None) -> None:
+        self._phpsessid = value
 
     @property
     def session(self) -> BaseSession:
