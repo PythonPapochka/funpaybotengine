@@ -26,12 +26,12 @@ class Message(FunPayObject, BaseModel, PMessage):
     @field_validator('chat_id', mode='before')
     @classmethod
     def get_chat_id_from_context(cls, value, info: ValidationInfo):
-        return info.context.get('chat_id')
+        return info.context.get('chat_id') if value is None else value
 
     @field_validator('chat_name', mode='before')
     @classmethod
     def get_chat_name_from_context(cls, value, info: ValidationInfo):
-        return info.context.get('chat_name')
+        return info.context.get('chat_name') if value is None else value
 
     async def reply(self):
         raise NotImplementedError
