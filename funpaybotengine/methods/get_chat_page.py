@@ -41,9 +41,4 @@ class GetChatPage(FunPayMethod[ChatPage], BaseModel):
         )
 
     def transform_result(self, chat_page: ParserChatPage) -> ChatPage:
-        context = {
-            'chat_name': chat_page.chat.name,
-            'chat_id': chat_page.chat.id,
-        } | self.context
-
-        return ChatPage.model_validate(chat_page, context=context | {'bot': self._bot})
+        return ChatPage.model_validate(chat_page, context={'bot': self._bot})
