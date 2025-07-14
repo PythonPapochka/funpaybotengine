@@ -24,9 +24,10 @@ class GetMainPage(FunPayMethod[MainPage], BaseModel):
     Returns ``funpaybotengine.types.pages.MainPage`` obj.
     """
 
-    def __init__(self, locale: Language | None = None):
+    def __init__(self, locale: Language | None = None, change_locale: Language | None = None):
         super().__init__(
-            url='', locale=locale, parser_cls=MainPageParser, allow_anonymous=True
+            url='', locale=locale, parser_cls=MainPageParser, allow_anonymous=True,
+            data={'setlocale': change_locale.value} if change_locale is not None else None
         )
 
     def transform_result(self, result: ParserMainPage) -> MainPage:

@@ -186,7 +186,7 @@ class Bot(BaseBot):
             await self.update()
         return await self.session.make_request(method.as_(self))
 
-    async def update(self) -> Self:
+    async def update(self, change_locale: Language | None = None) -> Self:
         result = await self.session.make_request(GetMainPage().as_(self))
         self.csrf_token = result.response_obj.app_data.csrf_token
         self.locale = result.response_obj.app_data.locale
