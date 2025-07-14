@@ -13,6 +13,10 @@ from funpayparsers.parsers.base import ParsingOptions, FunPayObjectParser
 from funpaybotengine.base import BindableObject
 
 
+if TYPE_CHECKING:
+    from funpaybotengine.types.enums import Language
+
+
 MethodReturnType = TypeVar('MethodReturnType', bound=Any)
 
 
@@ -29,9 +33,9 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
     Defaults to ``HTTPMethod.GET``.
     """
 
-    locale: str | None = None
+    locale: Language | None = None
     """
-    FunPay locale (``''`` (ru) / ``'en'`` / ``'uk'``).
+    FunPay locale.
 
     If specified and ``FunPayMethod.ignore_locale`` is ``False``,
     it will override bots locale when making a request.
@@ -65,6 +69,13 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
     List of expected status codes.
 
     Defaults to ``[HTTPStatus.OK]``.
+    """
+
+    allow_anonymous: bool = False
+    """
+    Whether this method can be executed anonymous or not.
+    
+    Defaults to ``False``.
     """
 
     parser_cls: Type[FunPayObjectParser] | None = None
@@ -101,11 +112,12 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
             self,
             url: str,
             method: HTTPMethod = HTTPMethod.GET,
-            locale: str = '',
+            locale: Language | None = None,
             ignore_locale: bool = False,
             headers: dict[str, str] = {},
             data: dict[str, str] = {},
             expected_status_codes: list[int | HTTPStatus] = [HTTPStatus.OK],
+            allow_anonymous: bool = False,
             parser_cls: Type[FunPayObjectParser] | None = None,
             parser_options: ParsingOptions | None = None,
             timeout: float = 10.0,
@@ -115,11 +127,10 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
             :param url: Method URL.
             :param method: HTTP Method.
                 Defaults to ``HTTPMethod.GET``.
-            :param locale: FunPay locale (``'en'`` / ``'uk'``).
-                If specified and ``FunPayMethod.ignore_locale`` is ``False``,
-                it will be considered when constructing the final URL via the
-                ``full_url`` property.
-                Defaults to ``''`` (Russian).
+            :param locale: FunPay locale.
+                If specified and ``ignore_locale`` is ``False``,
+                it will override bots locale when making a request.
+                Defaults to ``None``.
             :param ignore_locale: Whether to ignore locale or not.
                 If ``True``, ``FunPayMethod.locale`` will be ignored.
             :param headers: Headers.
@@ -128,6 +139,9 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
                 Defaults to empty dict.
             :param expected_status_codes: List of expected status codes.
                 Defaults to ``[HTTPStatus.OK]``.
+            :param allow_anonymous: Whether this method can be executed anonymous
+                or not.
+                Defaults to ``False``.
             :param parser_cls: Parser class (not an instance!) for parsing raw source.
                 Defaults to ``None``.
             :param parser_options: Instance of parser options for

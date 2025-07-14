@@ -61,6 +61,7 @@ class GetChatHistory(FunPayMethod[list[Message]], BaseModel):
             locale=locale,
             data={'node': str(chat_id), 'last_message': str(before_message_id)},
             headers={'X-Requested-With': 'XMLHttpRequest'},
+            allow_anonymous=True,
             parser_cls=MessagesParser,
             chat_id=chat_id,
             before_message_id=before_message_id,

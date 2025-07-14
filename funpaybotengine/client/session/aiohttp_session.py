@@ -11,7 +11,7 @@ from http import HTTPMethod
 from aiohttp import ClientSession, ClientTimeout
 from aiohttp.hdrs import USER_AGENT
 
-from funpaybotengine.client.session.base import BaseSession
+from funpaybotengine.client.session.base import Response, BaseSession
 
 
 if TYPE_CHECKING:
@@ -58,13 +58,22 @@ class AioHttpSession(BaseSession):
         method: FunPayMethod[MethodReturnType],
         bot: BaseBot | None = None,
         timeout: float | None = None,
-    ) -> MethodReturnType:
+    ) -> Response[MethodReturnType]:
         if bot is not None:
             method.bind_to(bot)
 
+        if not method.allow_anonymous and method.bot.anonymous:
+            raise Exception(
+                f"Method '{method.__class__.__name__}' "
+                f'cannot be executed as an anonymous user. '
+            )  # todo
+
         session = await self.session()
+
         session.cookie_jar.clear()
-        session.cookie_jar.update_cookies({'golden_key': method.bot.golden_key})
+        session.cookie_jar.update_cookies({'cookie_prefs': '1'})  # no 3rd-party cookies
+        if method.bot.golden_key:
+            session.cookie_jar.update_cookies({'golden_key': method.bot.golden_key})
         if method.bot.phpsessid:
             session.cookie_jar.update_cookies({'PHPSESSID': method.bot.phpsessid})
 
@@ -91,18 +100,30 @@ class AioHttpSession(BaseSession):
 
         self.check_status_code(method, response.status)
 
-        if 'PHPSESSID' in response.cookies and method.bot.phpsessid != response.cookies['PHPSESSID']:
-            method.bot.phpsessid = response.cookies['PHPSESSID']
+        result = method.to_obj(await response.text())
+        cookies = {}
+        for i in response.history:
+            cookies = cookies | {k: v.value for k, v in i.cookies.items()}
 
-        return method.to_obj(await response.text())
+        return Response(
+            url=str(response.real_url),
+            status_code=response.status,
+            raw_response=await response.text(),
+            response_obj=result,
+            response_cookies=cookies,
+            method_obj=method,
+        )
 
     def resolve_url(self, method: FunPayMethod) -> str:
         if method.ignore_locale:
             locale = ''
         elif method.locale is not None:
-            locale = method.locale
+            locale = method.locale.value
         else:
-            locale = method.bot.locale
+            locale = method.bot.locale.value
+
+        if locale == 'ru':
+            locale = ''
 
         return f'{locale}/{method.url[1 if method.url.startswith("/") else 0 :]}'
 

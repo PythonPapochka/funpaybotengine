@@ -37,6 +37,7 @@ class GetChatPage(FunPayMethod[ChatPage], BaseModel):
             locale=locale,
             data={'node': str(chat_id)},
             parser_cls=ChatPageParser,
+            allow_anonymous=True,
             chat_id=chat_id,
         )
 

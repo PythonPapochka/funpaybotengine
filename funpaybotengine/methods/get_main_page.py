@@ -25,9 +25,7 @@ class GetMainPage(FunPayMethod[MainPage], BaseModel):
 
     def __init__(self, locale: str = ''):
         super().__init__(
-            url='',
-            locale=locale,
-            parser_cls=MainPageParser,
+            url='', locale=locale, parser_cls=MainPageParser, allow_anonymous=True
         )
 
     def transform_result(self, result: ParserMainPage) -> MainPage:

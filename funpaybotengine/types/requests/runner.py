@@ -14,11 +14,13 @@ __all__ = (
     'SendMessageAction',
     'RunnerRequestData',
 )
+import json
 from typing import Any, Literal
 from abc import ABC, abstractmethod
-import json
 
 from pydantic import BaseModel, computed_field
+
+from funpaybotengine.base import BindableObject
 
 
 class RequestableObject(ABC, BaseModel):
@@ -29,11 +31,13 @@ class RequestableObject(ABC, BaseModel):
     @property
     @abstractmethod
     def type(self) -> str: ...
+
     """Request type identifier."""
 
     @property
     def data(self) -> Any:
         return False
+
     """Optional request payload."""
 
 
@@ -174,6 +178,7 @@ class Action(ABC, BaseModel):
     @property
     @abstractmethod
     def action(self) -> str: ...
+
     """Action type identifier."""
 
 
@@ -217,7 +222,7 @@ class SendMessageAction(Action, BaseModel):
         return 'chat_message'
 
 
-class RunnerRequestData(BaseModel):
+class RunnerRequestData(BindableObject, BaseModel):
     """
     Payload structure for requests sent to https://funpay.com/runner/.
     """
@@ -236,19 +241,23 @@ class RunnerRequestData(BaseModel):
     Defaults to ``False``.
     """
 
-    csrf_token: str
-    """Account CSRF token."""
+    csrf_token: str | None = None
+    """
+    Bot CSRF token.
+
+    Defaults to ``None``.
+    """
 
     def serialize_as_request_data(self):
         """Returns a dictionary suitable for runner HTTP requests."""
         return {
-            'objects': json.dumps([
-                i.model_dump(exclude_none=True) for i in self.objects
-            ])
-            if self.objects else 'false',
-
+            'objects': json.dumps(
+                [i.model_dump(exclude_none=True) for i in self.objects]
+            )
+            if self.objects
+            else 'false',
             'request': self.request.model_dump_json(exclude_none=True)
-            if self.request else 'false',
-
+            if self.request
+            else 'false',
             'csrf_token': self.csrf_token,
         }

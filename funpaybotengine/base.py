@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pydantic import BaseModel, PrivateAttr
+from typing_extensions import Self
 
 from funpaybotengine.client.base_bot import BaseBot
 
@@ -11,7 +12,7 @@ class BindableObject(BaseModel):
     def model_post_init(self, context) -> None:
         self._bot = context.get('bot') if context else None
 
-    def as_(self, bot: BaseBot, /) -> 'BindableObject':
+    def as_(self, bot: BaseBot, /) -> Self:
         self.bind_to(bot)
         return self
 

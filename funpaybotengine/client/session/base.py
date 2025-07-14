@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 
-__all__ = ('BaseSession',)
+__all__ = ('BaseSession', 'Response')
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from http import HTTPStatus
 
@@ -31,6 +32,19 @@ _exceptions = {
 }
 
 
+ResponseObject = TypeVar('ResponseObject', bound=Any)
+
+
+@dataclass
+class Response(Generic[ResponseObject]):
+    url: str
+    status_code: HTTPStatus | int
+    raw_response: str
+    response_obj: ResponseObject
+    response_cookies: dict[str, str]
+    method_obj: FunPayMethod[ResponseObject]
+
+
 class BaseSession(ABC):
     @abstractmethod
     async def close(self) -> None: ...
@@ -38,7 +52,7 @@ class BaseSession(ABC):
     @abstractmethod
     async def make_request(
         self, method: FunPayMethod[MethodReturnType], timeout: float | None = None
-    ) -> MethodReturnType: ...
+    ) -> Response[MethodReturnType]: ...
 
     def check_status_code(
         self, method: FunPayMethod[Any], status_code: int | HTTPStatus
