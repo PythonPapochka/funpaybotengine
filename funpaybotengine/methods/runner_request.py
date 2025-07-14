@@ -1,0 +1,39 @@
+from __future__ import annotations
+
+
+__all__ = ('RunnerRequest',)
+
+from typing import TYPE_CHECKING
+from http import HTTPMethod
+
+from pydantic import BaseModel
+from funpayparsers.parsers import UpdatesParser
+
+from funpaybotengine.types import UpdatesPack
+from funpaybotengine.methods.base import FunPayMethod
+from funpaybotengine.types.requests import RunnerRequestData
+
+
+if TYPE_CHECKING:
+    from funpayparsers.types.pages import MainPage as ParserMainPage
+
+
+class RunnerRequest(FunPayMethod[UpdatesPack], BaseModel):
+    """
+    Get info from runner (``https://funpay.com/runner``).
+
+    Returns ``funpaybotengine.types.UpdatesPack`` obj.
+    """
+
+    def __init__(self, request: RunnerRequestData, locale: str = ''):
+        super().__init__(
+            url='runner/',
+            method=HTTPMethod.POST,
+            locale=locale,
+            parser_cls=UpdatesParser,
+            data=request.serialize_as_request_data(),
+            headers={'X-Requested-With': 'XMLHttpRequest'},
+        )
+
+    def transform_result(self, result: ParserMainPage) -> UpdatesPack:
+        return UpdatesPack.model_validate(result, context={'bot': self._bot})
