@@ -11,6 +11,7 @@ from funpayparsers.parsers import MessagesParser
 
 from funpaybotengine.methods.base import FunPayMethod
 from funpaybotengine.types.messages import Message
+from funpaybotengine.types.enums import Language
 
 
 if TYPE_CHECKING:
@@ -37,15 +38,8 @@ class GetChatHistory(FunPayMethod[list[Message]], BaseModel):
     Defaults to ``99999999999``
     """
 
-    locale: str = ''
-    """
-    FunPay locale (``'en'`` / ``'uk'``).
-
-    Defaults to ``''`` (Russian).
-    """
-
     def __init__(
-        self, chat_id: int | str, before_message_id: int = 99999999999, locale: str = ''
+        self, chat_id: int | str, before_message_id: int = 99999999999, locale: Language | None = None
     ):
         """
         :param chat_id: Chat ID.
@@ -53,8 +47,10 @@ class GetChatHistory(FunPayMethod[list[Message]], BaseModel):
             (exclusive).
             Messages with IDs **less than** this one will be returned,
             i.e. history will be fetched in reverse order *before* this message.
-        :param locale: FunPay locale (``'en'`` / ``'uk'``).
-            Defaults to ``''`` (Russian).
+        :param locale: FunPay locale.
+            If specified and ``ignore_locale`` is ``False``,
+            it will override bots locale when making a request.
+            Defaults to ``None``.
         """
         super().__init__(
             url='chat/history',

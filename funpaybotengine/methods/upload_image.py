@@ -9,6 +9,7 @@ from io import BytesIO
 from http import HTTPMethod
 
 from pydantic import BaseModel
+from funpaybotengine.types.enums import Language
 
 from funpaybotengine.methods.base import FunPayMethod
 
@@ -20,7 +21,7 @@ class UploadImage(FunPayMethod[int], BaseModel):
     Returns image ID (``int``).
     """
 
-    def __init__(self, file: str | BytesIO, locale: str = ''):
+    def __init__(self, file: str | BytesIO, locale: Language | None = None):
         super().__init__(
             method=HTTPMethod.POST,
             url='file/addChatImage',

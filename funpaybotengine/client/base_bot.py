@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from funpaybotengine.types.enums import Language
     from funpaybotengine.methods.base import FunPayMethod, MethodReturnType
     from funpaybotengine.client.session.base import Response
+    from funpaybotengine.client.categories_cache import CategoriesCache
 
 
 class BaseBot(ABC):
@@ -38,6 +39,10 @@ class BaseBot(ABC):
     @property
     @abstractmethod
     def anonymous(self) -> bool: ...
+
+    @property
+    @abstractmethod
+    def categories_cache(self) -> CategoriesCache: ...
 
     async def make_request(
         self, method: FunPayMethod[MethodReturnType]

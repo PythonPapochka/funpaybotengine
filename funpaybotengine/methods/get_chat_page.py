@@ -10,6 +10,7 @@ from funpayparsers.parsers.page_parsers import ChatPageParser
 
 from funpaybotengine.methods.base import FunPayMethod
 from funpaybotengine.types.pages.chat_page import ChatPage
+from funpaybotengine.types.enums import Language
 
 
 if TYPE_CHECKING:
@@ -26,11 +27,13 @@ class GetChatPage(FunPayMethod[ChatPage], BaseModel):
     chat_id: int | str
     """Chat ID."""
 
-    def __init__(self, chat_id: int | str, locale: str = ''):
+    def __init__(self, chat_id: int | str, locale: Language | None = None):
         """
         :param chat_id: Chat ID.
-        :param locale: FunPay locale (``'en'`` / ``'uk'``).
-            Defaults to ``''`` (Russian).
+        :param locale: FunPay locale.
+            If specified and ``ignore_locale`` is ``False``,
+            it will override bots locale when making a request.
+            Defaults to ``None``.
         """
         super().__init__(
             url='chat/',

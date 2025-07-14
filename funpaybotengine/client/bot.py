@@ -22,6 +22,7 @@ from funpaybotengine.types.requests import RunnerRequestData
 from funpaybotengine.client.base_bot import BaseBot
 from funpaybotengine.client.session.base import Response
 from funpaybotengine.client.session.aiohttp_session import AioHttpSession
+from funpaybotengine.client.categories_cache import CategoriesCache
 
 
 if TYPE_CHECKING:
@@ -47,6 +48,7 @@ class Bot(BaseBot):
 
         self._userid: int | None = None
         self._username: str | None = None
+        self._categories_cache: CategoriesCache | None = None
 
     @property
     def anonymous(self) -> bool:
@@ -108,6 +110,10 @@ class Bot(BaseBot):
     @locale.setter
     def locale(self, value: Language) -> None:
         self._locale = value
+
+    @property
+    def categories_cache(self) -> CategoriesCache:
+        return self._categories_cache
 
     @need_preinitialization
     async def runner_request(self, data: RunnerRequestData) -> UpdatesPack:
@@ -187,3 +193,4 @@ class Bot(BaseBot):
         self.phpsessid = result.response_cookies.get('PHPSESSID')
         self._userid = result.response_obj.header.user_id
         self._username = result.response_obj.header.username
+        self._categories_cache = CategoriesCache(result.response_obj.categories)

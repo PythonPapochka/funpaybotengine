@@ -12,6 +12,7 @@ from funpayparsers.parsers import UpdatesParser
 from funpaybotengine.types import UpdatesPack
 from funpaybotengine.methods.base import FunPayMethod
 from funpaybotengine.types.requests import RunnerRequestData
+from funpaybotengine.types.enums import Language
 
 
 if TYPE_CHECKING:
@@ -25,7 +26,7 @@ class RunnerRequest(FunPayMethod[UpdatesPack], BaseModel):
     Returns ``funpaybotengine.types.UpdatesPack`` obj.
     """
 
-    def __init__(self, request: RunnerRequestData, locale: str = ''):
+    def __init__(self, request: RunnerRequestData, locale: Language | None = None):
         super().__init__(
             url='runner/',
             method=HTTPMethod.POST,
