@@ -6,7 +6,6 @@ __all__ = ('FunPayMethod', 'MethodReturnType')
 from typing import TYPE_CHECKING, Any, Type, Generic, TypeVar
 from abc import ABC, abstractmethod
 from http import HTTPMethod, HTTPStatus
-
 from pydantic import Field, BaseModel
 from funpayparsers.parsers.base import ParsingOptions, FunPayObjectParser
 
@@ -78,7 +77,7 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
     Defaults to ``False``.
     """
 
-    parser_cls: Type[FunPayObjectParser] | None = None
+    parser_cls: Type[FunPayObjectParser[Any, Any]] | None = None
     """
     Parser class (not an instance!) for parsing raw source.
 
@@ -118,7 +117,7 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
             data: dict[str, str] = {},
             expected_status_codes: list[int | HTTPStatus] = [HTTPStatus.OK],
             allow_anonymous: bool = False,
-            parser_cls: Type[FunPayObjectParser] | None = None,
+            parser_cls: Type[FunPayObjectParser[Any, Any]] | None = None,
             parser_options: ParsingOptions | None = None,
             timeout: float = 10.0,
             context: dict[str, Any] = {},
@@ -159,7 +158,7 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
         if self.parser_cls and self.parser_options is None:
             self.parser_options = self.parser_cls.get_options_cls()()
 
-    def parse_result(self, response: str):
+    def parse_result(self, response: str) -> Any:
         """
         Method that parses raw response.
 
@@ -189,6 +188,6 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
         """
         ...
 
-    def to_obj(self, response) -> MethodReturnType:
+    def to_obj(self, response: str) -> MethodReturnType:
         parsing_result = self.parse_result(response)
         return self.transform_result(parsing_result)

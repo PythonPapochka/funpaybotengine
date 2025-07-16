@@ -30,7 +30,7 @@ class UnexpectedHTTPStatusError(FunPayRequestError):
         self.status = status
         self.expected_status_codes = method.expected_status_codes
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f'Unexpected response status code {self.status} for {self.method.url!r} '
             f'(expected: {self.method.expected_status_codes!r})'

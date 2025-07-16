@@ -44,6 +44,7 @@ class BaseBot(ABC):
     @abstractmethod
     def categories_cache(self) -> CategoriesCache: ...
 
+    @abstractmethod
     async def make_request(
         self, method: FunPayMethod[MethodReturnType]
     ) -> Response[MethodReturnType]: ...

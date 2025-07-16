@@ -9,6 +9,7 @@ from funpayparsers.types import Message as PMessage
 
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.common import UserBadge
+from funpaybotengine.base import check_bound
 
 
 class Message(FunPayObject, BaseModel, PMessage):

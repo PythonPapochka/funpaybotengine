@@ -3,7 +3,7 @@ from __future__ import annotations
 
 __all__ = ('BaseSession', 'Response')
 
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, Type
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from http import HTTPStatus
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from funpaybotengine.methods.base import FunPayMethod, MethodReturnType
 
 
-_exceptions = {
+_exceptions: dict[int, Any] = {
     HTTPStatus.TOO_MANY_REQUESTS: RateLimitExceededError,
     HTTPStatus.UNAUTHORIZED: UnauthorizedError,
     HTTPStatus.FORBIDDEN: ForbiddenError,
@@ -56,7 +56,7 @@ class BaseSession(ABC):
 
     def check_status_code(
         self, method: FunPayMethod[Any], status_code: int | HTTPStatus
-    ):
+    ) -> None:
         if status_code in method.expected_status_codes:
             return
 
@@ -71,5 +71,5 @@ class BaseSession(ABC):
     async def __aenter__(self) -> BaseSession:
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         await self.close()

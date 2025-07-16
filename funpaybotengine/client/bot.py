@@ -17,6 +17,7 @@ from funpaybotengine.methods import (
     GetChatHistory,
     GetProfilePage,
     MethodReturnType,
+    UploadImage,
 )
 from funpaybotengine.types.pages import ChatPage, MainPage, ProfilePage
 from funpaybotengine.types.requests import RunnerRequestData
@@ -24,18 +25,25 @@ from funpaybotengine.client.base_bot import BaseBot
 from funpaybotengine.client.session.base import Response
 from funpaybotengine.client.categories_cache import CategoriesCache
 from funpaybotengine.client.session.aiohttp_session import AioHttpSession
+from typing import ParamSpec, Concatenate, TypeVar, Any
+from collections.abc import Callable, Awaitable, Coroutine
 
 
 if TYPE_CHECKING:
     from funpaybotengine.client.session.base import BaseSession
 
 
-def need_preinitialization(func):
-    async def wrapper(self: 'Bot', *args, **kwargs):
+P = ParamSpec('P')
+R = TypeVar('R')
+
+
+def need_preinitialization(
+        func: Callable[Concatenate['Bot', P], Awaitable[R]]
+) -> Callable[Concatenate['Bot', P], Coroutine[Any, Any, R]]:
+    async def wrapper(self: 'Bot', *args: P.args, **kwargs: P.kwargs) -> R:
         if not self.initialized:
             await self.update()
         return await func(self, *args, **kwargs)
-
     return wrapper
 
 
@@ -140,6 +148,8 @@ class Bot(BaseBot):
 
         :return: Unique FunPay image ID assigned to the uploaded image.
         """
+        result = await self.make_request(UploadImage(file=file))
+        return result.response_obj
 
     async def get_chat_history(
         self, chat_id: int | str, before_message_id: int = 999999999999
