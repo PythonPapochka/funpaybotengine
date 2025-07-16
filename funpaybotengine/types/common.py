@@ -8,6 +8,7 @@ __all__ = (
     'UserRating',
     'Achievement',
     'CurrentlyViewingOfferInfo',
+    'RaiseOffersResponse',
 )
 
 
@@ -74,3 +75,13 @@ class Achievement(FunPayObject, BaseModel, PAchievement):
 class CurrentlyViewingOfferInfo(
     FunPayObject, BaseModel, PCurrentlyViewingOfferInfo
 ): ...
+
+
+class RaiseOffersResponse(FunPayObject, BaseModel):
+    """Represents a response to lot raise request."""
+
+    error: bool
+    """Whether the error occurred while raising offers."""
+
+    msg: str
+    """Status message."""

@@ -10,9 +10,9 @@ from pydantic import BaseModel
 from funpayparsers.parsers import UpdatesParser
 
 from funpaybotengine.types import UpdatesPack
+from funpaybotengine.types.enums import Language
 from funpaybotengine.methods.base import FunPayMethod
 from funpaybotengine.types.requests import RunnerRequestData
-from funpaybotengine.types.enums import Language
 
 
 if TYPE_CHECKING:

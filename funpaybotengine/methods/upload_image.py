@@ -9,8 +9,8 @@ from io import BytesIO
 from http import HTTPMethod
 
 from pydantic import BaseModel
-from funpaybotengine.types.enums import Language
 
+from funpaybotengine.types.enums import Language
 from funpaybotengine.methods.base import FunPayMethod
 
 

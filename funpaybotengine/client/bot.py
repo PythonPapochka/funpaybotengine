@@ -15,14 +15,15 @@ from funpaybotengine.methods import (
     FunPayMethod,
     RunnerRequest,
     GetChatHistory,
+    GetProfilePage,
     MethodReturnType,
 )
-from funpaybotengine.types.pages import ChatPage, MainPage
+from funpaybotengine.types.pages import ChatPage, MainPage, ProfilePage
 from funpaybotengine.types.requests import RunnerRequestData
 from funpaybotengine.client.base_bot import BaseBot
 from funpaybotengine.client.session.base import Response
-from funpaybotengine.client.session.aiohttp_session import AioHttpSession
 from funpaybotengine.client.categories_cache import CategoriesCache
+from funpaybotengine.client.session.aiohttp_session import AioHttpSession
 
 
 if TYPE_CHECKING:
@@ -179,6 +180,10 @@ class Bot(BaseBot):
         result = await self.make_request(GetChatPage(chat_id=chat_id))
         return result.response_obj
 
+    async def get_profile_page(self, id: int) -> ProfilePage:
+        result = await self.make_request(GetProfilePage(id=id))
+        return result.response_obj
+
     async def make_request(
         self, method: FunPayMethod[MethodReturnType]
     ) -> Response[MethodReturnType]:
@@ -187,10 +192,15 @@ class Bot(BaseBot):
         return await self.session.make_request(method.as_(self))
 
     async def update(self, change_locale: Language | None = None) -> Self:
-        result = await self.session.make_request(GetMainPage().as_(self))
+        result = await self.session.make_request(
+            GetMainPage(change_locale=change_locale).as_(self)
+        )
+
         self.csrf_token = result.response_obj.app_data.csrf_token
         self.locale = result.response_obj.app_data.locale
         self.phpsessid = result.response_cookies.get('PHPSESSID')
         self._userid = result.response_obj.header.user_id
         self._username = result.response_obj.header.username
         self._categories_cache = CategoriesCache(result.response_obj.categories)
+
+        return self

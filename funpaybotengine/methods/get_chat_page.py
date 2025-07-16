@@ -8,9 +8,9 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel
 from funpayparsers.parsers.page_parsers import ChatPageParser
 
+from funpaybotengine.types.enums import Language
 from funpaybotengine.methods.base import FunPayMethod
 from funpaybotengine.types.pages.chat_page import ChatPage
-from funpaybotengine.types.enums import Language
 
 
 if TYPE_CHECKING:

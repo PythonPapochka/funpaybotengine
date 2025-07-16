@@ -9,9 +9,9 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel
 from funpayparsers.parsers import MessagesParser
 
+from funpaybotengine.types.enums import Language
 from funpaybotengine.methods.base import FunPayMethod
 from funpaybotengine.types.messages import Message
-from funpaybotengine.types.enums import Language
 
 
 if TYPE_CHECKING:
@@ -39,7 +39,10 @@ class GetChatHistory(FunPayMethod[list[Message]], BaseModel):
     """
 
     def __init__(
-        self, chat_id: int | str, before_message_id: int = 99999999999, locale: Language | None = None
+        self,
+        chat_id: int | str,
+        before_message_id: int = 99999999999,
+        locale: Language | None = None,
     ):
         """
         :param chat_id: Chat ID.

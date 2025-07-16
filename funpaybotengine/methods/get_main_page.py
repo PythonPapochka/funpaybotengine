@@ -8,9 +8,9 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel
 from funpayparsers.parsers.page_parsers import MainPageParser
 
+from funpaybotengine.types.enums import Language
 from funpaybotengine.types.pages import MainPage
 from funpaybotengine.methods.base import FunPayMethod
-from funpaybotengine.types.enums import Language
 
 
 if TYPE_CHECKING:
@@ -24,10 +24,17 @@ class GetMainPage(FunPayMethod[MainPage], BaseModel):
     Returns ``funpaybotengine.types.pages.MainPage`` obj.
     """
 
-    def __init__(self, locale: Language | None = None, change_locale: Language | None = None):
+    def __init__(
+        self, locale: Language | None = None, change_locale: Language | None = None
+    ):
         super().__init__(
-            url='', locale=locale, parser_cls=MainPageParser, allow_anonymous=True,
-            data={'setlocale': change_locale.value} if change_locale is not None else None
+            url='',
+            locale=locale,
+            parser_cls=MainPageParser,
+            allow_anonymous=True,
+            data={'setlocale': change_locale.value}
+            if change_locale is not None
+            else {},
         )
 
     def transform_result(self, result: ParserMainPage) -> MainPage:

@@ -1,7 +1,11 @@
-__all__ = ('CategoriesCache', )
+from __future__ import annotations
+
+
+__all__ = ('CategoriesCache',)
 
 from typing import overload
 from collections.abc import Sequence
+
 from funpaybotengine.types.enums import SubcategoryType
 from funpaybotengine.types.categories import Category, Subcategory
 
