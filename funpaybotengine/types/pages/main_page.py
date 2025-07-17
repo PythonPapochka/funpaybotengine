@@ -4,14 +4,13 @@ from __future__ import annotations
 __all__ = ('MainPage',)
 
 from pydantic import BaseModel
-from funpayparsers.types.pages import MainPage as PMainPage
 
 from funpaybotengine.types.chat import Chat
 from funpaybotengine.types.categories import Category
 from funpaybotengine.types.pages.base import FunPayPage
 
 
-class MainPage(FunPayPage, BaseModel, PMainPage):
+class MainPage(FunPayPage, BaseModel):
     """Represents the main page (https://funpay.com)."""
 
     last_categories: tuple[Category, ...]

@@ -6,12 +6,12 @@ __all__ = ('FunPayObject', 'FunPayMutableObject')
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, PrivateAttr
-from funpayparsers.types import FunPayObject as PFunPayObject
-
 from funpaybotengine.base import BindableObject
 
 
-class FunPayObject(BindableObject, BaseModel, PFunPayObject):
+class FunPayObject(BindableObject, BaseModel):
+    """Base class for all FunPay-parsed objects."""
+
     model_config = ConfigDict(
         frozen=True,
         validate_assignment=True,
@@ -20,6 +20,12 @@ class FunPayObject(BindableObject, BaseModel, PFunPayObject):
         validate_default=True,
         from_attributes=True,
     )
+
+    raw_source: str
+    """
+    Raw source of an object.
+    Typically a HTML string, but in rare cases can be a JSON string.
+    """
 
     _cache_: dict[str, Any] = PrivateAttr(default_factory=dict)
 

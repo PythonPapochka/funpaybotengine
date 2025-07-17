@@ -27,7 +27,7 @@ class BindableObject(BaseModel):
         self._bot = None
 
     def bind_to(self, bot: BaseBot, /) -> None:
-        if not isinstance(bot, BaseBot):
+        if not isinstance(bot, BaseBot | None):
             raise TypeError(f'{bot} is not a bot instance.')
         self._bot = bot
 

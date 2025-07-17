@@ -5,24 +5,76 @@ __all__ = ('Message',)
 
 
 from pydantic import BaseModel, ValidationInfo, field_validator
-from funpayparsers.types import Message as PMessage
 
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.common import UserBadge
-from funpaybotengine.base import check_bound
 
 
-class Message(FunPayObject, BaseModel, PMessage):
+class Message(FunPayObject, BaseModel):
     """Represents a message from any FunPay chat (private or public)."""
+
+    id: int
+    """Unique message ID."""
+
+    is_heading: bool
+    """
+    Indicates whether this is a heading message.
+
+    Heading messages contain sender information (ID, username, etc.).
+    If this is not a heading message, it means the message was sent by the same user
+    as the previous one. The parser does not resolve sender data for such messages
+    and sets all related fields to ``None``.
+    """
+
+    sender_id: int | None
+    """Sender ID."""
+
+    sender_username: str | None
+    """Sender username."""
 
     badge: UserBadge | None
     """Sender's badge."""
 
-    chat_id: int | str | None = None
-    """Chat ID where this message was sent."""
+    send_date_text: str | None
+    """Message date (as human-readable text)."""
 
-    chat_name: str | None = None
-    """Chat name (also ID) where this message was sent."""
+    text: str | None
+    """
+    Text content of the message.
+
+    Mutually exclusive with ``Message.image_url``: 
+    a message can contain either text or an image, but not both.
+
+    Will be ``None`` if the message contains an image.
+    """
+
+    image_url: str | None
+    """
+    URL of the image in the message.
+
+    Mutually exclusive with ``Message.text``: 
+    a message can contain either an image or text, but not both.
+
+    Will be ``None`` if the message contains text.
+    """
+
+    chat_id: int | str | None
+    """
+    Chat ID where the message was sent.
+
+    Parsers obtain this value from the `context` field of the provided options only.
+
+    Context key: ``chat_id``.
+    """
+
+    chat_name: str | None
+    """
+    Chat name where the message was sent.
+
+    This value is available only via the options context during parsing.
+
+    Context key: ``chat_name``.
+    """
 
     @field_validator('chat_id', mode='before')
     @classmethod
@@ -34,14 +86,14 @@ class Message(FunPayObject, BaseModel, PMessage):
     def get_chat_name_from_context(cls, value, info: ValidationInfo):
         return info.context.get('chat_name') if value is None else value
 
-    async def reply(self):
+    async def reply(self) -> None:
         raise NotImplementedError
 
-    async def chat(self, update: bool = False):
+    async def chat(self, update: bool = False) -> None:
         raise NotImplementedError
 
-    async def chat_page(self, update: bool = False):
+    async def chat_page(self, update: bool = False) -> None:
         raise NotImplementedError
 
-    async def sender_profile_page(self, update: bool = False):
+    async def sender_profile_page(self, update: bool = False) -> None:
         raise NotImplementedError

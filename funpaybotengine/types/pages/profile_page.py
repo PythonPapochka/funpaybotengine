@@ -9,7 +9,6 @@ from types import MappingProxyType
 from collections.abc import Mapping
 
 from pydantic import BaseModel, BeforeValidator
-from funpayparsers.types.pages import ProfilePage as PProfilePage
 
 from funpaybotengine.types.chat import Chat
 from funpaybotengine.types.enums import SubcategoryType
@@ -19,14 +18,35 @@ from funpaybotengine.types.reviews import ReviewsBatch
 from funpaybotengine.types.pages.base import FunPayPage
 
 
-class ProfilePage(FunPayPage, BaseModel, PProfilePage):
+class ProfilePage(FunPayPage, BaseModel):
     """Represents a user profile page (`https://funpay.com/users/<user_id>`)."""
+
+    user_id: int
+    """User id."""
+
+    username: str
+    """Username."""
 
     badge: UserBadge | None
     """User badge."""
 
     achievements: tuple[Achievement, ...]
     """User achievements."""
+
+    avatar_url: str
+    """User avatar url."""
+
+    online: bool
+    """Whether the user is online or not."""
+
+    banned: bool
+    """Whether the user is banned or not."""
+
+    registration_date_text: str
+    """User registration date text."""
+
+    status_text: str | None
+    """User status text."""
 
     rating: UserRating | None
     """User rating."""

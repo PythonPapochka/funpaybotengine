@@ -8,96 +8,145 @@ __all__ = (
     'NodeInfo',
     'ChatNode',
     'ActionResponse',
-    'UpdateObject',
-    'UpdatesPack',
+    'RunnerResponseObject',
+    'RunnerResponse',
 )
 
-from typing import TypeVar
+from typing import TypeVar, Any, Generic
 from types import MappingProxyType
 from collections.abc import Mapping
 
 from pydantic import BaseModel, field_validator
-from funpayparsers.types import (
-    ChatNode as PChatNode,
-    NodeInfo as PNodeInfo,
-    ChatCounter as PChatCounter,
-    UpdatesPack as PUpdatesPack,
-    UpdateObject as PUpdateObject,
-    ChatBookmarks as PChatBookmarks,
-    ActionResponse as PActionResponse,
-    OrdersCounters as POrdersCounters,
-)
-
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.chat import PrivateChatPreview
-from funpaybotengine.types.enums import UpdateType
+from funpaybotengine.types.enums import RunnerDataType
 from funpaybotengine.types.common import CurrentlyViewingOfferInfo
 from funpaybotengine.types.messages import Message
-
 
 UpdateData = TypeVar('UpdateData')
 
 
 # ------ Simple objects ------
-class OrdersCounters(FunPayObject, BaseModel, POrdersCounters):
-    """Represents an order counters data from updates object."""
+class OrdersCounters(FunPayObject, BaseModel):
+    """Represents an order counters data from runner response."""
 
-    ...
+    purchases: int
+    """Active purchases amount."""
+    sales: int
+    """Active sales amount."""
 
 
-class ChatBookmarks(FunPayObject, BaseModel, PChatBookmarks):
-    """Represents a chat bookmarks data from updates object."""
+class ChatBookmarks(FunPayObject, BaseModel):
+    """Represents a chat bookmarks data from runner response."""
 
-    order: tuple[int, ...]
+    counter: int
+    """Unread chats amount."""
+
+    latest_message_id: int
+    """
+    ID of the latest unread message.
+
+    If there are new messages in multiple chats, 
+    this field contains the ID of the most recent message among all of them.
+    """
+
+    order: list[int]
     """Order of chat previews (list of chats IDs)."""
 
-    chat_previews: tuple[PrivateChatPreview, ...]
+    chat_previews: list[PrivateChatPreview]
     """List of chat previews."""
 
 
-class ChatCounter(FunPayObject, BaseModel, PChatCounter):
-    """Represents a chat counter data from updates object."""
+class ChatCounter(FunPayObject, BaseModel):
+    """Represents a chat counter data from runner response."""
 
-    ...
+    counter: int
+    """Unread chats amount."""
+
+    latest_message_id: int
+    """
+    ID of the latest unread message.
+
+    If there are new messages in multiple chats, 
+    this field contains the ID of the most recent message among all of them.
+    """
 
 
 # ------ Nodes ------
-class NodeInfo(FunPayObject, BaseModel, PNodeInfo): ...
+class NodeInfo(FunPayObject, BaseModel):
+    """Represents a chat info in chat data from runner response."""
+
+    id: int
+    """Chat ID."""
+
+    name: str
+    """Chat name."""
+
+    silent: bool
+    """Purpose is unknown."""  # todo
 
 
-class ChatNode(FunPayObject, BaseModel, PChatNode):
+class ChatNode(FunPayObject, BaseModel):
+    """Represents a chat data from runner response."""
+
     node: NodeInfo
-    messages: tuple[Message, ...]
+    """Chat info."""
+
+    messages: list[Message]
+    """List of messages."""
+
+    has_history: bool
+    """Purpose is unknown."""  # todo
 
 
 # ------ Response to action ------
-class ActionResponse(FunPayObject, BaseModel, PActionResponse):
-    """Represents an action response data from updates object."""
+class ActionResponse(FunPayObject, BaseModel):
+    """Represents an action response data from runner response."""
 
-    ...
+    error: str | None
+    """Error text, if an error occurred while processing a request."""
 
 
 # ------ Update obj ------
-class UpdateObject(FunPayObject, BaseModel, PUpdateObject[UpdateData]):
-    """Represents a single update data from updates object."""
+class RunnerResponseObject(FunPayObject, BaseModel, Generic[UpdateData]):
+    """Represents a single runner response object from runner response."""
 
-    type: UpdateType
-    """Update type."""
+    type: RunnerDataType
+    """Object type."""
+
+    id: int | str
+    """Related ID (user ID / chat ID / etc)."""
+
+    tag: str
+    """Runner tag."""
 
     data: UpdateData
-    """Update data."""
+    """Runner object data."""
 
 
-class UpdatesPack(FunPayObject, BaseModel, PUpdatesPack):
-    """Represents an updates object, returned by runner."""
+class RunnerResponse(FunPayObject, BaseModel):
+    """Represents a runner response."""
 
-    orders_counters: UpdateObject[OrdersCounters] | None
-    chat_counter: UpdateObject[ChatCounter] | None
-    chat_bookmarks: UpdateObject[ChatBookmarks] | None
-    cpu: UpdateObject[CurrentlyViewingOfferInfo] | None
-    nodes: tuple[UpdateObject[ChatNode], ...] | None
-    unknown_objects: tuple[Mapping, ...] | None
+    orders_counters: RunnerResponseObject[OrdersCounters] | None
+    """Orders counters data."""
+
+    chat_counter: RunnerResponseObject[ChatCounter] | None
+    """Chat counter data."""
+
+    chat_bookmarks: RunnerResponseObject[ChatBookmarks] | None
+    """Chat bookmarks data."""
+
+    cpu: RunnerResponseObject[CurrentlyViewingOfferInfo] | None
+    """Currently viewing offer info."""
+
+    nodes: tuple[RunnerResponseObject[ChatNode], ...] | None
+    """Nodes data."""
+
+    unknown_objects: tuple[Mapping[str, Any], ...] | None
+    """Datas with unknown type."""
+
     response: ActionResponse | None
+    """Action response."""
 
     @field_validator('unknown_objects', mode='before')
     @classmethod
