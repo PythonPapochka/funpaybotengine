@@ -34,12 +34,6 @@ class RequestableObject(ABC, BaseModel):
 
     """Request type identifier."""
 
-    @computed_field
-    def data(self) -> Any:
-        return False
-
-    """Optional request payload."""
-
 
 class OrdersCountersRequestObject(RequestableObject, BaseModel):
     """
@@ -55,6 +49,10 @@ class OrdersCountersRequestObject(RequestableObject, BaseModel):
     @computed_field
     def type(self) -> str:
         return 'orders_counters'
+
+    @computed_field
+    def data(self) -> bool:
+        return False
 
 
 class ChatCounterRequestObject(RequestableObject, BaseModel):
@@ -72,6 +70,10 @@ class ChatCounterRequestObject(RequestableObject, BaseModel):
     def type(self) -> str:
         return 'chat_counter'
 
+    @computed_field
+    def data(self) -> bool:
+        return False
+
 
 class CPURequestObject(RequestableObject, BaseModel):
     """
@@ -88,6 +90,10 @@ class CPURequestObject(RequestableObject, BaseModel):
     def type(self) -> str:
         return 'c-p-u'
 
+    @computed_field
+    def data(self) -> bool:
+        return False
+
 
 class ChatBookmarksRequestObject(RequestableObject, BaseModel):
     """
@@ -100,7 +106,7 @@ class ChatBookmarksRequestObject(RequestableObject, BaseModel):
     tag: str
     """Runner tag used for request tracking."""
 
-    data: list[tuple[int, int]] | Literal[False] = False  # type: ignore[assignment]  # pydantic # todo
+    data: list[tuple[int, int]] | Literal[False] = False
     """
     Optional list of (chat ID, last message ID) pairs.
 
@@ -150,7 +156,7 @@ class NodeRequestObject(RequestableObject, BaseModel):
     tag: str
     """Runner tag used for request tracking."""
 
-    data: RequestNodeInfo | Literal[False] = False  # type: ignore[assignment]  # pydantic # todo
+    data: RequestNodeInfo | Literal[False] = False
     """
     Chat metadata describing what history to fetch.
     

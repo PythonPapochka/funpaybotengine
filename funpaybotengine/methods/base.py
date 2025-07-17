@@ -6,7 +6,7 @@ __all__ = ('FunPayMethod', 'MethodReturnType')
 from typing import TYPE_CHECKING, Any, Type, Generic, TypeVar
 from abc import ABC, abstractmethod
 from http import HTTPStatus
-from funpaybotengine.client.session import HTTPMethod
+from funpaybotengine.client.session.http_methods import HTTPMethod
 from pydantic import Field, BaseModel
 from funpayparsers.parsers.base import ParsingOptions, FunPayObjectParser
 

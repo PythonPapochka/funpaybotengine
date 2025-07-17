@@ -39,7 +39,7 @@ R = TypeVar('R')
 
 def need_preinitialization(
         func: Callable[Concatenate['Bot', P], Awaitable[R]]
-) -> Callable[Concatenate['Bot', P], Coroutine[Any, Any, R]]:
+) -> Callable[Concatenate[P], Coroutine[Any, Any, R]]:
     async def wrapper(self: 'Bot', /, *args: P.args, **kwargs: P.kwargs) -> R:
         if not self.initialized:
             await self.update()
@@ -212,5 +212,8 @@ class Bot(BaseBot):
         self._userid = result.response_obj.header.user_id
         self._username = result.response_obj.header.username
         self._categories_cache = CategoriesCache(result.response_obj.categories)
+
+        print(f'CSRF token: {self.csrf_token}')
+        print(f'PHPSESSID: {self.phpsessid}')
 
         return self

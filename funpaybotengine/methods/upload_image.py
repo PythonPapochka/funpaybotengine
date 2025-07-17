@@ -6,7 +6,7 @@ __all__ = ('UploadImage',)
 
 import json
 from io import BytesIO
-from funpaybotengine.client.session import HTTPMethod
+from funpaybotengine.client.session.http_methods import HTTPMethod
 
 from pydantic import BaseModel
 

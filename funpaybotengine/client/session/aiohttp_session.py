@@ -6,7 +6,7 @@ __all__ = ('AioHttpSession',)
 
 import asyncio
 from typing import TYPE_CHECKING, Any
-from funpaybotengine.client.session import HTTPMethod
+from funpaybotengine.client.session.http_methods import HTTPMethod
 
 from aiohttp import ClientSession, ClientTimeout
 from aiohttp.hdrs import USER_AGENT
@@ -84,6 +84,7 @@ class AioHttpSession(BaseSession):
             total=timeout if timeout is not None else method.timeout
         )
 
+        print(f'Making request to {session._base_url}/{method.url}')
         if method.method == HTTPMethod.GET:
             response = await session.get(
                 self.resolve_url(method),
@@ -105,8 +106,12 @@ class AioHttpSession(BaseSession):
 
         result = method.to_obj(await response.text())
         cookies: dict[str, str] = {}
-        for i in response.history:
-            cookies = cookies | {k: v.value for k, v in i.cookies.items()}
+
+        if response.history:
+            for i in response.history:
+                cookies = cookies | {k: v.value for k, v in i.cookies.items()}
+        else:
+            cookies = {k: v.value for k, v in response.cookies.items()}
 
         return Response(
             url=str(response.real_url),

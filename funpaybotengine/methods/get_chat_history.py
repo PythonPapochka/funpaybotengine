@@ -13,10 +13,7 @@ from funpaybotengine.types.enums import Language
 from funpaybotengine.methods.base import FunPayMethod
 from funpaybotengine.types.messages import Message
 from typing import cast
-
-
-if TYPE_CHECKING:
-    from funpayparsers.types import Message as ParserMessage
+from funpayparsers.types import Message as ParserMessage
 
 
 class GetChatHistory(FunPayMethod[list[Message]], BaseModel):
