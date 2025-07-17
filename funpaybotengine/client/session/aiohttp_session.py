@@ -8,10 +8,13 @@ import asyncio
 from typing import TYPE_CHECKING, Any
 
 from aiohttp import ClientSession, ClientTimeout
+from aiohttp.helpers import URL
 from aiohttp.hdrs import USER_AGENT
+import time
 
 from funpaybotengine.client.session.base import Response, BaseSession
 from funpaybotengine.client.session.http_methods import HTTPMethod
+from funpaybotengine.loggers import session_logger
 
 
 if TYPE_CHECKING:
@@ -84,6 +87,12 @@ class AioHttpSession(BaseSession):
             total=timeout if timeout is not None else method.timeout
         )
 
+        url_to_log = method.url if URL(method.url).is_absolute() \
+            else str(session._base_url.join(URL(self.resolve_url(method))))  # type: ignore[union-attr]
+
+
+        session_logger.info(f'Making {method.method.name} request to {url_to_log}')
+        start_time = time.time()
         if method.method == HTTPMethod.GET:
             response = await session.get(
                 self.resolve_url(method),
@@ -101,9 +110,15 @@ class AioHttpSession(BaseSession):
         else:
             raise Exception('Unsupported HTTP method')  # todo: Custom exception
 
+        session_logger.debug(f'Requesting {url_to_log} took {time.time() - start_time}s. '
+                             f'Status: {response.status}.')
+
         self.check_status_code(method, response.status)
 
+        start_time = time.time()
         result = method.to_obj(await response.text())
+        session_logger.debug(f'Parsing response of {url_to_log} took {time.time() - start_time}s.')
+
         cookies: dict[str, str] = {}
 
         if response.history:

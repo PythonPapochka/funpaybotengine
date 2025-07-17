@@ -65,7 +65,7 @@ class Chat(FunPayObject, BaseModel):
     Will be ``None`` if parsing anonymous request response.
     """
 
-    name: str
+    name: str | None
     """
     Chat name.
 
