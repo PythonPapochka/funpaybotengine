@@ -25,7 +25,9 @@ class RunnerRequest(FunPayMethod[RunnerResponse], BaseModel):
 
     Returns ``funpaybotengine.types.UpdatesPack`` obj.
     """
+
     request: RunnerRequestData
+    """Runner request data."""
 
     def __init__(self, request: RunnerRequestData, locale: Language | None = None):
         super().__init__(

@@ -21,7 +21,9 @@ class UploadImage(FunPayMethod[int], BaseModel):
 
     Returns image ID (``int``).
     """
+
     file: str | BytesIO
+    """Image stream or path to image to upload."""
 
     def __init__(self, file: str | BytesIO, locale: Language | None = None):
         super().__init__(

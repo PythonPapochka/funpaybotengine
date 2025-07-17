@@ -23,7 +23,13 @@ class GetMainPage(FunPayMethod[MainPage], BaseModel):
 
     Returns ``funpaybotengine.types.pages.MainPage`` obj.
     """
+
     change_locale: Language | None = None
+    """
+    Change locale to specified.
+    
+    Defaults to ``None``.
+    """
 
     def __init__(
         self, locale: Language | None = None, change_locale: Language | None = None

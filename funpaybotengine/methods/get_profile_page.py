@@ -19,7 +19,14 @@ if TYPE_CHECKING:
 
 
 class GetProfilePage(FunPayMethod[ProfilePage], BaseModel):
+    """
+    Get a profile page method (``https://funpay.com/users/<user_id>/``).
+
+    Returns ``funpaybotengine.types.pages.ProfilePage`` obj.
+    """
+
     id: int
+    """User ID."""
 
     def __init__(self, id: int, locale: Language | None = None):
         super().__init__(
