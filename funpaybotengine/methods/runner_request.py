@@ -9,7 +9,7 @@ from http import HTTPMethod
 from pydantic import BaseModel
 from funpayparsers.parsers import UpdatesParser
 
-from funpaybotengine.types import UpdatesPack
+from funpaybotengine.types import RunnerResponse
 from funpaybotengine.types.enums import Language
 from funpaybotengine.methods.base import FunPayMethod
 from funpaybotengine.types.requests import RunnerRequestData
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from funpayparsers.types.pages import MainPage as ParserMainPage
 
 
-class RunnerRequest(FunPayMethod[UpdatesPack], BaseModel):
+class RunnerRequest(FunPayMethod[RunnerResponse], BaseModel):
     """
     Get info from runner (``https://funpay.com/runner``).
 
@@ -36,5 +36,5 @@ class RunnerRequest(FunPayMethod[UpdatesPack], BaseModel):
             headers={'X-Requested-With': 'XMLHttpRequest'},
         )
 
-    def transform_result(self, result: ParserMainPage) -> UpdatesPack:
-        return UpdatesPack.model_validate(result, context={'bot': self._bot})
+    def transform_result(self, result: ParserMainPage) -> RunnerResponse:
+        return RunnerResponse.model_validate(result, context={'bot': self._bot})

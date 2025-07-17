@@ -8,7 +8,7 @@ from io import BytesIO
 
 from typing_extensions import Self
 
-from funpaybotengine.types import Message, Language, UpdatesPack
+from funpaybotengine.types import Message, Language, RunnerResponse
 from funpaybotengine.methods import (
     GetChatPage,
     GetMainPage,
@@ -125,7 +125,7 @@ class Bot(BaseBot):
         return self._categories_cache
 
     @need_preinitialization
-    async def runner_request(self, data: RunnerRequestData) -> UpdatesPack:
+    async def runner_request(self, data: RunnerRequestData) -> RunnerResponse:
         """
         Makes request to the runner.
 
