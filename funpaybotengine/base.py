@@ -19,14 +19,14 @@ class BindableObject(BaseModel):
     def model_post_init(self, context: dict[Any, Any]) -> None:
         self._bot = context.get('bot') if context else None
 
-    def as_(self, bot: BaseBot, /) -> Self:
+    def as_(self, bot: BaseBot | None, /) -> Self:
         self.bind_to(bot)
         return self
 
     def unbind(self) -> None:
         self._bot = None
 
-    def bind_to(self, bot: BaseBot, /) -> None:
+    def bind_to(self, bot: BaseBot | None, /) -> None:
         if not isinstance(bot, BaseBot | None):
             raise TypeError(f'{bot} is not a bot instance.')
         self._bot = bot

@@ -12,6 +12,7 @@ from funpayparsers.parsers import MessagesParser
 from funpaybotengine.types.enums import Language
 from funpaybotengine.methods.base import FunPayMethod
 from funpaybotengine.types.messages import Message
+from typing import cast
 
 
 if TYPE_CHECKING:
@@ -62,18 +63,22 @@ class GetChatHistory(FunPayMethod[list[Message]], BaseModel):
             headers={'X-Requested-With': 'XMLHttpRequest'},
             allow_anonymous=True,
             parser_cls=MessagesParser,
+            context={'chat_id': chat_id},
             chat_id=chat_id,
             before_message_id=before_message_id,
-            context={'chat_id': chat_id},
         )
 
     def parse_result(self, response: str) -> list[ParserMessage]:
         result = json.loads(response)
         messages = result['chat']['messages']
         html = '\n'.join(i['html'] for i in messages)
-        return self.parser_cls(html, options=self.parser_options).parse()
+        return cast(
+            list[ParserMessage],
+            self.parser_cls(html, options=self.parser_options).parse()  # type: ignore[misc]
+            # not None
+        )
 
-    def transform_result(self, messages) -> list[Message]:
+    def transform_result(self, messages: list[ParserMessage]) -> list[Message]:
         return [
             Message.model_validate(i, context={'bot': self._bot} | self.context)
             for i in messages

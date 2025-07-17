@@ -3,7 +3,7 @@ from __future__ import annotations
 
 __all__ = ('BaseSession', 'Response')
 
-from typing import TYPE_CHECKING, Any, Generic, TypeVar, Type
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from http import HTTPStatus

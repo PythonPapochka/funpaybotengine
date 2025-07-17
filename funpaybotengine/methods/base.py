@@ -5,7 +5,8 @@ __all__ = ('FunPayMethod', 'MethodReturnType')
 
 from typing import TYPE_CHECKING, Any, Type, Generic, TypeVar
 from abc import ABC, abstractmethod
-from http import HTTPMethod, HTTPStatus
+from http import HTTPStatus
+from funpaybotengine.client.session import HTTPMethod
 from pydantic import Field, BaseModel
 from funpayparsers.parsers.base import ParsingOptions, FunPayObjectParser
 
@@ -107,21 +108,21 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
     """
 
     if TYPE_CHECKING:
-
         def __init__(
             self,
             url: str,
-            method: HTTPMethod = HTTPMethod.GET,
-            locale: Language | None = None,
-            ignore_locale: bool = False,
-            headers: dict[str, str] = {},
-            data: dict[str, Any] = {},
-            expected_status_codes: list[int | HTTPStatus] = [HTTPStatus.OK],
-            allow_anonymous: bool = False,
-            parser_cls: Type[FunPayObjectParser[Any, Any]] | None = None,
-            parser_options: ParsingOptions | None = None,
-            timeout: float = 10.0,
-            context: dict[str, Any] = {},
+            method: HTTPMethod = ...,
+            locale: Language | None = ...,
+            ignore_locale: bool = ...,
+            headers: dict[str, str] = ...,
+            data: dict[str, Any] = ...,
+            expected_status_codes: list[int | HTTPStatus] = ...,
+            allow_anonymous: bool = ...,
+            parser_cls: Type[FunPayObjectParser[Any, Any]] | None = ...,
+            parser_options: ParsingOptions | None = ...,
+            timeout: float = ...,
+            context: dict[str, Any] = ...,
+            **kwargs: Any,
         ):
             """
             :param url: Method URL.

@@ -40,7 +40,8 @@ tests = [
     "pytest"
 ]
 dev = [
-    "ruff"
+    "mypy>=1.17.0",
+    "ruff",
 ]
 docs = [
     "pydata-sphinx-theme>=0.16.1",
@@ -65,6 +66,12 @@ exclude = [
     "docs",
     ".venv",
 ]
+
+
+[pydantic-mypy]
+init_forbid_extra = false
+init_typed = false
+warn_required_dynamic_aliases = true
 
 
 [tool.ruff]

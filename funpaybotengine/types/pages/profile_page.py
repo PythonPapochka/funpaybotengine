@@ -64,12 +64,15 @@ class ProfilePage(FunPayPage, BaseModel):
     """User reviews."""
 
     @staticmethod
-    def _convert_to_immutable(value):
+    def _convert_to_immutable(
+            value: dict[SubcategoryType, dict[int, list[OfferPreview]]]
+    ) -> MappingProxyType[SubcategoryType, Mapping[int, tuple[OfferPreview, ...]]] | None:
         if value is None:
             return None
 
+        result = {}
         for type_, offers in value.items():
-            value[type_] = MappingProxyType(
+            result[type_] = MappingProxyType(
                 {id_: tuple(offers_list) for id_, offers_list in offers.items()}
             )
-        return MappingProxyType(value)
+        return MappingProxyType(result)

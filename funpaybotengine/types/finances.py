@@ -51,7 +51,7 @@ class TransactionInfo(FunPayObject, BaseModel):
     """Transaction data."""
 
     @staticmethod
-    def _convert_to_immutable(value):
+    def _convert_to_immutable(value: dict[str, str]) -> MappingProxyType[str, str]:
         return MappingProxyType(value)
 
 

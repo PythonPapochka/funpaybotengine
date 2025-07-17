@@ -7,6 +7,7 @@ __all__ = ('OrderPage',)
 from typing import Annotated
 from types import MappingProxyType
 from collections.abc import Mapping
+import re
 
 from pydantic import BaseModel, BeforeValidator
 
@@ -49,7 +50,7 @@ class OrderPage(FunPayPage, BaseModel):
     """Chat with counterparty."""
 
     @staticmethod
-    def _convert_to_immutable(value):
+    def _convert_to_immutable(value: dict[str, str]) -> MappingProxyType[str, str]:
         return MappingProxyType(value)
 
     def _first_found(self, names: list[str]) -> str | None:

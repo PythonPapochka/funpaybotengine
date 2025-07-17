@@ -5,8 +5,8 @@ __all__ = ('AioHttpSession',)
 
 
 import asyncio
-from typing import TYPE_CHECKING
-from http import HTTPMethod
+from typing import TYPE_CHECKING, Any
+from funpaybotengine.client.session import HTTPMethod
 
 from aiohttp import ClientSession, ClientTimeout
 from aiohttp.hdrs import USER_AGENT
@@ -37,7 +37,7 @@ class AioHttpSession(BaseSession):
             }
         )
 
-        self._session = None
+        self._session: ClientSession | None = None
 
     async def session(self) -> ClientSession:
         if self._session is None or self._session.closed:
@@ -46,7 +46,7 @@ class AioHttpSession(BaseSession):
             )
         return self._session
 
-    async def close(self):
+    async def close(self) -> None:
         if self._session is not None and not self._session.closed:
             await self._session.close()
 
@@ -117,13 +117,13 @@ class AioHttpSession(BaseSession):
             method_obj=method,
         )
 
-    def resolve_url(self, method: FunPayMethod) -> str:
+    def resolve_url(self, method: FunPayMethod[Any]) -> str:
         if method.ignore_locale:
             locale = ''
         elif method.locale is not None:
             locale = method.locale.value
         else:
-            locale = method.bot.locale.value
+            locale = method.bot.locale.value  # type: ignore[union-attr] # always has bound bot
 
         if locale == 'ru':
             locale = ''

@@ -8,6 +8,7 @@ from pydantic import BaseModel, ValidationInfo, field_validator
 
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.common import UserBadge
+from typing import Any
 
 
 class Message(FunPayObject, BaseModel):
@@ -78,13 +79,15 @@ class Message(FunPayObject, BaseModel):
 
     @field_validator('chat_id', mode='before')
     @classmethod
-    def get_chat_id_from_context(cls, value, info: ValidationInfo):
-        return info.context.get('chat_id') if value is None else value
+    def get_chat_id_from_context(cls, value: Any, info: ValidationInfo) -> Any:
+        if info.context:
+            return info.context.get('chat_id') if value is None else value
 
     @field_validator('chat_name', mode='before')
     @classmethod
-    def get_chat_name_from_context(cls, value, info: ValidationInfo):
-        return info.context.get('chat_name') if value is None else value
+    def get_chat_name_from_context(cls, value: Any, info: ValidationInfo) -> Any:
+        if info.context:
+            return info.context.get('chat_name') if value is None else value
 
     async def reply(self) -> None:
         raise NotImplementedError

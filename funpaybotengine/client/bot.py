@@ -40,7 +40,7 @@ R = TypeVar('R')
 def need_preinitialization(
         func: Callable[Concatenate['Bot', P], Awaitable[R]]
 ) -> Callable[Concatenate['Bot', P], Coroutine[Any, Any, R]]:
-    async def wrapper(self: 'Bot', *args: P.args, **kwargs: P.kwargs) -> R:
+    async def wrapper(self: 'Bot', /, *args: P.args, **kwargs: P.kwargs) -> R:
         if not self.initialized:
             await self.update()
         return await func(self, *args, **kwargs)
@@ -121,7 +121,7 @@ class Bot(BaseBot):
         self._locale = value
 
     @property
-    def categories_cache(self) -> CategoriesCache:
+    def categories_cache(self) -> CategoriesCache | None:
         return self._categories_cache
 
     @need_preinitialization

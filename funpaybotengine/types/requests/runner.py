@@ -100,7 +100,7 @@ class ChatBookmarksRequestObject(RequestableObject, BaseModel):
     tag: str
     """Runner tag used for request tracking."""
 
-    data: list[tuple[int, int]] | Literal[False] = False
+    data: list[tuple[int, int]] | Literal[False] = False  # type: ignore[assignment]  # pydantic # todo
     """
     Optional list of (chat ID, last message ID) pairs.
 
@@ -150,7 +150,7 @@ class NodeRequestObject(RequestableObject, BaseModel):
     tag: str
     """Runner tag used for request tracking."""
 
-    data: RequestNodeInfo | Literal[False] = False
+    data: RequestNodeInfo | Literal[False] = False  # type: ignore[assignment]  # pydantic # todo
     """
     Chat metadata describing what history to fetch.
     

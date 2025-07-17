@@ -82,7 +82,7 @@ class OfferPreview(FunPayObject, BaseModel):
     """
 
     @staticmethod
-    def _convert_to_immutable(value):
+    def _convert_to_immutable(value: dict[str, str | int]) -> MappingProxyType[str, str | int]:
         return MappingProxyType(value)
 
 

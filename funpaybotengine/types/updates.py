@@ -150,7 +150,9 @@ class RunnerResponse(FunPayObject, BaseModel):
 
     @field_validator('unknown_objects', mode='before')
     @classmethod
-    def convert_to_immutable(cls, value):
+    def convert_to_immutable(
+            cls, value: Any
+    ) -> tuple[MappingProxyType[str, Any], ...] | None:
         if value is None:
             return value
 

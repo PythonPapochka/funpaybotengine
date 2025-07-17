@@ -4,7 +4,7 @@ from __future__ import annotations
 __all__ = ('RunnerRequest',)
 
 from typing import TYPE_CHECKING
-from http import HTTPMethod
+from funpaybotengine.client.session import HTTPMethod
 
 from pydantic import BaseModel
 from funpayparsers.parsers import UpdatesParser

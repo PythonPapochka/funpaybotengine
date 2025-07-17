@@ -42,7 +42,7 @@ class BaseBot(ABC):
 
     @property
     @abstractmethod
-    def categories_cache(self) -> CategoriesCache: ...
+    def categories_cache(self) -> CategoriesCache | None: ...
 
     @abstractmethod
     async def make_request(
