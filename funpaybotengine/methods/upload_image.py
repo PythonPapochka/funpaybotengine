@@ -21,6 +21,7 @@ class UploadImage(FunPayMethod[int], BaseModel):
 
     Returns image ID (``int``).
     """
+    file: str | BytesIO
 
     def __init__(self, file: str | BytesIO, locale: Language | None = None):
         super().__init__(
@@ -29,6 +30,8 @@ class UploadImage(FunPayMethod[int], BaseModel):
             locale=locale,
             data={'file': open(file, 'rb') if isinstance(file, str) else file},
             headers={'X-Requested-With': 'XMLHttpRequest'},
+
+            file=file,
         )
 
     def transform_result(self, result: str) -> int:

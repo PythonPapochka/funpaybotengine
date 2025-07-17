@@ -25,6 +25,7 @@ class RunnerRequest(FunPayMethod[RunnerResponse], BaseModel):
 
     Returns ``funpaybotengine.types.UpdatesPack`` obj.
     """
+    request: RunnerRequestData
 
     def __init__(self, request: RunnerRequestData, locale: Language | None = None):
         super().__init__(
@@ -34,6 +35,8 @@ class RunnerRequest(FunPayMethod[RunnerResponse], BaseModel):
             parser_cls=UpdatesParser,
             data=request.serialize_as_request_data(),
             headers={'X-Requested-With': 'XMLHttpRequest'},
+
+            request=request,
         )
 
     def transform_result(self, result: ParserMainPage) -> RunnerResponse:
