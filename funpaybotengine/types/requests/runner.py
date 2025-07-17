@@ -28,13 +28,13 @@ class RequestableObject(ABC, BaseModel):
     Base class for all objects that can be sent as runner requests.
     """
 
-    @property
+    @computed_field
     @abstractmethod
     def type(self) -> str: ...
 
     """Request type identifier."""
 
-    @property
+    @computed_field
     def data(self) -> Any:
         return False
 
@@ -53,7 +53,6 @@ class OrdersCountersRequestObject(RequestableObject, BaseModel):
     """Runner tag used for request tracking."""
 
     @computed_field
-    @property
     def type(self) -> str:
         return 'orders_counters'
 
@@ -70,7 +69,6 @@ class ChatCounterRequestObject(RequestableObject, BaseModel):
     """Runner tag used for request tracking."""
 
     @computed_field
-    @property
     def type(self) -> str:
         return 'chat_counter'
 
@@ -87,7 +85,6 @@ class CPURequestObject(RequestableObject, BaseModel):
     """Runner tag used for request tracking."""
 
     @computed_field
-    @property
     def type(self) -> str:
         return 'c-p-u'
 
@@ -103,15 +100,14 @@ class ChatBookmarksRequestObject(RequestableObject, BaseModel):
     tag: str
     """Runner tag used for request tracking."""
 
-    data: list[tuple[int, int]] | Literal[False] = None
+    data: list[tuple[int, int]] | Literal[False] = False
     """
     Optional list of (chat ID, last message ID) pairs.
 
-    If not provided, defaults to ``None`` (recommended).
+    If not provided, defaults to ``False`` (recommended).
     """
 
     @computed_field
-    @property
     def type(self) -> str:
         return 'chat_bookmarks'
 
@@ -139,7 +135,6 @@ class RequestNodeInfo(BaseModel):
     """
 
     @computed_field
-    @property
     def content(self) -> str:
         return ''
 
@@ -165,7 +160,6 @@ class NodeRequestObject(RequestableObject, BaseModel):
     """
 
     @computed_field
-    @property
     def type(self) -> str:
         return 'chat_node'
 
@@ -175,7 +169,7 @@ class Action(ABC, BaseModel):
     Base class for all runner actions.
     """
 
-    @property
+    @computed_field
     @abstractmethod
     def action(self) -> str: ...
 
@@ -217,7 +211,6 @@ class SendMessageAction(Action, BaseModel):
     """Chat metadata for message delivery."""
 
     @computed_field
-    @property
     def action(self) -> str:
         return 'chat_message'
 
@@ -248,7 +241,7 @@ class RunnerRequestData(BindableObject, BaseModel):
     Defaults to ``None``.
     """
 
-    def serialize_as_request_data(self):
+    def serialize_as_request_data(self) -> dict[str, str | None]:
         """Returns a dictionary suitable for runner HTTP requests."""
         return {
             'objects': json.dumps(

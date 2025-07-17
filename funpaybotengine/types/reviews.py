@@ -49,5 +49,5 @@ class ReviewsBatch(FunPayObject, BaseModel, PReviewsBatch):
     along with metadata required to fetch the next batch.
     """
 
-    reviews: tuple[Review, ...]
+    reviews: tuple[Review, ...]  # type: ignore[assignment]  # override for model
     """List of reviews included in this batch."""

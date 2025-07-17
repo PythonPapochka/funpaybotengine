@@ -62,6 +62,9 @@ class AioHttpSession(BaseSession):
         if bot is not None:
             method.bind_to(bot)
 
+        if method.bot is None:
+            raise Exception('Method is unbound') # todo
+
         if not method.allow_anonymous and method.bot.anonymous:
             raise Exception(
                 f"Method '{method.__class__.__name__}' "
@@ -77,7 +80,7 @@ class AioHttpSession(BaseSession):
         if method.bot.phpsessid:
             session.cookie_jar.update_cookies({'PHPSESSID': method.bot.phpsessid})
 
-        timeout = ClientTimeout(
+        timeout_obj = ClientTimeout(
             total=timeout if timeout is not None else method.timeout
         )
 
@@ -85,14 +88,14 @@ class AioHttpSession(BaseSession):
             response = await session.get(
                 self.resolve_url(method),
                 params=method.data,
-                timeout=timeout,
+                timeout=timeout_obj,
                 headers=self._default_headers | method.headers,
             )
         elif method.method == HTTPMethod.POST:
             response = await session.post(
                 self.resolve_url(method),
                 data=method.data,
-                timeout=timeout,
+                timeout=timeout_obj,
                 headers=self._default_headers | method.headers,
             )
         else:
@@ -101,7 +104,7 @@ class AioHttpSession(BaseSession):
         self.check_status_code(method, response.status)
 
         result = method.to_obj(await response.text())
-        cookies = {}
+        cookies: dict[str, str] = {}
         for i in response.history:
             cookies = cookies | {k: v.value for k, v in i.cookies.items()}
 

@@ -77,7 +77,8 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
     Defaults to ``False``.
     """
 
-    parser_cls: Type[FunPayObjectParser[Any, Any]] | None = None
+    parser_cls: Type[FunPayObjectParser] | None = None  # type: ignore[type-arg]
+    # unsupported by pydantic
     """
     Parser class (not an instance!) for parsing raw source.
 
@@ -114,7 +115,7 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
             locale: Language | None = None,
             ignore_locale: bool = False,
             headers: dict[str, str] = {},
-            data: dict[str, str] = {},
+            data: dict[str, Any] = {},
             expected_status_codes: list[int | HTTPStatus] = [HTTPStatus.OK],
             allow_anonymous: bool = False,
             parser_cls: Type[FunPayObjectParser[Any, Any]] | None = None,

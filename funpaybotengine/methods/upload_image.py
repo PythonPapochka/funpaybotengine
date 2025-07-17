@@ -12,6 +12,7 @@ from pydantic import BaseModel
 
 from funpaybotengine.types.enums import Language
 from funpaybotengine.methods.base import FunPayMethod
+from typing import cast
 
 
 class UploadImage(FunPayMethod[int], BaseModel):
@@ -31,4 +32,4 @@ class UploadImage(FunPayMethod[int], BaseModel):
         )
 
     def transform_result(self, result: str) -> int:
-        return json.loads(result)['fileId']
+        return cast(int, json.loads(result)['fileId'])
