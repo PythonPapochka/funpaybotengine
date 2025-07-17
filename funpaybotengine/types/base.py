@@ -6,6 +6,7 @@ __all__ = ('FunPayObject', 'FunPayMutableObject')
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, PrivateAttr
+
 from funpaybotengine.base import BindableObject
 
 

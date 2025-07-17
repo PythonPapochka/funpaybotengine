@@ -37,14 +37,20 @@ class CategoriesCache:
     def get_category_by_name(self, name: str) -> Category | None:
         return self._categories_by_name.get(name)
 
-    def get_subcategory_by_id(self, type: SubcategoryType, id: int) -> Subcategory | None:
+    def get_subcategory_by_id(
+        self, type: SubcategoryType, id: int
+    ) -> Subcategory | None:
         return self._subcategories_by_id[type].get(id)
 
     @overload
-    def get_subcategory_category(self, type: SubcategoryType, id: int, subcategory: None = ...) -> Category | None: ...
+    def get_subcategory_category(
+        self, type: SubcategoryType, id: int, subcategory: None = ...
+    ) -> Category | None: ...
 
     @overload
-    def get_subcategory_category(self, type: None = ..., id: None = ..., subcategory: Subcategory = ...) -> Category | None: ...
+    def get_subcategory_category(
+        self, type: None = ..., id: None = ..., subcategory: Subcategory = ...
+    ) -> Category | None: ...
 
     def get_subcategory_category(
         self,

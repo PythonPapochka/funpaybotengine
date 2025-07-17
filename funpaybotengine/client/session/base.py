@@ -52,10 +52,10 @@ class BaseSession(ABC):
 
     @abstractmethod
     async def make_request(
-            self,
-            method: FunPayMethod[MethodReturnType],
-            bot: BaseBot | None = None,
-            timeout: float | None = None
+        self,
+        method: FunPayMethod[MethodReturnType],
+        bot: BaseBot | None = None,
+        timeout: float | None = None,
     ) -> Response[MethodReturnType]: ...
 
     def check_status_code(

@@ -5,6 +5,7 @@ __all__ = ('PrivateChatPreview', 'Chat', 'PrivateChatInfo')
 
 
 from pydantic import BaseModel
+
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.common import UserPreview, CurrentlyViewingOfferInfo
 from funpaybotengine.types.messages import Message
@@ -111,4 +112,3 @@ class PrivateChatInfo(FunPayObject, BaseModel):
     """
     Info about the offer currently being viewed by the interlocutor.
     """
-

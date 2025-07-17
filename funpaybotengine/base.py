@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, PrivateAttr
-from typing_extensions import Self
 from typing import Any, TypeVar, ParamSpec, Concatenate
 from collections.abc import Callable
+
+from pydantic import BaseModel, PrivateAttr
+from typing_extensions import Self
 
 from funpaybotengine.client.base_bot import BaseBot
 
@@ -36,9 +37,7 @@ class BindableObject(BaseModel):
         return self._bot
 
 
-def check_bound(
-        func: Callable[Concatenate[T, P], R]
-) -> Callable[Concatenate[T, P], R]:
+def check_bound(func: Callable[Concatenate[T, P], R]) -> Callable[Concatenate[T, P], R]:
     """
     Decorator for instance methods to ensure the object is bound to any Bot instance.
     """

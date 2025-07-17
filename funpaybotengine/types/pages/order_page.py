@@ -4,19 +4,19 @@ from __future__ import annotations
 __all__ = ('OrderPage',)
 
 
+import re
 from typing import Annotated
 from types import MappingProxyType
 from collections.abc import Mapping
-import re
 
 from pydantic import BaseModel, BeforeValidator
+from funpayparsers.parsers.utils import parse_money_value_string
 
 from funpaybotengine.types.chat import Chat
-from funpaybotengine.types.reviews import Review
-from funpaybotengine.types.pages.base import FunPayPage
 from funpaybotengine.types.enums import OrderStatus, SubcategoryType
 from funpaybotengine.types.common import MoneyValue
-from funpayparsers.parsers.utils import parse_money_value_string
+from funpaybotengine.types.reviews import Review
+from funpaybotengine.types.pages.base import FunPayPage
 
 
 class OrderPage(FunPayPage, BaseModel):
@@ -63,13 +63,17 @@ class OrderPage(FunPayPage, BaseModel):
     def short_description(self) -> str | None:
         """Order short description (title)."""
 
-        return self._first_found(['short description', 'краткое описание', 'короткий опис'])
+        return self._first_found(
+            ['short description', 'краткое описание', 'короткий опис']
+        )
 
     @property
     def full_description(self) -> str | None:
         """Order full description (detailed description)."""
 
-        return self._first_found(['detailed description', 'подробное описание', 'докладний опис'])
+        return self._first_found(
+            ['detailed description', 'подробное описание', 'докладний опис']
+        )
 
     @property
     def amount(self) -> int | None:

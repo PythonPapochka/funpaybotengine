@@ -12,16 +12,18 @@ __all__ = (
     'RunnerResponse',
 )
 
-from typing import TypeVar, Any, Generic
+from typing import Any, Generic, TypeVar
 from types import MappingProxyType
 from collections.abc import Mapping
 
 from pydantic import BaseModel, field_validator
+
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.chat import PrivateChatPreview
 from funpaybotengine.types.enums import RunnerDataType
 from funpaybotengine.types.common import CurrentlyViewingOfferInfo
 from funpaybotengine.types.messages import Message
+
 
 UpdateData = TypeVar('UpdateData')
 
@@ -151,7 +153,7 @@ class RunnerResponse(FunPayObject, BaseModel):
     @field_validator('unknown_objects', mode='before')
     @classmethod
     def convert_to_immutable(
-            cls, value: Any
+        cls, value: Any
     ) -> tuple[MappingProxyType[str, Any], ...] | None:
         if value is None:
             return value

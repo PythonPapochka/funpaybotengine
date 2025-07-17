@@ -3,8 +3,9 @@ from __future__ import annotations
 
 __all__ = ('Bot',)
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeVar, ParamSpec
 from io import BytesIO
+from collections.abc import Callable, Awaitable
 
 from typing_extensions import Self
 
@@ -12,12 +13,12 @@ from funpaybotengine.types import Message, Language, RunnerResponse
 from funpaybotengine.methods import (
     GetChatPage,
     GetMainPage,
+    UploadImage,
     FunPayMethod,
     RunnerRequest,
     GetChatHistory,
     GetProfilePage,
     MethodReturnType,
-    UploadImage,
 )
 from funpaybotengine.types.pages import ChatPage, MainPage, ProfilePage
 from funpaybotengine.types.requests import RunnerRequestData
@@ -25,8 +26,6 @@ from funpaybotengine.client.base_bot import BaseBot
 from funpaybotengine.client.session.base import Response
 from funpaybotengine.client.categories_cache import CategoriesCache
 from funpaybotengine.client.session.aiohttp_session import AioHttpSession
-from typing import ParamSpec, Concatenate, TypeVar, Any
-from collections.abc import Callable, Awaitable, Coroutine
 
 
 if TYPE_CHECKING:
@@ -38,12 +37,17 @@ R = TypeVar('R')
 
 
 def need_preinitialization(
-        func: Callable[Concatenate['Bot', P], Awaitable[R]]
-) -> Callable[Concatenate[P], Coroutine[Any, Any, R]]:
-    async def wrapper(self: 'Bot', /, *args: P.args, **kwargs: P.kwargs) -> R:
+    func: Callable[P, Awaitable[R]],
+) -> Callable[P, Awaitable[R]]:
+    async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        if not args or not isinstance(args[0], Bot):
+            raise RuntimeError('Can be used only with Bot methods.')  # todo
+
+        self: Bot = args[0]
         if not self.initialized:
             await self.update()
-        return await func(self, *args, **kwargs)
+        return await func(*args, **kwargs)
+
     return wrapper
 
 
@@ -212,8 +216,5 @@ class Bot(BaseBot):
         self._userid = result.response_obj.header.user_id
         self._username = result.response_obj.header.username
         self._categories_cache = CategoriesCache(result.response_obj.categories)
-
-        print(f'CSRF token: {self.csrf_token}')
-        print(f'PHPSESSID: {self.phpsessid}')
 
         return self

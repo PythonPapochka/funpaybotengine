@@ -109,4 +109,3 @@ class ReviewsBatch(FunPayObject, BaseModel):
     If present, this value should be included in the next request to fetch
     the following batch of reviews. If ``None``, there are no more reviews to load.
     """
-

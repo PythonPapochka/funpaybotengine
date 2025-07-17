@@ -4,11 +4,12 @@ from __future__ import annotations
 __all__ = ('Message',)
 
 
+from typing import Any
+
 from pydantic import BaseModel, ValidationInfo, field_validator
 
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.common import UserBadge
-from typing import Any
 
 
 class Message(FunPayObject, BaseModel):
@@ -82,12 +83,14 @@ class Message(FunPayObject, BaseModel):
     def get_chat_id_from_context(cls, value: Any, info: ValidationInfo) -> Any:
         if info.context:
             return info.context.get('chat_id') if value is None else value
+        return None
 
     @field_validator('chat_name', mode='before')
     @classmethod
     def get_chat_name_from_context(cls, value: Any, info: ValidationInfo) -> Any:
         if info.context:
             return info.context.get('chat_name') if value is None else value
+        return None
 
     async def reply(self) -> None:
         raise NotImplementedError

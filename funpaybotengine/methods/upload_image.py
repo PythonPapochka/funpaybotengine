@@ -5,14 +5,14 @@ __all__ = ('UploadImage',)
 
 
 import json
+from typing import cast
 from io import BytesIO
-from funpaybotengine.client.session.http_methods import HTTPMethod
 
 from pydantic import BaseModel
 
 from funpaybotengine.types.enums import Language
 from funpaybotengine.methods.base import FunPayMethod
-from typing import cast
+from funpaybotengine.client.session.http_methods import HTTPMethod
 
 
 class UploadImage(FunPayMethod[int], BaseModel):

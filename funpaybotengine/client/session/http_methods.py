@@ -1,4 +1,7 @@
-__all__ = ('HTTPMethod', )
+from __future__ import annotations
+
+
+__all__ = ('HTTPMethod',)
 
 from enum import Enum
 

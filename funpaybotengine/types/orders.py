@@ -5,6 +5,7 @@ __all__ = ('OrderPreview', 'OrderPreviewsBatch')
 
 
 from pydantic import BaseModel
+
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.enums import OrderStatus
 from funpaybotengine.types.common import MoneyValue, UserPreview
@@ -55,4 +56,3 @@ class OrderPreviewsBatch(FunPayObject, BaseModel):
 
     If ``None``, there are no more orders to load.
     """
-

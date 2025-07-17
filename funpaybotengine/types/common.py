@@ -13,6 +13,7 @@ __all__ = (
 
 
 from pydantic import BaseModel
+
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.enums import Currency, BadgeType
 
@@ -143,7 +144,6 @@ class CurrentlyViewingOfferInfo(FunPayObject, BaseModel):
 
     title: str
     """Offer title."""
-
 
 
 class RaiseOffersResponse(FunPayObject, BaseModel):

@@ -15,7 +15,7 @@ __all__ = (
     'RunnerRequestData',
 )
 import json
-from typing import Any, Literal
+from typing import Literal
 from abc import ABC, abstractmethod
 
 from pydantic import BaseModel, computed_field

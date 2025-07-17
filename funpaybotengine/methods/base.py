@@ -6,11 +6,12 @@ __all__ = ('FunPayMethod', 'MethodReturnType')
 from typing import TYPE_CHECKING, Any, Type, Generic, TypeVar
 from abc import ABC, abstractmethod
 from http import HTTPStatus
-from funpaybotengine.client.session.http_methods import HTTPMethod
+
 from pydantic import Field, BaseModel
 from funpayparsers.parsers.base import ParsingOptions, FunPayObjectParser
 
 from funpaybotengine.base import BindableObject
+from funpaybotengine.client.session.http_methods import HTTPMethod
 
 
 if TYPE_CHECKING:
@@ -108,6 +109,7 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
     """
 
     if TYPE_CHECKING:
+
         def __init__(
             self,
             url: str,

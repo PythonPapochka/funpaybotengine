@@ -6,12 +6,12 @@ __all__ = ('AioHttpSession',)
 
 import asyncio
 from typing import TYPE_CHECKING, Any
-from funpaybotengine.client.session.http_methods import HTTPMethod
 
 from aiohttp import ClientSession, ClientTimeout
 from aiohttp.hdrs import USER_AGENT
 
 from funpaybotengine.client.session.base import Response, BaseSession
+from funpaybotengine.client.session.http_methods import HTTPMethod
 
 
 if TYPE_CHECKING:
@@ -63,7 +63,7 @@ class AioHttpSession(BaseSession):
             method.bind_to(bot)
 
         if method.bot is None:
-            raise Exception('Method is unbound') # todo
+            raise Exception('Method is unbound')  # todo
 
         if not method.allow_anonymous and method.bot.anonymous:
             raise Exception(
@@ -84,7 +84,6 @@ class AioHttpSession(BaseSession):
             total=timeout if timeout is not None else method.timeout
         )
 
-        print(f'Making request to {session._base_url}/{method.url}')
         if method.method == HTTPMethod.GET:
             response = await session.get(
                 self.resolve_url(method),
