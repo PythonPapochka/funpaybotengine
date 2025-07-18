@@ -39,11 +39,13 @@ from funpaybotengine.types.pages import (
     ProfilePage,
     SubcategoryPage,
 )
-from funpaybotengine.types.requests import RunnerRequestData
+from funpaybotengine.types.requests import RunnerRequestData, SendMessageAction, NodeRequestObject, ActionNodeInfo, RequestNodeInfo
 from funpaybotengine.client.base_bot import BaseBot
 from funpaybotengine.client.session.base import Response
 from funpaybotengine.client.categories_cache import CategoriesCache
 from funpaybotengine.client.session.aiohttp_session import AioHttpSession
+import random
+import string
 
 
 if TYPE_CHECKING:
@@ -159,6 +161,7 @@ class Bot(BaseBot):
         result = await self.make_request(RunnerRequest(request=data))
         return result.response_obj
 
+    # ----- Actions -----
     async def upload_chat_image(self, file: str | BytesIO) -> int:
         """
         Uploads an image to FunPay servers for use in chat messages.
@@ -173,6 +176,63 @@ class Bot(BaseBot):
         result = await self.make_request(UploadImage(file=file))
         return result.response_obj
 
+    @overload
+    async def send_message(
+            self,
+            chat_id: int | str,
+            text: str = ...,
+            image: None = ...
+    ) -> Message: ...
+
+    @overload
+    async def send_message(
+            self,
+            chat_id: int | str,
+            text: None = ...,
+            image: str | BytesIO | int = ...
+    ) -> Message: ...
+
+    async def send_message(
+            self,
+            chat_id: int | str,
+            text: str | None = None,
+            image: str | BytesIO | int | None = None
+    ) -> Message:
+        assert isinstance(text, str) or isinstance(image, str | BytesIO | int), (
+            f'Invalid message text or image input: '
+            f"either provide message text ('text') (got {text=}), "
+            f"or provide image ID / path to image / image file strem ('image') (got {image=})."
+        )
+        tag = ''.join(random.choice(string.ascii_lowercase) for _ in range(8))  # todo: function
+        image_id = None
+        if image is not None:
+            if isinstance(image, str | BytesIO):
+                image_id = await self.upload_chat_image(image)
+            else:
+                image_id = image
+
+        action_node_info = ActionNodeInfo(
+            node=chat_id,
+            content=text if text is not None else '',
+            image_id=image_id
+        )
+        action = SendMessageAction(data=action_node_info)
+
+        request_node_info = RequestNodeInfo(node=chat_id)
+        requests = [NodeRequestObject(id=chat_id, tag=tag, data=request_node_info)]
+
+        data = RunnerRequestData(
+            objects=requests,
+            request=action,
+        )
+
+        result: RunnerResponse = await self.runner_request(data=data)
+        if result.response.error:  # type: ignore[union-attr] # will have response
+            raise Exception("error")  # todo
+
+        return result.nodes[0].data.messages[-1]  # type: ignore[index] # will have nodes
+
+    # ----- Getters -----
     async def get_chat_history(
         self, chat_id: int | str, before_message_id: int = 999999999999
     ) -> list[Message]:
@@ -272,6 +332,7 @@ class Bot(BaseBot):
         result = await self.make_request(m)
         return result.response_obj
 
+    # ----- Page getters -----
     async def get_main_page(self) -> MainPage:
         """
         Retrieves the FunPay main page.

@@ -126,19 +126,21 @@ class RequestNodeInfo(BaseModel):
     node: int | str
     """Chat ID or name whose message history is being requested."""
 
-    last_message: int = 99999999999
+    last_message: int = 0
     """
-    ID of the last message (start point for reverse history retrieval).
+    ID of the last message (start point for history retrieval).
 
-    Fetches messages sent **before** this ID, typically in batches of 50.
+    Fetches messages sent **after** this ID, typically in batches of 50.
+    
+    If you need to fetch last messages in a chat, set it to ``0``.
     """
 
-    show_avatar: Literal[0, 1] = 1
-    """
-    Whether to include user avatars in the rendered HTML output.
-
-    Avatars are only available for public chats.
-    """
+    # show_avatar: Literal[0, 1] = 1
+    # """
+    # Whether to include user avatars in the rendered HTML output.
+    #
+    # Avatars are only available for public chats.
+    # """
 
     @computed_field
     def content(self) -> str:
