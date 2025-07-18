@@ -205,6 +205,23 @@ class Bot(BaseBot):
         game_id_filter: str | None = None,
         other_filters: dict[str, str] | None = None,
     ) -> OrderPreviewsBatch:
+        """
+        Fetch the latest 100 sales, optionally filtered by various criteria.
+
+        If ``from_order_id`` is provided,
+        the method retrieves sales after the specified order ID, enabling pagination.
+
+        :param from_order_id: Optional. The order ID to start pagination from (inclusive).
+        :param order_id_filter: Optional. Only return the sale with this exact order ID.
+        :param buyer_username_filter: Optional. Only include sales from this seller.
+        :param status_filter: Optional. Only include sales with the specified status.
+            Can be an `OrderStatus` enum or a string.
+        :param game_id_filter: Optional. Only include sales related to this game ID.
+        :param other_filters: Optional. A dictionary of additional filters to apply.
+
+        :return: A batch of order previews (``OrderPreviewsBatch``)
+            matching the specified criteria.
+        """
         m = GetSales(
             from_order_id=from_order_id,
             order_id_filter=order_id_filter,
@@ -226,6 +243,23 @@ class Bot(BaseBot):
         game_id_filter: str | None = None,
         other_filters: dict[str, str] | None = None,
     ) -> OrderPreviewsBatch:
+        """
+        Fetch the latest 100 purchases, optionally filtered by various criteria.
+
+        If ``from_order_id`` is provided,
+        the method retrieves purchases after the specified order ID, enabling pagination.
+
+        :param from_order_id: Optional. The order ID to start pagination from (inclusive).
+        :param order_id_filter: Optional. Only return the purchase with this exact order ID.
+        :param seller_username_filter: Optional. Only include purchases from this seller.
+        :param status_filter: Optional. Only include purchases with the specified status.
+            Can be an `OrderStatus` enum or a string.
+        :param game_id_filter: Optional. Only include purchases related to this game ID.
+        :param other_filters: Optional. A dictionary of additional filters to apply.
+
+        :return: A batch of purchase previews (``OrderPreviewsBatch``)
+            matching the specified criteria.
+        """
         m = GetPurchases(
             from_order_id=from_order_id,
             order_id_filter=order_id_filter,
