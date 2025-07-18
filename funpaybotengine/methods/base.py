@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Type, Generic, TypeVar
 from abc import ABC, abstractmethod
 from http import HTTPStatus
 
-from pydantic import Field, BaseModel
+from pydantic import Field, BaseModel, ConfigDict
 from funpayparsers.parsers.base import ParsingOptions, FunPayObjectParser
 
 from funpaybotengine.base import BindableObject
@@ -23,6 +23,10 @@ MethodReturnType = TypeVar('MethodReturnType', bound=Any)
 
 class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
     """Base method class."""
+    model_config = ConfigDict(
+        validate_assignment=True,
+        arbitrary_types_allowed=True,
+    )
 
     url: str
     """Method URL."""

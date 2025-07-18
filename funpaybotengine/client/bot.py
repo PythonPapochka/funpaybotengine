@@ -9,7 +9,7 @@ from collections.abc import Callable, Awaitable
 
 from typing_extensions import Self
 
-from funpaybotengine.types import Message, Language, RunnerResponse, Subcategory
+from funpaybotengine.types import Message, Language, RunnerResponse, Subcategory, OrderPreviewsBatch, OrderPreview
 from funpaybotengine.methods import (
     GetChatPage,
     GetMainPage,
@@ -20,9 +20,11 @@ from funpaybotengine.methods import (
     GetProfilePage,
     MethodReturnType,
     GetSubcategoryPage,
+    GetOrderPage,
+    GetSales,
 )
-from funpaybotengine.types.pages import ChatPage, MainPage, ProfilePage, SubcategoryPage
-from funpaybotengine.types.enums import SubcategoryType
+from funpaybotengine.types.pages import ChatPage, MainPage, ProfilePage, SubcategoryPage, OrderPage
+from funpaybotengine.types.enums import SubcategoryType, OrderStatus
 from funpaybotengine.types.requests import RunnerRequestData
 from funpaybotengine.client.base_bot import BaseBot
 from funpaybotengine.client.session.base import Response
@@ -181,6 +183,27 @@ class Bot(BaseBot):
         )
         return result.response_obj
 
+    async def get_sales(
+            self,
+            from_order_id: str | None = None,
+            order_id_filter: str | None = None,
+            buyer_username_filter: str | None = None,
+            status_filter: OrderStatus | str | None = None,
+            game_id_filter: str | None = None,
+            other_filters: dict[str, str] | None = None,
+    ) -> OrderPreviewsBatch:
+        m = GetSales(
+            from_order_id=from_order_id,
+            order_id_filter=order_id_filter,
+            buyer_username_filter=buyer_username_filter,
+            status_filter=status_filter,
+            game_id_filter=game_id_filter,
+            other_filters=other_filters,
+        )
+
+        result = await self.make_request(m)
+        return result.response_obj
+
     async def get_main_page(self) -> MainPage:
         """
         Retrieves the FunPay main page.
@@ -223,9 +246,9 @@ class Bot(BaseBot):
             subcategory: Subcategory | None = None
     ) -> SubcategoryPage:
         assert (
-                (subcategory_type is not None and subcategory_id is not None)
+                (isinstance(subcategory_type, SubcategoryType) and isinstance(subcategory_id, int))
                 or
-                subcategory is not None
+                isinstance(subcategory, Subcategory)
         ), (
             f'Invalid subcategory input: '
             f'either provide both \'subcategory_type\' and \'subcategory_id\' '
@@ -239,6 +262,34 @@ class Bot(BaseBot):
             t, i = subcategory_type, subcategory_id  # type: ignore[assignment]  # asserted above
 
         result = await self.make_request(GetSubcategoryPage(type=t, id=i))
+        return result.response_obj
+
+    @overload
+    async def get_order_page(self, order_id: str = ..., order: None = ...) -> OrderPage: ...
+
+    @overload
+    async def get_order_page(
+            self, order_id: None = ..., order: OrderPreview | OrderPage = ...
+    ) -> OrderPage: ...
+
+    async def get_order_page(
+            self,
+            order_id: str | None = None,
+            order: OrderPreview | OrderPage | None = None
+    ) -> OrderPage:
+        assert isinstance(order_id, str) or isinstance(order, OrderPreview | OrderPage), (
+            f'Invalid order_id input: '
+            f'either provide \'order_id\' (got {order_id=}), '
+            f'or provide \'order\' object (got {order=}).'
+        )
+
+        if order_id:
+            i = order_id
+        else:
+            i = order.id if isinstance(order, OrderPreview) else order.order_id  # type: ignore[union-attr]
+            # asserted above
+
+        result = await self.make_request(GetOrderPage(id=i))
         return result.response_obj
 
     async def make_request(
