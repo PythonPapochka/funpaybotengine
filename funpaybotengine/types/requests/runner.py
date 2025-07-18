@@ -18,7 +18,7 @@ import json
 from typing import Literal
 from abc import ABC, abstractmethod
 
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel, computed_field, Field, AliasChoices
 
 from funpaybotengine.base import BindableObject
 
@@ -43,7 +43,10 @@ class OrdersCountersRequestObject(RequestableObject, BaseModel):
     id: int
     """User ID whose order counters are being requested."""
 
-    tag: str
+    runner_tag: str = Field(
+        serialization_alias='tag',
+        validation_alias=AliasChoices('runner_tag', 'tag')
+    )
     """Runner tag used for request tracking."""
 
     @computed_field
@@ -63,7 +66,10 @@ class ChatCounterRequestObject(RequestableObject, BaseModel):
     id: int
     """User ID whose chat counter is being requested."""
 
-    tag: str
+    runner_tag: str = Field(
+        serialization_alias='tag',
+        validation_alias=AliasChoices('runner_tag', 'tag')
+    )
     """Runner tag used for request tracking."""
 
     @computed_field
@@ -83,7 +89,10 @@ class CPURequestObject(RequestableObject, BaseModel):
     id: int
     """User ID whose currently viewed offer info is being requested."""
 
-    tag: str
+    runner_tag: str = Field(
+        serialization_alias='tag',
+        validation_alias=AliasChoices('runner_tag', 'tag')
+    )
     """Runner tag used for request tracking."""
 
     @computed_field
@@ -103,7 +112,10 @@ class ChatBookmarksRequestObject(RequestableObject, BaseModel):
     id: int
     """User ID whose chat bookmarks are being requested."""
 
-    tag: str
+    runner_tag: str = Field(
+        serialization_alias='tag',
+        validation_alias=AliasChoices('runner_tag', 'tag')
+    )
     """Runner tag used for request tracking."""
 
     data: list[tuple[int, int]] | Literal[False] = False
@@ -123,10 +135,17 @@ class RequestNodeInfo(BaseModel):
     Chat node metadata used in ``NodeRequestObject.data``.
     """
 
-    node: int | str
+    chat_id: int | str = Field(
+        serialization_alias='node',
+        validation_alias=AliasChoices('chat_id', 'node')
+    )
     """Chat ID or name whose message history is being requested."""
 
-    last_message: int = 0
+    after_message_id: int = Field(
+        default=0,
+        serialization_alias='last_message',
+        validation_alias=AliasChoices('after_message_id', 'last_message ')
+    )
     """
     ID of the last message (start point for history retrieval).
 
@@ -135,12 +154,12 @@ class RequestNodeInfo(BaseModel):
     If you need to fetch last messages in a chat, set it to ``0``.
     """
 
-    # show_avatar: Literal[0, 1] = 1
-    # """
-    # Whether to include user avatars in the rendered HTML output.
-    #
-    # Avatars are only available for public chats.
-    # """
+    show_avatar: Literal[0, 1] = 1
+    """
+    Whether to include user avatars in the rendered HTML output.
+    
+    Avatars are only available for public chats.
+    """
 
     @computed_field
     def content(self) -> str:
@@ -152,10 +171,16 @@ class NodeRequestObject(RequestableObject, BaseModel):
     Request for retrieving chat (node) message history.
     """
 
-    id: int | str
+    chat_id: int | str = Field(
+        serialization_alias='id',
+        validation_alias=AliasChoices('chat_id', 'id')
+    )
     """Chat ID or name whose history is being requested."""
 
-    tag: str
+    runner_tag: str = Field(
+        serialization_alias='tag',
+        validation_alias=AliasChoices('runner_tag', 'tag')
+    )
     """Runner tag used for request tracking."""
 
     data: RequestNodeInfo | Literal[False] = False
@@ -189,13 +214,24 @@ class ActionNodeInfo(BaseModel):
     Chat node metadata used in ``SendMessageAction.data``.
     """
 
-    node: int | str
+    chat_id: int | str = Field(
+        serialization_alias='node',
+        validation_alias=AliasChoices('chat_id', 'node')
+    )
     """Chat ID or name where the message should be sent."""
 
-    last_message: int = 99999999999
+    after_message_id: int = Field(
+        default=99999999999,
+        serialization_alias='last_message',
+        validation_alias=AliasChoices('after_message_id', 'last_message')
+    )
     """Unused field (currently has no effect)."""
 
-    content: str = ''
+    message_text: str = Field(
+        default='',
+        serialization_alias='content',
+        validation_alias=AliasChoices('message_text', 'content')
+    )
     """
     Text content of the message.
 
@@ -215,7 +251,10 @@ class SendMessageAction(Action, BaseModel):
     Action that sends a message to a chat.
     """
 
-    data: ActionNodeInfo
+    message_data: ActionNodeInfo = Field(
+        serialization_alias='data',
+        validation_alias=AliasChoices('message_data', 'data')
+    )
     """Chat metadata for message delivery."""
 
     @computed_field
@@ -228,14 +267,22 @@ class RunnerRequestData(BindableObject, BaseModel):
     Payload structure for requests sent to https://funpay.com/runner/.
     """
 
-    objects: list[RequestableObject] | Literal[False] = False
+    requested_objects: list[RequestableObject] | Literal[False] = Field(
+        default=False,
+        serialization_alias='objects',
+        validation_alias=AliasChoices('objects', 'requested_objects')
+    )
     """
-    List of requestable objects (or ``False`` if none).
+    Optional list of objects to request (or ``False`` if none).
     
     Defaults to ``False``.
     """
 
-    request: Action | Literal[False] = False
+    action: Action | Literal[False] = Field(
+        default=False,
+        serialization_alias='request',
+        validation_alias=AliasChoices('request', 'action')
+    )
     """
     Optional action to perform (e.g., send message).
     
@@ -253,12 +300,12 @@ class RunnerRequestData(BindableObject, BaseModel):
         """Returns a dictionary suitable for runner HTTP requests."""
         return {
             'objects': json.dumps(
-                [i.model_dump(exclude_none=True) for i in self.objects]
+                [i.model_dump(exclude_none=True, by_alias=True) for i in self.requested_objects]
             )
-            if self.objects
+            if self.requested_objects
             else 'false',
-            'request': self.request.model_dump_json(exclude_none=True)
-            if self.request
+            'request': self.action.model_dump_json(exclude_none=True, by_alias=True)
+            if self.action
             else 'false',
             'csrf_token': self.csrf_token,
         }

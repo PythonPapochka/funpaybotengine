@@ -212,23 +212,20 @@ class Bot(BaseBot):
                 image_id = image
 
         action_node_info = ActionNodeInfo(
-            node=chat_id,
-            content=text if text is not None else '',
+            chat_id=chat_id,
+            message_text=text if text is not None else '',
             image_id=image_id
         )
-        action = SendMessageAction(data=action_node_info)
-
-        request_node_info = RequestNodeInfo(node=chat_id)
-        requests = [NodeRequestObject(id=chat_id, tag=tag, data=request_node_info)]
+        action = SendMessageAction(message_data=action_node_info)
 
         data = RunnerRequestData(
-            objects=requests,
-            request=action,
+            requested_objects=[NodeRequestObject(chat_id=chat_id, runner_tag=tag)],
+            action=action,
         )
-
+        print(data.serialize_as_request_data())
         result: RunnerResponse = await self.runner_request(data=data)
         if result.response.error:  # type: ignore[union-attr] # will have response
-            raise Exception("error")  # todo
+            raise Exception(result.response.error)  # todo
 
         return result.nodes[0].data.messages[-1]  # type: ignore[index] # will have nodes
 
