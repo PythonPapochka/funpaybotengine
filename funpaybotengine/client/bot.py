@@ -226,12 +226,17 @@ class Bot(BaseBot):
                 (subcategory_type is not None and subcategory_id is not None)
                 or
                 subcategory is not None
-        ), 'Need to pass either subcategory type and id or subcategory object.'
+        ), (
+            f'Invalid subcategory input: '
+            f'either provide both \'subcategory_type\' and \'subcategory_id\' '
+            f'(got {subcategory_type=}, {subcategory_id=}), or provide \'subcategory\' object '
+            f'(got {subcategory=}).'
+        )
 
         if subcategory is not None:
             t, i = subcategory.type, subcategory.id
         else:
-            t, i = subcategory_type, subcategory_id
+            t, i = subcategory_type, subcategory_id  # type: ignore[assignment]  # asserted above
 
         result = await self.make_request(GetSubcategoryPage(type=t, id=i))
         return result.response_obj
