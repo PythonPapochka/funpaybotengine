@@ -9,7 +9,7 @@ from collections.abc import Callable, Awaitable
 
 from typing_extensions import Self
 
-from funpaybotengine.types import Message, Language, RunnerResponse
+from funpaybotengine.types import Message, Language, RunnerResponse, Subcategory
 from funpaybotengine.methods import (
     GetChatPage,
     GetMainPage,
@@ -19,13 +19,16 @@ from funpaybotengine.methods import (
     GetChatHistory,
     GetProfilePage,
     MethodReturnType,
+    GetSubcategoryPage,
 )
-from funpaybotengine.types.pages import ChatPage, MainPage, ProfilePage
+from funpaybotengine.types.pages import ChatPage, MainPage, ProfilePage, SubcategoryPage
+from funpaybotengine.types.enums import SubcategoryType
 from funpaybotengine.types.requests import RunnerRequestData
 from funpaybotengine.client.base_bot import BaseBot
 from funpaybotengine.client.session.base import Response
 from funpaybotengine.client.categories_cache import CategoriesCache
 from funpaybotengine.client.session.aiohttp_session import AioHttpSession
+from typing import overload
 
 
 if TYPE_CHECKING:
@@ -196,6 +199,41 @@ class Bot(BaseBot):
 
     async def get_profile_page(self, id: int) -> ProfilePage:
         result = await self.make_request(GetProfilePage(id=id))
+        return result.response_obj
+
+    @overload
+    async def get_subcategory_page(
+            self,
+            subcategory_type: SubcategoryType = ...,
+            subcategory_id: int = ...,
+            subcategory: None = ...) -> SubcategoryPage: ...
+
+    @overload
+    async def get_subcategory_page(
+            self,
+            subcategory_type: None = ...,
+            subcategory_id: None = ...,
+            subcategory: Subcategory = ...
+    ) -> SubcategoryPage: ...
+
+    async def get_subcategory_page(
+            self,
+            subcategory_type: SubcategoryType | None = None,
+            subcategory_id: int | None = None,
+            subcategory: Subcategory | None = None
+    ) -> SubcategoryPage:
+        assert (
+                (subcategory_type is not None and subcategory_id is not None)
+                or
+                subcategory is not None
+        ), 'Need to pass either subcategory type and id or subcategory object.'
+
+        if subcategory is not None:
+            t, i = subcategory.type, subcategory.id
+        else:
+            t, i = subcategory_type, subcategory_id
+
+        result = await self.make_request(GetSubcategoryPage(type=t, id=i))
         return result.response_obj
 
     async def make_request(
