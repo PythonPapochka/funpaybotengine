@@ -3,34 +3,47 @@ from __future__ import annotations
 
 __all__ = ('Bot',)
 
-from typing import TYPE_CHECKING, TypeVar, ParamSpec
+from typing import TYPE_CHECKING, TypeVar, ParamSpec, overload
 from io import BytesIO
 from collections.abc import Callable, Awaitable
 
 from typing_extensions import Self
 
-from funpaybotengine.types import Message, Language, RunnerResponse, Subcategory, OrderPreviewsBatch, OrderPreview
+from funpaybotengine.types import (
+    Message,
+    Language,
+    Subcategory,
+    OrderPreview,
+    RunnerResponse,
+    OrderPreviewsBatch,
+)
 from funpaybotengine.methods import (
+    GetSales,
     GetChatPage,
     GetMainPage,
     UploadImage,
     FunPayMethod,
+    GetOrderPage,
+    GetPurchases,
     RunnerRequest,
     GetChatHistory,
     GetProfilePage,
     MethodReturnType,
     GetSubcategoryPage,
-    GetOrderPage,
-    GetSales,
 )
-from funpaybotengine.types.pages import ChatPage, MainPage, ProfilePage, SubcategoryPage, OrderPage
-from funpaybotengine.types.enums import SubcategoryType, OrderStatus
+from funpaybotengine.types.enums import OrderStatus, SubcategoryType
+from funpaybotengine.types.pages import (
+    ChatPage,
+    MainPage,
+    OrderPage,
+    ProfilePage,
+    SubcategoryPage,
+)
 from funpaybotengine.types.requests import RunnerRequestData
 from funpaybotengine.client.base_bot import BaseBot
 from funpaybotengine.client.session.base import Response
 from funpaybotengine.client.categories_cache import CategoriesCache
 from funpaybotengine.client.session.aiohttp_session import AioHttpSession
-from typing import overload
 
 
 if TYPE_CHECKING:
@@ -184,18 +197,39 @@ class Bot(BaseBot):
         return result.response_obj
 
     async def get_sales(
-            self,
-            from_order_id: str | None = None,
-            order_id_filter: str | None = None,
-            buyer_username_filter: str | None = None,
-            status_filter: OrderStatus | str | None = None,
-            game_id_filter: str | None = None,
-            other_filters: dict[str, str] | None = None,
+        self,
+        from_order_id: str | None = None,
+        order_id_filter: str | None = None,
+        buyer_username_filter: str | None = None,
+        status_filter: OrderStatus | str | None = None,
+        game_id_filter: str | None = None,
+        other_filters: dict[str, str] | None = None,
     ) -> OrderPreviewsBatch:
         m = GetSales(
             from_order_id=from_order_id,
             order_id_filter=order_id_filter,
             buyer_username_filter=buyer_username_filter,
+            status_filter=status_filter,
+            game_id_filter=game_id_filter,
+            other_filters=other_filters,
+        )
+
+        result = await self.make_request(m)
+        return result.response_obj
+
+    async def get_purchases(
+        self,
+        from_order_id: str | None = None,
+        order_id_filter: str | None = None,
+        seller_username_filter: str | None = None,
+        status_filter: OrderStatus | str | None = None,
+        game_id_filter: str | None = None,
+        other_filters: dict[str, str] | None = None,
+    ) -> OrderPreviewsBatch:
+        m = GetPurchases(
+            from_order_id=from_order_id,
+            order_id_filter=order_id_filter,
+            seller_username_filter=seller_username_filter,
             status_filter=status_filter,
             game_id_filter=game_id_filter,
             other_filters=other_filters,
@@ -226,33 +260,33 @@ class Bot(BaseBot):
 
     @overload
     async def get_subcategory_page(
-            self,
-            subcategory_type: SubcategoryType = ...,
-            subcategory_id: int = ...,
-            subcategory: None = ...) -> SubcategoryPage: ...
+        self,
+        subcategory_type: SubcategoryType = ...,
+        subcategory_id: int = ...,
+        subcategory: None = ...,
+    ) -> SubcategoryPage: ...
 
     @overload
     async def get_subcategory_page(
-            self,
-            subcategory_type: None = ...,
-            subcategory_id: None = ...,
-            subcategory: Subcategory = ...
+        self,
+        subcategory_type: None = ...,
+        subcategory_id: None = ...,
+        subcategory: Subcategory = ...,
     ) -> SubcategoryPage: ...
 
     async def get_subcategory_page(
-            self,
-            subcategory_type: SubcategoryType | None = None,
-            subcategory_id: int | None = None,
-            subcategory: Subcategory | None = None
+        self,
+        subcategory_type: SubcategoryType | None = None,
+        subcategory_id: int | None = None,
+        subcategory: Subcategory | None = None,
     ) -> SubcategoryPage:
         assert (
-                (isinstance(subcategory_type, SubcategoryType) and isinstance(subcategory_id, int))
-                or
-                isinstance(subcategory, Subcategory)
-        ), (
+            isinstance(subcategory_type, SubcategoryType)
+            and isinstance(subcategory_id, int)
+        ) or isinstance(subcategory, Subcategory), (
             f'Invalid subcategory input: '
-            f'either provide both \'subcategory_type\' and \'subcategory_id\' '
-            f'(got {subcategory_type=}, {subcategory_id=}), or provide \'subcategory\' object '
+            f"either provide both 'subcategory_type' and 'subcategory_id' "
+            f"(got {subcategory_type=}, {subcategory_id=}), or provide 'subcategory' object "
             f'(got {subcategory=}).'
         )
 
@@ -265,22 +299,24 @@ class Bot(BaseBot):
         return result.response_obj
 
     @overload
-    async def get_order_page(self, order_id: str = ..., order: None = ...) -> OrderPage: ...
+    async def get_order_page(
+        self, order_id: str = ..., order: None = ...
+    ) -> OrderPage: ...
 
     @overload
     async def get_order_page(
-            self, order_id: None = ..., order: OrderPreview | OrderPage = ...
+        self, order_id: None = ..., order: OrderPreview | OrderPage = ...
     ) -> OrderPage: ...
 
     async def get_order_page(
-            self,
-            order_id: str | None = None,
-            order: OrderPreview | OrderPage | None = None
+        self, order_id: str | None = None, order: OrderPreview | OrderPage | None = None
     ) -> OrderPage:
-        assert isinstance(order_id, str) or isinstance(order, OrderPreview | OrderPage), (
+        assert isinstance(order_id, str) or isinstance(
+            order, OrderPreview | OrderPage
+        ), (
             f'Invalid order_id input: '
-            f'either provide \'order_id\' (got {order_id=}), '
-            f'or provide \'order\' object (got {order=}).'
+            f"either provide 'order_id' (got {order_id=}), "
+            f"or provide 'order' object (got {order=})."
         )
 
         if order_id:

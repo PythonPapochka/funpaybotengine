@@ -23,6 +23,7 @@ MethodReturnType = TypeVar('MethodReturnType', bound=Any)
 
 class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
     """Base method class."""
+
     model_config = ConfigDict(
         validate_assignment=True,
         arbitrary_types_allowed=True,

@@ -41,7 +41,6 @@ class GetChatPage(FunPayMethod[ChatPage], BaseModel):
             data={'node': str(chat_id)},
             parser_cls=ChatPageParser,
             allow_anonymous=True,
-
             chat_id=chat_id,
         )
 

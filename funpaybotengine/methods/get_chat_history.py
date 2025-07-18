@@ -60,7 +60,6 @@ class GetChatHistory(FunPayMethod[list[Message]], BaseModel):
             allow_anonymous=True,
             parser_cls=MessagesParser,
             context={'chat_id': chat_id},
-
             chat_id=chat_id,
             before_message_id=before_message_id,
         )

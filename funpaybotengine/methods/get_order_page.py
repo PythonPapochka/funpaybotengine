@@ -33,7 +33,6 @@ class GetOrderPage(FunPayMethod[OrderPage], BaseModel):
             url=f'orders/{id}/',
             parser_cls=OrderPageParser,
             locale=locale,
-
             id=id,
         )
 

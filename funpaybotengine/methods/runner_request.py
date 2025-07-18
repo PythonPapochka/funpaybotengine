@@ -37,7 +37,6 @@ class RunnerRequest(FunPayMethod[RunnerResponse], BaseModel):
             parser_cls=UpdatesParser,
             data=request.serialize_as_request_data(),
             headers={'X-Requested-With': 'XMLHttpRequest'},
-
             request=request,
         )
 

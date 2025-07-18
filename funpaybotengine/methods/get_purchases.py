@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 
-__all__ = ('GetSales',)
+__all__ = ('GetPurchases',)
 
 
 from typing import TYPE_CHECKING
@@ -27,16 +27,16 @@ STATE_FILTERS = {
 }
 
 
-class GetSales(FunPayMethod[OrderPreviewsBatch], BaseModel):
+class GetPurchases(FunPayMethod[OrderPreviewsBatch], BaseModel):
     """
-    Get a sales list (``https://funpay.com/orders/trade``).
+    Get a purchases list (``https://funpay.com/orders/``).
 
     Returns ``funpaybotengine.types.OrderPreviewsBatch`` obj.
     """
 
     from_order_id: str | None = None
     order_id_filter: str | None = None
-    buyer_username_filter: str | None = None
+    seller_username_filter: str | None = None
     status_filter: OrderStatus | str | None = None
     game_id_filter: int | None = None
     other_filters: dict[str, str] | None = None
@@ -45,7 +45,7 @@ class GetSales(FunPayMethod[OrderPreviewsBatch], BaseModel):
         self,
         from_order_id: str | None = None,
         order_id_filter: str | None = None,
-        buyer_username_filter: str | None = None,
+        seller_username_filter: str | None = None,
         status_filter: OrderStatus | str | None = None,
         game_id_filter: str | None = None,
         other_filters: dict[str, str] | None = None,
@@ -53,7 +53,7 @@ class GetSales(FunPayMethod[OrderPreviewsBatch], BaseModel):
     ):
         url = self._construct_url(
             order_id_filter=order_id_filter,
-            buyer_username_filter=buyer_username_filter,
+            seller_username_filter=seller_username_filter,
             status_filter=status_filter,
             game_id_filter=game_id_filter,
             other_filters=other_filters,
@@ -67,7 +67,7 @@ class GetSales(FunPayMethod[OrderPreviewsBatch], BaseModel):
             locale=locale,
             from_order_id=from_order_id,
             order_id_filter=order_id_filter,
-            buyer_username_filter=buyer_username_filter,
+            seller_username_filter=seller_username_filter,
             status_filter=status_filter,
             game_id_filter=game_id_filter,
             other_filters=other_filters,
@@ -76,7 +76,7 @@ class GetSales(FunPayMethod[OrderPreviewsBatch], BaseModel):
     def _construct_url(
         self,
         order_id_filter: str | None = None,
-        buyer_username_filter: str | None = None,
+        seller_username_filter: str | None = None,
         status_filter: OrderStatus | str | None = None,
         game_id_filter: str | None = None,
         other_filters: dict[str, str] | None = None,
@@ -86,8 +86,8 @@ class GetSales(FunPayMethod[OrderPreviewsBatch], BaseModel):
         queries = []
         if order_id_filter is not None:
             queries.append(f'id={order_id_filter}')
-        if buyer_username_filter is not None:
-            queries.append(f'buyer={buyer_username_filter}')
+        if seller_username_filter is not None:
+            queries.append(f'buyer={seller_username_filter}')
         if status_filter is not None:
             if isinstance(status_filter, str):
                 queries.append(f'state={status_filter}')

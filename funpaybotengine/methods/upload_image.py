@@ -32,7 +32,6 @@ class UploadImage(FunPayMethod[int], BaseModel):
             locale=locale,
             data={'file': open(file, 'rb') if isinstance(file, str) else file},
             headers={'X-Requested-With': 'XMLHttpRequest'},
-
             file=file,
         )
 

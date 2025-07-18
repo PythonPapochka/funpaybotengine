@@ -34,7 +34,6 @@ class GetProfilePage(FunPayMethod[ProfilePage], BaseModel):
             allow_anonymous=True,
             parser_cls=ProfilePageParser,
             locale=locale,
-
             id=id,
         )
 

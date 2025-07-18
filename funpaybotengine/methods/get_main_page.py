@@ -42,8 +42,7 @@ class GetMainPage(FunPayMethod[MainPage], BaseModel):
             data={'setlocale': change_locale.value}
             if change_locale is not None
             else {},
-
-            change_locale=change_locale
+            change_locale=change_locale,
         )
 
     def transform_result(self, result: ParserMainPage) -> MainPage:
