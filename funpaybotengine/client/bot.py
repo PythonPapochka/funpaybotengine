@@ -17,7 +17,7 @@ from funpaybotengine.types import (
     RunnerResponse,
     OrderPreviewsBatch,
 )
-from funpaybotengine.utils import random_runner_tag
+from funpaybotengine.utils import random_runner_tag, check_message_text, enforce_message_text_whitespaces
 from funpaybotengine.methods import (
     GetSales,
     GetChatPage,
@@ -182,12 +182,12 @@ class Bot(BaseBot):
 
     @overload
     async def send_message(
-        self, chat_id: int | str, text: str = ..., image: None = ...
+        self, chat_id: int | str, text: str = ..., image: None = ..., enforce_whitespaces: bool = ...
     ) -> Message: ...
 
     @overload
     async def send_message(
-        self, chat_id: int | str, text: None = ..., image: str | BytesIO | int = ...
+        self, chat_id: int | str, text: None = ..., image: str | BytesIO | int = ..., enforce_whitespaces: bool = ...
     ) -> Message: ...
 
     async def send_message(
@@ -195,6 +195,7 @@ class Bot(BaseBot):
         chat_id: int | str,
         text: str | None = None,
         image: str | BytesIO | int | None = None,
+        enforce_whitespaces: bool = True
     ) -> Message:
         """
         Send a message to a chat.
@@ -203,9 +204,20 @@ class Bot(BaseBot):
         The image can be a file path (``str``), a file-like object (``BytesIO``),
         or an existing image ID (``int``).
 
+        .. note::
+            By default, FunPay trims the message text and replaces multiple consecutive spaces
+            or line breaks with a single space or line break.
+
+            If ``enforce_whitespaces`` is ``True`` (default: ``True``),
+            this method preserves the exact number of spaces and line breaks by appending
+            an invisible tag ``[a][/a]`` after each one (except the last), preventing FunPay
+            from collapsing them.
+
         :param chat_id: Target chat ID.
         :param text: Text content of the message.
         :param image: Image to send: file path, file-like object, or existing image ID.
+        :param enforce_whitespaces: whether to preserve the exact number of spaces and line breaks
+            or not. Defaults to ``True``.
 
         :returns: The resulting message object.
         """
@@ -222,6 +234,10 @@ class Bot(BaseBot):
                 image_id = await self.upload_chat_image(image)
             else:
                 image_id = image
+        elif text is not None:
+            if enforce_whitespaces:
+                text = enforce_message_text_whitespaces(text)
+            check_message_text(text)
 
         msg_data = SendingMessageData(chat_id=chat_id, message_text=text or '', image_id=image_id)
         data = RunnerRequestData(

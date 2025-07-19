@@ -73,23 +73,35 @@ def enforce_message_text_whitespaces(
     :return: The modified message text with spacing and/or line breaks preserved.
     """
     if enforce_spaces:
-        message_text = re.sub(' {2,}', _replace_spaces, message_text)
-        if message_text.startswith(' '):
-            message_text = '[a][/a]' + message_text
+        message_text = re.sub(r' {2,}', _replace_multiple_spaces, message_text)
+        message_text = re.sub(r'^ |\n ', _replace_first_space, message_text)
+        message_text = re.sub(r' $| \n', _replace_last_space, message_text)
 
     if enforce_line_breaks:
         message_text = re.sub('\n{2,}', _replace_line_breaks, message_text)
+        message_text = re.sub('\n$', '\n[a][/a]', message_text)
         if message_text.startswith('\n'):
             message_text = '[a][/a]' + message_text
 
     return message_text
 
 
-def _replace_spaces(match: re.Match[str]) -> str:
-    spaces_amount = len(match.group(0))
+def _replace_multiple_spaces(match: re.Match[str]) -> str:
+    spaces_amount = len(match.group())
     return ' [a][/a]' * (spaces_amount - 1) + ' '
 
 
+def _replace_first_space(match: re.Match[str]) -> str:
+    if match.group().startswith('\n'):
+        return '\n[a][/a] '
+    return '[a][/a] '
+
+
+def _replace_last_space(match: re.Match[str]) -> str:
+    if match.group().endswith('\n'):
+        return ' [a][/a]\n'
+    return ' [a][/a]'
+
 def _replace_line_breaks(match: re.Match[str]) -> str:
-    breaks_amount = len(match.group(0))
+    breaks_amount = len(match.group())
     return '\n[a][/a]' * (breaks_amount - 1) + '\n'
