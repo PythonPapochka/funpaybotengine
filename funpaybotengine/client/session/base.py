@@ -58,14 +58,12 @@ class BaseSession(ABC):
         timeout: float | None = None,
     ) -> Response[MethodReturnType]: ...
 
-    def check_status_code(
-        self, method: FunPayMethod[Any], status_code: int | HTTPStatus
-    ) -> None:
+    def check_status_code(self, method: FunPayMethod[Any], status_code: int | HTTPStatus) -> None:
         if status_code in method.expected_status_codes:
             return
 
         if status_code >= HTTPStatus.INTERNAL_SERVER_ERROR:
-            raise FunPayServerError(method=method)
+            raise FunPayServerError(method=method, status=status_code)
 
         if status_code not in _exceptions:
             raise UnexpectedHTTPStatusError(method=method, status=status_code)
