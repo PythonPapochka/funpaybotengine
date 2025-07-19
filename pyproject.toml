@@ -75,7 +75,7 @@ warn_required_dynamic_aliases = true
 
 
 [tool.ruff]
-line-length = 88
+line-length = 99
 exclude = [
     ".git",
     "build",

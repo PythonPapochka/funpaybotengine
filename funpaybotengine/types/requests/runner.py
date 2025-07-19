@@ -10,7 +10,7 @@ __all__ = (
     'RequestNodeInfo',
     'NodeRequestObject',
     'Action',
-    'ActionNodeInfo',
+    'SendingMessageData',
     'SendMessageAction',
     'RunnerRequestData',
 )
@@ -18,7 +18,7 @@ import json
 from typing import Literal
 from abc import ABC, abstractmethod
 
-from pydantic import BaseModel, computed_field, Field, AliasChoices
+from pydantic import Field, BaseModel, AliasChoices, computed_field
 
 from funpaybotengine.base import BindableObject
 
@@ -44,8 +44,7 @@ class OrdersCountersRequestObject(RequestableObject, BaseModel):
     """User ID whose order counters are being requested."""
 
     runner_tag: str = Field(
-        serialization_alias='tag',
-        validation_alias=AliasChoices('runner_tag', 'tag')
+        serialization_alias='tag', validation_alias=AliasChoices('runner_tag', 'tag')
     )
     """Runner tag used for request tracking."""
 
@@ -67,8 +66,7 @@ class ChatCounterRequestObject(RequestableObject, BaseModel):
     """User ID whose chat counter is being requested."""
 
     runner_tag: str = Field(
-        serialization_alias='tag',
-        validation_alias=AliasChoices('runner_tag', 'tag')
+        serialization_alias='tag', validation_alias=AliasChoices('runner_tag', 'tag')
     )
     """Runner tag used for request tracking."""
 
@@ -90,8 +88,7 @@ class CPURequestObject(RequestableObject, BaseModel):
     """User ID whose currently viewed offer info is being requested."""
 
     runner_tag: str = Field(
-        serialization_alias='tag',
-        validation_alias=AliasChoices('runner_tag', 'tag')
+        serialization_alias='tag', validation_alias=AliasChoices('runner_tag', 'tag')
     )
     """Runner tag used for request tracking."""
 
@@ -113,8 +110,7 @@ class ChatBookmarksRequestObject(RequestableObject, BaseModel):
     """User ID whose chat bookmarks are being requested."""
 
     runner_tag: str = Field(
-        serialization_alias='tag',
-        validation_alias=AliasChoices('runner_tag', 'tag')
+        serialization_alias='tag', validation_alias=AliasChoices('runner_tag', 'tag')
     )
     """Runner tag used for request tracking."""
 
@@ -136,15 +132,14 @@ class RequestNodeInfo(BaseModel):
     """
 
     chat_id: int | str = Field(
-        serialization_alias='node',
-        validation_alias=AliasChoices('chat_id', 'node')
+        serialization_alias='node', validation_alias=AliasChoices('chat_id', 'node')
     )
     """Chat ID or name whose message history is being requested."""
 
     after_message_id: int = Field(
         default=0,
         serialization_alias='last_message',
-        validation_alias=AliasChoices('after_message_id', 'last_message ')
+        validation_alias=AliasChoices('after_message_id', 'last_message '),
     )
     """
     ID of the last message (start point for history retrieval).
@@ -172,14 +167,12 @@ class NodeRequestObject(RequestableObject, BaseModel):
     """
 
     chat_id: int | str = Field(
-        serialization_alias='id',
-        validation_alias=AliasChoices('chat_id', 'id')
+        serialization_alias='id', validation_alias=AliasChoices('chat_id', 'id')
     )
     """Chat ID or name whose history is being requested."""
 
     runner_tag: str = Field(
-        serialization_alias='tag',
-        validation_alias=AliasChoices('runner_tag', 'tag')
+        serialization_alias='tag', validation_alias=AliasChoices('runner_tag', 'tag')
     )
     """Runner tag used for request tracking."""
 
@@ -209,28 +202,27 @@ class Action(ABC, BaseModel):
     """Action type identifier."""
 
 
-class ActionNodeInfo(BaseModel):
+class SendingMessageData(BaseModel):
     """
-    Chat node metadata used in ``SendMessageAction.data``.
+    Chat node metadata used in ``SendMessageAction.message_data``.
     """
 
     chat_id: int | str = Field(
-        serialization_alias='node',
-        validation_alias=AliasChoices('chat_id', 'node')
+        serialization_alias='node', validation_alias=AliasChoices('chat_id', 'node')
     )
     """Chat ID or name where the message should be sent."""
 
     after_message_id: int = Field(
         default=99999999999,
         serialization_alias='last_message',
-        validation_alias=AliasChoices('after_message_id', 'last_message')
+        validation_alias=AliasChoices('after_message_id', 'last_message'),
     )
     """Unused field (currently has no effect)."""
 
     message_text: str = Field(
         default='',
         serialization_alias='content',
-        validation_alias=AliasChoices('message_text', 'content')
+        validation_alias=AliasChoices('message_text', 'content'),
     )
     """
     Text content of the message.
@@ -251,11 +243,11 @@ class SendMessageAction(Action, BaseModel):
     Action that sends a message to a chat.
     """
 
-    message_data: ActionNodeInfo = Field(
+    message_data: SendingMessageData = Field(
         serialization_alias='data',
-        validation_alias=AliasChoices('message_data', 'data')
+        validation_alias=AliasChoices('message_data', 'data'),
     )
-    """Chat metadata for message delivery."""
+    """Message data."""
 
     @computed_field
     def action(self) -> str:
@@ -270,7 +262,7 @@ class RunnerRequestData(BindableObject, BaseModel):
     requested_objects: list[RequestableObject] | Literal[False] = Field(
         default=False,
         serialization_alias='objects',
-        validation_alias=AliasChoices('objects', 'requested_objects')
+        validation_alias=AliasChoices('objects', 'requested_objects'),
     )
     """
     Optional list of objects to request (or ``False`` if none).
@@ -281,7 +273,7 @@ class RunnerRequestData(BindableObject, BaseModel):
     action: Action | Literal[False] = Field(
         default=False,
         serialization_alias='request',
-        validation_alias=AliasChoices('request', 'action')
+        validation_alias=AliasChoices('request', 'action'),
     )
     """
     Optional action to perform (e.g., send message).

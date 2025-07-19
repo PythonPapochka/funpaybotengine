@@ -46,9 +46,7 @@ class TransactionInfo(FunPayObject, BaseModel):
     status: TransactionStatus
     """Transaction status."""
 
-    data: Annotated[
-        Mapping[str, str], BeforeValidator(TransactionInfo._convert_to_immutable)
-    ]
+    data: Annotated[Mapping[str, str], BeforeValidator(TransactionInfo._convert_to_immutable)]
     """Transaction data."""
 
     @staticmethod

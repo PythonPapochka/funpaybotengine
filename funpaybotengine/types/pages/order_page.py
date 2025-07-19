@@ -63,17 +63,13 @@ class OrderPage(FunPayPage, BaseModel):
     def short_description(self) -> str | None:
         """Order short description (title)."""
 
-        return self._first_found(
-            ['short description', 'краткое описание', 'короткий опис']
-        )
+        return self._first_found(['short description', 'краткое описание', 'короткий опис'])
 
     @property
     def full_description(self) -> str | None:
         """Order full description (detailed description)."""
 
-        return self._first_found(
-            ['detailed description', 'подробное описание', 'докладний опис']
-        )
+        return self._first_found(['detailed description', 'подробное описание', 'докладний опис'])
 
     @property
     def amount(self) -> int | None:

@@ -44,9 +44,7 @@ class AioHttpSession(BaseSession):
 
     async def session(self) -> ClientSession:
         if self._session is None or self._session.closed:
-            self._session = ClientSession(
-                proxy=self.proxy, base_url='https://funpay.com'
-            )
+            self._session = ClientSession(proxy=self.proxy, base_url='https://funpay.com')
         return self._session
 
     async def close(self) -> None:
@@ -70,8 +68,7 @@ class AioHttpSession(BaseSession):
 
         if not method.allow_anonymous and method.bot.anonymous:
             raise Exception(
-                f"Method '{method.__class__.__name__}' "
-                f'cannot be executed as an anonymous user. '
+                f"Method '{method.__class__.__name__}' cannot be executed as an anonymous user. "
             )  # todo
 
         session = await self.session()
@@ -83,15 +80,13 @@ class AioHttpSession(BaseSession):
         if method.bot.phpsessid:
             session.cookie_jar.update_cookies({'PHPSESSID': method.bot.phpsessid})
 
-        timeout_obj = ClientTimeout(
-            total=timeout if timeout is not None else method.timeout
-        )
+        timeout_obj = ClientTimeout(total=timeout if timeout is not None else method.timeout)
 
         url_to_log = (
             method.url
             if URL(method.url).is_absolute()
-            else str(session._base_url.join(URL(self.resolve_url(method))))
-        )  # type: ignore[union-attr]
+            else str(session._base_url.join(URL(self.resolve_url(method))))  # type: ignore[union-attr]
+        )
 
         session_logger.info(f'Making {method.method.name} request to {url_to_log}')
         start_time = time.time()
@@ -113,17 +108,14 @@ class AioHttpSession(BaseSession):
             raise Exception('Unsupported HTTP method')  # todo: Custom exception
 
         session_logger.debug(
-            f'Requesting {url_to_log} took {time.time() - start_time}s. '
-            f'Status: {response.status}.'
+            f'Requesting {url_to_log} took {time.time() - start_time}s. Status: {response.status}.'
         )
 
         self.check_status_code(method, response.status)
 
         start_time = time.time()
         result = method.to_obj(await response.text())
-        session_logger.debug(
-            f'Parsing response of {url_to_log} took {time.time() - start_time}s.'
-        )
+        session_logger.debug(f'Parsing response of {url_to_log} took {time.time() - start_time}s.')
 
         cookies: dict[str, str] = {}
 

@@ -66,9 +66,7 @@ class ProfilePage(FunPayPage, BaseModel):
     @staticmethod
     def _convert_to_immutable(
         value: dict[SubcategoryType, dict[int, list[OfferPreview]]],
-    ) -> (
-        MappingProxyType[SubcategoryType, Mapping[int, tuple[OfferPreview, ...]]] | None
-    ):
+    ) -> MappingProxyType[SubcategoryType, Mapping[int, tuple[OfferPreview, ...]]] | None:
         if value is None:
             return None
 

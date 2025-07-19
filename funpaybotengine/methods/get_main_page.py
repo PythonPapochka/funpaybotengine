@@ -31,17 +31,13 @@ class GetMainPage(FunPayMethod[MainPage], BaseModel):
     Defaults to ``None``.
     """
 
-    def __init__(
-        self, locale: Language | None = None, change_locale: Language | None = None
-    ):
+    def __init__(self, locale: Language | None = None, change_locale: Language | None = None):
         super().__init__(
             url='',
             locale=locale,
             parser_cls=MainPageParser,
             allow_anonymous=True,
-            data={'setlocale': change_locale.value}
-            if change_locale is not None
-            else {},
+            data={'setlocale': change_locale.value} if change_locale is not None else {},
             change_locale=change_locale,
         )
 
