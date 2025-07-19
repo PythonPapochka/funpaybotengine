@@ -17,6 +17,7 @@ from funpaybotengine.types import (
     RunnerResponse,
     OrderPreviewsBatch,
 )
+from funpaybotengine.utils import random_runner_tag
 from funpaybotengine.methods import (
     GetSales,
     GetChatPage,
@@ -39,13 +40,16 @@ from funpaybotengine.types.pages import (
     ProfilePage,
     SubcategoryPage,
 )
-from funpaybotengine.types.requests import RunnerRequestData, SendMessageAction, NodeRequestObject, ActionNodeInfo, RequestNodeInfo
+from funpaybotengine.types.requests import (
+    NodeRequestObject,
+    RunnerRequestData,
+    SendMessageAction,
+    SendingMessageData,
+)
 from funpaybotengine.client.base_bot import BaseBot
 from funpaybotengine.client.session.base import Response
 from funpaybotengine.client.categories_cache import CategoriesCache
 from funpaybotengine.client.session.aiohttp_session import AioHttpSession
-import random
-import string
 
 
 if TYPE_CHECKING:
@@ -178,32 +182,40 @@ class Bot(BaseBot):
 
     @overload
     async def send_message(
-            self,
-            chat_id: int | str,
-            text: str = ...,
-            image: None = ...
+        self, chat_id: int | str, text: str = ..., image: None = ...
     ) -> Message: ...
 
     @overload
     async def send_message(
-            self,
-            chat_id: int | str,
-            text: None = ...,
-            image: str | BytesIO | int = ...
+        self, chat_id: int | str, text: None = ..., image: str | BytesIO | int = ...
     ) -> Message: ...
 
     async def send_message(
-            self,
-            chat_id: int | str,
-            text: str | None = None,
-            image: str | BytesIO | int | None = None
+        self,
+        chat_id: int | str,
+        text: str | None = None,
+        image: str | BytesIO | int | None = None,
     ) -> Message:
+        """
+        Send a message to a chat.
+
+        You must provide **either** a text message or an image — not both.
+        The image can be a file path (``str``), a file-like object (``BytesIO``),
+        or an existing image ID (``int``).
+
+        :param chat_id: Target chat ID.
+        :param text: Text content of the message.
+        :param image: Image to send: file path, file-like object, or existing image ID.
+
+        :returns: The resulting message object.
+        """
+
         assert isinstance(text, str) or isinstance(image, str | BytesIO | int), (
             f'Invalid message text or image input: '
             f"either provide message text ('text') (got {text=}), "
-            f"or provide image ID / path to image / image file strem ('image') (got {image=})."
+            f"or provide image ID / path to image / image file stream ('image') (got {image=})."
         )
-        tag = ''.join(random.choice(string.ascii_lowercase) for _ in range(8))  # todo: function
+
         image_id = None
         if image is not None:
             if isinstance(image, str | BytesIO):
@@ -211,20 +223,13 @@ class Bot(BaseBot):
             else:
                 image_id = image
 
-        action_node_info = ActionNodeInfo(
-            chat_id=chat_id,
-            message_text=text if text is not None else '',
-            image_id=image_id
-        )
-        action = SendMessageAction(message_data=action_node_info)
-
+        msg_data = SendingMessageData(chat_id=chat_id, message_text=text or '', image_id=image_id)
         data = RunnerRequestData(
-            requested_objects=[NodeRequestObject(chat_id=chat_id, runner_tag=tag)],
-            action=action,
+            requested_objects=[NodeRequestObject(chat_id=chat_id, runner_tag=random_runner_tag())],
+            action=SendMessageAction(message_data=msg_data),
         )
-        print(data.serialize_as_request_data())
         result: RunnerResponse = await self.runner_request(data=data)
-        if result.response.error:  # type: ignore[union-attr] # will have response
+        if result.response and result.response.error:
             raise Exception(result.response.error)  # todo
 
         return result.nodes[0].data.messages[-1]  # type: ignore[index] # will have nodes
@@ -373,8 +378,7 @@ class Bot(BaseBot):
         subcategory: Subcategory | None = None,
     ) -> SubcategoryPage:
         assert (
-            isinstance(subcategory_type, SubcategoryType)
-            and isinstance(subcategory_id, int)
+            isinstance(subcategory_type, SubcategoryType) and isinstance(subcategory_id, int)
         ) or isinstance(subcategory, Subcategory), (
             f'Invalid subcategory input: '
             f"either provide both 'subcategory_type' and 'subcategory_id' "
@@ -391,9 +395,7 @@ class Bot(BaseBot):
         return result.response_obj
 
     @overload
-    async def get_order_page(
-        self, order_id: str = ..., order: None = ...
-    ) -> OrderPage: ...
+    async def get_order_page(self, order_id: str = ..., order: None = ...) -> OrderPage: ...
 
     @overload
     async def get_order_page(
@@ -403,9 +405,7 @@ class Bot(BaseBot):
     async def get_order_page(
         self, order_id: str | None = None, order: OrderPreview | OrderPage | None = None
     ) -> OrderPage:
-        assert isinstance(order_id, str) or isinstance(
-            order, OrderPreview | OrderPage
-        ), (
+        assert isinstance(order_id, str) or isinstance(order, OrderPreview | OrderPage), (
             f'Invalid order_id input: '
             f"either provide 'order_id' (got {order_id=}), "
             f"or provide 'order' object (got {order=})."
