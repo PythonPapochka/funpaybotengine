@@ -6,7 +6,7 @@ __all__ = ('HandlerManager',)
 import sys
 import inspect
 import pathlib
-from typing import Any
+from typing import Any, Type
 from collections.abc import Callable, Awaitable, AsyncGenerator
 
 from funpaybotengine.dispatching.events.base import Event
@@ -15,8 +15,9 @@ from funpaybotengine.dispatching.handlers.handler import Handler
 
 
 class HandlerManager:
-    def __init__(self) -> None:
+    def __init__(self, event_type: Type[Event[Any]] | None = None) -> None:
         self.handlers: dict[str, Handler] = {}
+        self.event_type = event_type
 
     def add_handler(self, handler: Handler) -> None:
         if handler.id in self.handlers:
@@ -29,7 +30,13 @@ class HandlerManager:
             del self.handlers[handler_id]
 
     async def find_handlers(self, event: Event[Any]) -> AsyncGenerator[Handler, None]:
+        if self.event_type is not None and not isinstance(event, self.event_type):
+            return
+
         for handler in self.handlers.values():
+            if handler.event_type is not None and not isinstance(event, handler.event_type):
+                continue
+
             if handler.filter is None:
                 yield handler
             else:
@@ -41,16 +48,23 @@ class HandlerManager:
         self,
         func: Callable[[Event[Any], ...], Awaitable[Any]] | None = None,  # type: ignore[misc]
         *,
+        event_type: Type[Event[Any]] | None = None,
         id: str | None = None,
         filter: Filter | None = None,
     ) -> Any:
 
+        if self.event_type is not None and event_type is not None:
+            raise Exception('Cannot assign event type to this handler.')  # todo: exception
+
+
         def inner(
                 handler: Callable[[Event[Any], ...], Awaitable[Any]]  # type: ignore[misc]
         ) -> Callable[[Event[Any], ...], Awaitable[Any]]:  # type: ignore[misc]
-
             handler_obj = Handler(
-                id=id or gen_default_handler_id(handler), filter=filter, callable=handler
+                id=id or gen_default_handler_id(handler),
+                event_type=self.event_type if event_type is not None else event_type,
+                filter=filter,
+                callable=handler
             )
             self.add_handler(handler_obj)
             return handler

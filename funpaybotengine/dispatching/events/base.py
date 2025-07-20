@@ -9,7 +9,7 @@ from typing import Any, Generic, TypeVar
 from funpaybotengine.base import BindableObject
 
 
-EventObject = TypeVar('EventObject')
+EventObject = TypeVar('EventObject', bound=Any)
 
 
 class Event(BindableObject, Generic[EventObject]):
