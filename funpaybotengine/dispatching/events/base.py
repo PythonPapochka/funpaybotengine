@@ -1,0 +1,45 @@
+__all__ = ('Event', 'RunnerEvent', 'BotEngineEvent')
+
+
+from funpaybotengine.base import BindableObject
+from typing import Any, Generic, TypeVar
+
+
+EventObject = TypeVar('EventObject')
+
+
+class Event(BindableObject, Generic[EventObject]):
+    def __init__(self, obj: EventObject) -> None:
+        super().__init__()
+
+        self._object: EventObject = obj
+        self._data: dict[Any, Any] = {}
+
+    def __setitem__(self, key: Any, value: Any) -> None:
+        self._data[key] = value
+
+    def __getitem__(self, key: Any) -> Any:
+        return self._data[key]
+
+    def get(self, key: Any) -> Any:
+        return self._data.get(key, None)
+
+    @property
+    def object(self) -> EventObject:
+        return self._object
+
+
+class RunnerEvent(Event[EventObject], Generic[EventObject]):
+    def __init__(self, obj: EventObject, tag: str) -> None:
+        super().__init__(obj=obj)
+
+        self._tag = tag
+
+    @property
+    def tag(self) -> str:
+        return self._tag
+
+
+class BotEngineEvent(Event[EventObject], Generic[EventObject]):
+    def __init__(self, obj: EventObject) -> None:
+        super().__init__(obj)
