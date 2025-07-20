@@ -24,10 +24,16 @@ class Filter(ABC):
     @abstractmethod
     async def __call__(self, event: Event[Any], *args: Any, **kwargs: Any) -> bool: ...
 
-    def __and__(self, other: Filter) -> AndFilter:
+    def __and__(
+        self, other: Filter | CallableFilterProtocol | AwaitableFilterProtocol
+    ) -> AndFilter:
+        if not isinstance(other, Filter):
+            other = _convert_filters([other])[0]
         return AndFilter(self, other)
 
-    def __or__(self, other: Filter) -> OrFilter:
+    def __or__(self, other: Filter | CallableFilterProtocol | AwaitableFilterProtocol) -> OrFilter:
+        if not isinstance(other, Filter):
+            other = _convert_filters([other])[0]
         return OrFilter(self, other)
 
     def __invert__(self) -> NotFilter:
@@ -90,11 +96,9 @@ def _convert_filters(
     return converted_filters
 
 
-def any_of(
-    filters: Iterable[CallableFilterProtocol | AwaitableFilterProtocol | Filter],
-) -> OrFilter:
+def any_of(*filters: CallableFilterProtocol | AwaitableFilterProtocol | Filter) -> OrFilter:
     return OrFilter(*_convert_filters(filters))
 
 
-def all_of(filters: Iterable[Filter]) -> AndFilter:
+def all_of(*filters: CallableFilterProtocol | AwaitableFilterProtocol | Filter) -> AndFilter:
     return AndFilter(*_convert_filters(filters))
