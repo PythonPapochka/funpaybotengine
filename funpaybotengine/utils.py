@@ -102,6 +102,7 @@ def _replace_last_space(match: re.Match[str]) -> str:
         return ' [a][/a]\n'
     return ' [a][/a]'
 
+
 def _replace_line_breaks(match: re.Match[str]) -> str:
     breaks_amount = len(match.group())
     return '\n[a][/a]' * (breaks_amount - 1) + '\n'

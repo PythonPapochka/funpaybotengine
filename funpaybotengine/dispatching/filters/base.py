@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-__all__ = ('Filter', )
 
-from abc import ABC, abstractmethod
-from typing import Any, Protocol, Awaitable, Iterable, TYPE_CHECKING
+__all__ = ('Filter',)
+
 import inspect
+from typing import TYPE_CHECKING, Any, Iterable, Protocol, Awaitable
+from abc import ABC, abstractmethod
+
+
 if TYPE_CHECKING:
     from funpaybotengine.dispatching.events.base import Event
 
@@ -36,9 +39,7 @@ class AndFilter(Filter):
         self._filters = filters
 
     async def __call__(self, event: Event[Any], *args: Any, **kwargs: Any) -> bool:
-        return all(
-            i(event, *args, **kwargs) for i in self._filters
-        )
+        return all(i(event, *args, **kwargs) for i in self._filters)
 
 
 class OrFilter(Filter):
@@ -46,9 +47,7 @@ class OrFilter(Filter):
         self._filters = filters
 
     async def __call__(self, event: Event[Any], *args: Any, **kwargs: Any) -> bool:
-        return any(
-            i(event, *args, **kwargs) for i in self._filters
-        )
+        return any(i(event, *args, **kwargs) for i in self._filters)
 
 
 class NotFilter(Filter):
@@ -75,8 +74,8 @@ class FilterFromAsyncFunction(Filter):
         return await self._function(event, *args, **kwargs)
 
 
-def  _convert_filters(
-        filters: Iterable[CallableFilterProtocol | AwaitableFilterProtocol | Filter]
+def _convert_filters(
+    filters: Iterable[CallableFilterProtocol | AwaitableFilterProtocol | Filter],
 ) -> list[Filter]:
     converted_filters: list[Filter] = []
     for i in filters:
@@ -92,7 +91,7 @@ def  _convert_filters(
 
 
 def any_of(
-        filters: Iterable[CallableFilterProtocol | AwaitableFilterProtocol | Filter]
+    filters: Iterable[CallableFilterProtocol | AwaitableFilterProtocol | Filter],
 ) -> OrFilter:
     return OrFilter(*_convert_filters(filters))
 

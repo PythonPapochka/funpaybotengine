@@ -17,7 +17,11 @@ from funpaybotengine.types import (
     RunnerResponse,
     OrderPreviewsBatch,
 )
-from funpaybotengine.utils import random_runner_tag, check_message_text, enforce_message_text_whitespaces
+from funpaybotengine.utils import (
+    random_runner_tag,
+    check_message_text,
+    enforce_message_text_whitespaces,
+)
 from funpaybotengine.methods import (
     GetSales,
     GetChatPage,
@@ -182,12 +186,20 @@ class Bot(BaseBot):
 
     @overload
     async def send_message(
-        self, chat_id: int | str, text: str = ..., image: None = ..., enforce_whitespaces: bool = ...
+        self,
+        chat_id: int | str,
+        text: str = ...,
+        image: None = ...,
+        enforce_whitespaces: bool = ...,
     ) -> Message: ...
 
     @overload
     async def send_message(
-        self, chat_id: int | str, text: None = ..., image: str | BytesIO | int = ..., enforce_whitespaces: bool = ...
+        self,
+        chat_id: int | str,
+        text: None = ...,
+        image: str | BytesIO | int = ...,
+        enforce_whitespaces: bool = ...,
     ) -> Message: ...
 
     async def send_message(
@@ -195,7 +207,7 @@ class Bot(BaseBot):
         chat_id: int | str,
         text: str | None = None,
         image: str | BytesIO | int | None = None,
-        enforce_whitespaces: bool = True
+        enforce_whitespaces: bool = True,
     ) -> Message:
         """
         Send a message to a chat.

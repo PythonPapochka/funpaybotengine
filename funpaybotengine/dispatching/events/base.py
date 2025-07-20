@@ -1,8 +1,12 @@
+from __future__ import annotations
+
+
 __all__ = ('Event', 'RunnerEvent', 'BotEngineEvent')
 
 
-from funpaybotengine.base import BindableObject
 from typing import Any, Generic, TypeVar
+
+from funpaybotengine.base import BindableObject
 
 
 EventObject = TypeVar('EventObject')
