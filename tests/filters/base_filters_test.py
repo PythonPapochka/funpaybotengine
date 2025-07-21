@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from typing import Any
-from pytest import FixtureRequest
 
 import pytest
+from pytest import FixtureRequest
 
 from funpaybotengine.dispatching.events import Event, RunnerEvent
 from funpaybotengine.dispatching.filters import (
@@ -75,12 +75,13 @@ def event() -> RunnerEvent[object]:
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    'f1,f2,expected', [
+    'f1,f2,expected',
+    [
         ('true_filter', 'true_filter', True),
         ('true_filter', 'false_filter', False),
         ('false_filter', 'true_filter', False),
-        ('false_filter', 'false_filter', False)
-    ]
+        ('false_filter', 'false_filter', False),
+    ],
 )
 async def test_and_operator(
     f1: str, f2: str, expected: bool, request: FixtureRequest, event: RunnerEvent[object]
@@ -92,12 +93,13 @@ async def test_and_operator(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    'f1,f2,expected', [
+    'f1,f2,expected',
+    [
         ('true_filter', 'true_filter', True),
         ('true_filter', 'false_filter', True),
         ('false_filter', 'true_filter', True),
         ('false_filter', 'false_filter', False),
-    ]
+    ],
 )
 async def test_or_operator(
     f1: str, f2: str, expected: bool, request: FixtureRequest, event: RunnerEvent[object]
@@ -109,10 +111,11 @@ async def test_or_operator(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    'f,expected', [
+    'f,expected',
+    [
         ('true_filter', False),
         ('false_filter', True),
-    ]
+    ],
 )
 async def test_not_operator(
     f: str, expected: bool, request: FixtureRequest, event: RunnerEvent[object]
@@ -124,12 +127,13 @@ async def test_not_operator(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    'f_list,expected', [
+    'f_list,expected',
+    [
         (['true_filter', 'true_filter'], True),
         (['true_filter', 'false_filter'], False),
         (['false_filter', 'false_filter'], False),
-        ([], True)
-    ]
+        ([], True),
+    ],
 )
 async def test_all_of_filter(
     f_list: list[str], expected: bool, request: FixtureRequest, event: RunnerEvent[object]
@@ -142,12 +146,13 @@ async def test_all_of_filter(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    'f_list,expected', [
+    'f_list,expected',
+    [
         (['true_filter', 'true_filter'], True),
         (['true_filter', 'false_filter'], True),
         (['false_filter', 'false_filter'], False),
-        ([], False)
-    ]
+        ([], False),
+    ],
 )
 async def test_any_of_filter(
     f_list: list[str], expected: bool, request: FixtureRequest, event: RunnerEvent[object]
@@ -160,12 +165,13 @@ async def test_any_of_filter(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    'f_func,expected', [
+    'f_func,expected',
+    [
         ('true_filter_function', True),
         ('true_filter_async_function', True),
         ('false_filter_function', False),
-        ('false_filter_async_function', False)
-    ]
+        ('false_filter_async_function', False),
+    ],
 )
 async def test_function_filters_conversion(
     f_func: str,

@@ -5,7 +5,7 @@ __all__ = ('Handler',)
 
 from typing import TYPE_CHECKING, Any, Type
 from dataclasses import dataclass
-from collections.abc import Callable
+from collections.abc import Callable, Awaitable
 
 
 if TYPE_CHECKING:
@@ -18,4 +18,4 @@ class Handler:
     id: str
     event_type: Type[Event[Any]]
     filter: Filter | None
-    callable: Callable[[Event[Any], ...], Any]  # type: ignore[misc]  # expected
+    callable: Callable[[Event[Any], ...], Awaitable[Any]]  # type: ignore[misc]  # expected

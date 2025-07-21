@@ -140,8 +140,7 @@ class FilterFromFunction(Filter):
     async def __call__(self, event: Event[Any], *args: Any, **kwargs: Any) -> bool:
         if inspect.iscoroutinefunction(self._function):
             return await self._function(event, *args, **kwargs)  # type: ignore[no-any-return]
-        else:
-            return self._function(event, *args, **kwargs)  # type: ignore[return-value]
+        return self._function(event, *args, **kwargs)  # type: ignore[return-value]
 
 
 def _convert_filters(

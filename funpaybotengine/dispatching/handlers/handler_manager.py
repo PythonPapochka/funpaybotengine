@@ -6,7 +6,8 @@ __all__ = ('HandlerManager',)
 import sys
 import inspect
 import pathlib
-from typing import Any, Type
+from typing import TYPE_CHECKING, Any, Type
+from types import MappingProxyType
 from collections.abc import Callable, Awaitable, AsyncGenerator
 
 from funpaybotengine.dispatching.events.base import Event
@@ -14,26 +15,31 @@ from funpaybotengine.dispatching.filters.base import Filter
 from funpaybotengine.dispatching.handlers.handler import Handler
 
 
+if TYPE_CHECKING:
+    from funpaybotengine.dispatching.routers.base import Router
+
+
 class HandlerManager:
-    def __init__(self, event_type: Type[Event[Any]] | None = None) -> None:
-        self.handlers: dict[str, Handler] = {}
+    def __init__(self, router: Router, event_type: Type[Event[Any]] | None = None) -> None:
+        self._handlers: dict[str, Handler] = {}
+        self._router = router
         self.event_type = event_type
 
     def add_handler(self, handler: Handler) -> None:
-        if handler.id in self.handlers:
+        if handler.id in self._handlers:
             raise Exception(f'Handler with ID {handler.id} already exists.')  # todo: Exception
 
-        self.handlers[handler.id] = handler
+        self._handlers[handler.id] = handler
 
     def remove_handler(self, handler_id: str) -> None:
-        if handler_id in self.handlers:
-            del self.handlers[handler_id]
+        if handler_id in self._handlers:
+            del self._handlers[handler_id]
 
-    async def find_handlers(self, event: Event[Any]) -> AsyncGenerator[Handler, None]:
+    async def filter_handlers(self, event: Event[Any]) -> AsyncGenerator[Handler, None]:
         if self.event_type is not None and not isinstance(event, self.event_type):
             return
 
-        for handler in self.handlers.values():
+        for handler in self._handlers.values():
             if handler.event_type is not None and not isinstance(event, handler.event_type):
                 continue
 
@@ -70,6 +76,14 @@ class HandlerManager:
         if func is None:
             return inner
         return inner(func)
+
+    @property
+    def handlers(self) -> MappingProxyType[str, Handler]:
+        return MappingProxyType(self._handlers)
+
+    @property
+    def router(self) -> Router:
+        return self._router
 
 
 def gen_default_handler_id(func: Callable[..., Any]) -> str:
