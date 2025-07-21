@@ -27,26 +27,63 @@ class AwaitableFilterProtocol(Protocol):
 
 
 class Filter(ABC):
+    """
+    Abstract base class for all filters.
+
+    All custom filters must inherit from this class and implement the asynchronous
+    ``__call__`` method, which defines the filtering logic.
+
+    Supports logical composition using the following operators:
+        - ``&`` (AND) creates an ``AndFilter``
+        - ``|`` (OR) creates an ``OrFilter``
+        - ``~`` (NOT) creates a ``NotFilter``
+    """
+
     @abstractmethod
     async def __call__(self, event: Event[Any], *args: Any, **kwargs: Any) -> bool: ...
 
     def __and__(
         self, other: Filter | CallableFilterProtocol | AwaitableFilterProtocol
     ) -> AndFilter:
+        """
+        Combines this filter with another using logical AND.
+
+        Returns a new ``AndFilter`` that succeeds only if both filters return ``True``.
+        """
+
         if not isinstance(other, Filter):
             other = _convert_filters([other])[0]
         return AndFilter(self, other)
 
     def __or__(self, other: Filter | CallableFilterProtocol | AwaitableFilterProtocol) -> OrFilter:
+        """
+        Combines this filter with another using logical OR.
+
+        Returns a new ``OrFilter`` that succeeds if at least one filter returns ``True``.
+        """
+
         if not isinstance(other, Filter):
             other = _convert_filters([other])[0]
         return OrFilter(self, other)
 
     def __invert__(self) -> NotFilter:
+        """
+        Inverts the result of this filter.
+
+        Returns a new ``NotFilter`` that returns ``True`` when this filter returns False,
+        and vice versa.
+        """
+
         return NotFilter(self)
 
 
 class AndFilter(Filter):
+    """
+    Composite filter that succeeds only if all wrapped filters succeed.
+
+    Typically, created using the ``&`` operator or ``all_of()`` function.
+    """
+
     def __init__(self, *filters: Filter) -> None:
         self._filters = filters
 
@@ -58,6 +95,12 @@ class AndFilter(Filter):
 
 
 class OrFilter(Filter):
+    """
+    Composite filter that succeeds if at least one wrapped filter succeeds.
+
+    Typically, created using the ``|`` operator or ``any_of()`` function.
+    """
+
     def __init__(self, *filters: Filter) -> None:
         self._filters = filters
 
@@ -69,6 +112,12 @@ class OrFilter(Filter):
 
 
 class NotFilter(Filter):
+    """
+    Inverted filter that negates the result of another filter.
+
+    Typically, created using the ``~`` operator.
+    """
+
     def __init__(self, filter: Filter) -> None:
         self._filter = filter
 
@@ -77,6 +126,12 @@ class NotFilter(Filter):
 
 
 class FilterFromFunction(Filter):
+    """
+    Wrapper that turns a regular function (sync or async) into a ``Filter``.
+
+    Used internally to adapt user-defined callables into the filter system.
+    """
+
     def __init__(self, function: CallableFilterProtocol | AwaitableFilterProtocol) -> None:
         self._function = function
 
@@ -90,6 +145,12 @@ class FilterFromFunction(Filter):
 def _convert_filters(
     filters: Iterable[CallableFilterProtocol | AwaitableFilterProtocol | Filter],
 ) -> list[Filter]:
+    """
+    Converts all function filters to ``FilterFromFunction`` objects.
+
+    :param filters: iterable of filters to convert.
+    :return: list of converted filters.
+    """
     converted_filters: list[Filter] = []
     for i in filters:
         if isinstance(i, Filter):
@@ -101,8 +162,35 @@ def _convert_filters(
 
 
 def any_of(*filters: CallableFilterProtocol | AwaitableFilterProtocol | Filter) -> OrFilter:
+    """
+    Creates a composite filter that returns ``True``
+    if at least one of the given filters returns ``True``.
+
+    This function behaves like the built-in ``any()`` function,
+    but returns a new ``OrFilter`` instance that can be used as a filter object.
+
+    Each passed filter may be:
+    - an instance of ``Filter``,
+    - a synchronous function returning ``bool``,
+    - or an asynchronous function returning ``bool``.
+
+    If no filters are provided, the resulting filter always returns ``False``.
+    """
     return OrFilter(*_convert_filters(filters))
 
 
 def all_of(*filters: CallableFilterProtocol | AwaitableFilterProtocol | Filter) -> AndFilter:
+    """
+    Creates a composite filter that returns ``True`` only if all the given filters return ``True``.
+
+    This function behaves like the built-in ``all()`` function,
+    but returns a new ``AndFilter`` instance that can be used as a filter object.
+
+    Each passed filter may be:
+    - an instance of ``Filter``,
+    - a synchronous function returning ``bool``,
+    - or an asynchronous function returning ``bool``.
+
+    If no filters are provided, the resulting filter always returns ``True``.
+    """
     return AndFilter(*_convert_filters(filters))
