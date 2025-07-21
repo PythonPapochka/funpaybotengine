@@ -52,19 +52,17 @@ class HandlerManager:
         id: str | None = None,
         filter: Filter | None = None,
     ) -> Any:
-
         if self.event_type is not None and event_type is not None:
             raise Exception('Cannot assign event type to this handler.')  # todo: exception
 
-
         def inner(
-                handler: Callable[[Event[Any], ...], Awaitable[Any]]  # type: ignore[misc]
+            handler: Callable[[Event[Any], ...], Awaitable[Any]],  # type: ignore[misc]
         ) -> Callable[[Event[Any], ...], Awaitable[Any]]:  # type: ignore[misc]
             handler_obj = Handler(
                 id=id or gen_default_handler_id(handler),
                 event_type=self.event_type if event_type is not None else event_type,
                 filter=filter,
-                callable=handler
+                callable=handler,
             )
             self.add_handler(handler_obj)
             return handler

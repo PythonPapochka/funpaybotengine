@@ -37,7 +37,8 @@ Issues = "https://github.com/funpyahub/funpaybotengine/issues"
 
 [project.optional-dependencies]
 tests = [
-    "pytest"
+    "pytest",
+    "pytest-asyncio>=1.1.0",
 ]
 dev = [
     "mypy>=1.17.0",
@@ -83,7 +84,6 @@ exclude = [
     "venv",
     ".venv",
     "docs",
-    "tests",
     "*.egg-info"
 ]
 

@@ -3,13 +3,10 @@ from __future__ import annotations
 
 __all__ = (
     'Filter',
-    'AndFilter',
-    'OrFilter',
-    'NotFilter',
-    'FilterFromFunction',
-    'FilterFromAsyncFunction',
     'any_of',
     'all_of',
+    'CallableFilterProtocol',
+    'AwaitableFilterProtocol',
 )
 
 import inspect
@@ -54,7 +51,10 @@ class AndFilter(Filter):
         self._filters = filters
 
     async def __call__(self, event: Event[Any], *args: Any, **kwargs: Any) -> bool:
-        return all(i(event, *args, **kwargs) for i in self._filters)
+        for i in self._filters:
+            if not (await i(event, *args, **kwargs)):
+                return False
+        return True
 
 
 class OrFilter(Filter):
@@ -62,7 +62,10 @@ class OrFilter(Filter):
         self._filters = filters
 
     async def __call__(self, event: Event[Any], *args: Any, **kwargs: Any) -> bool:
-        return any(i(event, *args, **kwargs) for i in self._filters)
+        for i in self._filters:
+            if await i(event, *args, **kwargs):
+                return True
+        return False
 
 
 class NotFilter(Filter):
@@ -70,23 +73,18 @@ class NotFilter(Filter):
         self._filter = filter
 
     async def __call__(self, event: Event[Any], *args: Any, **kwargs: Any) -> bool:
-        return not self._filter(event, *args, **kwargs)
+        return not (await self._filter(event, *args, **kwargs))
 
 
 class FilterFromFunction(Filter):
-    def __init__(self, function: CallableFilterProtocol) -> None:
+    def __init__(self, function: CallableFilterProtocol | AwaitableFilterProtocol) -> None:
         self._function = function
 
     async def __call__(self, event: Event[Any], *args: Any, **kwargs: Any) -> bool:
-        return self._function(event, *args, **kwargs)
-
-
-class FilterFromAsyncFunction(Filter):
-    def __init__(self, function: AwaitableFilterProtocol) -> None:
-        self._function = function
-
-    async def __call__(self, event: Event[Any], *args: Any, **kwargs: Any) -> bool:
-        return await self._function(event, *args, **kwargs)
+        if inspect.iscoroutinefunction(self._function):
+            return await self._function(event, *args, **kwargs)  # type: ignore[no-any-return]
+        else:
+            return self._function(event, *args, **kwargs)  # type: ignore[return-value]
 
 
 def _convert_filters(
@@ -96,11 +94,8 @@ def _convert_filters(
     for i in filters:
         if isinstance(i, Filter):
             converted_filters.append(i)
-        elif inspect.iscoroutinefunction(i):
-            converted_filters.append(FilterFromAsyncFunction(i))
         else:
-            converted_filters.append(FilterFromFunction(i))  # type: ignore[arg-type]
-            # checked above
+            converted_filters.append(FilterFromFunction(i))
 
     return converted_filters
 

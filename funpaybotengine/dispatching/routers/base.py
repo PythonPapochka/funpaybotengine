@@ -1,17 +1,17 @@
 from __future__ import annotations
-from funpaybotengine.dispatching.handlers.handler_manager import HandlerManager
+
 from funpaybotengine.dispatching.events.builtin_events import (
-    ChatInitEvent,
-    ChatChangedEvent,
-    NewMessageEvent,
-    SalesListChangedEvent,
     NewSaleEvent,
+    ChatInitEvent,
+    NewMessageEvent,
+    ChatChangedEvent,
+    NewPurchaseEvent,
+    SalesListChangedEvent,
     SaleStatusChangedEvent,
     PurchasesListChangedEvent,
-    NewPurchaseEvent,
-    PurchaseStatusChangedEvent
+    PurchaseStatusChangedEvent,
 )
-from typing import Generator
+from funpaybotengine.dispatching.handlers.handler_manager import HandlerManager
 
 
 class Router:
@@ -28,15 +28,17 @@ class Router:
         self.on_sale_status_changed_event = HandlerManager(event_type=SaleStatusChangedEvent)
         self.on_purchases_list_changed_event = HandlerManager(event_type=PurchasesListChangedEvent)
         self.on_new_purchase_event = HandlerManager(event_type=NewPurchaseEvent)
-        self.on_purchase_status_changed_event = HandlerManager(event_type=PurchaseStatusChangedEvent)
+        self.on_purchase_status_changed_event = HandlerManager(
+            event_type=PurchaseStatusChangedEvent
+        )
         self.on_event = HandlerManager()
 
     def connect_router(self, router: Router) -> None:
         if router.parent_router is not None:
-            raise Exception("Router is already connected to ...")  # todo: exception
+            raise Exception('Router is already connected to ...')  # todo: exception
 
         if router is self:
-            raise Exception("Cannot connect self")  # todo: exception
+            raise Exception('Cannot connect self')  # todo: exception
 
         # if isinstance(router, 'RootRouter'):  # todo
 
