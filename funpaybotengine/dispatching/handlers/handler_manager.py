@@ -22,12 +22,28 @@ if TYPE_CHECKING:
 class HandlerManager:
     def __init__(self, router: Router, event_type: Type[Event[Any]] | None = None) -> None:
         self._handlers: dict[str, Handler] = {}
+        self._handlers_mapping_proxy = MappingProxyType(self._handlers)
         self._router = router
-        self.event_type = event_type
+        self._event_type = event_type
 
     def add_handler(self, handler: Handler) -> None:
-        if handler.id in self._handlers:
-            raise Exception(f'Handler with ID {handler.id} already exists.')  # todo: Exception
+        root_router = self._router.root_router
+
+        if (exists_handler := root_router.get_handler_by_id(handler.id)) is not None:
+            exists_function_file_path = inspect.getsourcefile(exists_handler.callable)
+            exists_line_no = inspect.getsourcelines(exists_handler.callable)[1]
+
+            function_file_path = inspect.getsourcefile(handler.callable)
+            line_no = inspect.getsourcelines(handler.callable)[1]
+
+            raise ValueError(
+                f'Handler with ID {handler.id} already exists.\n'
+                
+                f'Original handler in router \'{exists_handler.manager.router.id}\' '
+                f'in \"{exists_function_file_path}:{exists_line_no}\"\n'
+                
+                f'Duplicate handler in router \'{handler.manager.router.id}\' '
+                f'in \"{function_file_path}:{line_no}\"')
 
         self._handlers[handler.id] = handler
 
@@ -59,16 +75,18 @@ class HandlerManager:
         filter: Filter | None = None,
     ) -> Any:
         if self.event_type is not None and event_type is not None:
-            raise Exception('Cannot assign event type to this handler.')  # todo: exception
+            raise ValueError(f'Cannot specify event type when using this handler manager.\n'
+                             f'Use @<Router>.on_event(event_type={event_type.__name__}) instead.')
 
         def inner(
             handler: Callable[[Event[Any], ...], Awaitable[Any]],  # type: ignore[misc]
         ) -> Callable[[Event[Any], ...], Awaitable[Any]]:  # type: ignore[misc]
             handler_obj = Handler(
                 id=id or gen_default_handler_id(handler),
-                event_type=self.event_type if event_type is not None else event_type,
+                event_type=self.event_type if self.event_type is not None else event_type,
                 filter=filter,
                 callable=handler,
+                manager=self,
             )
             self.add_handler(handler_obj)
             return handler
@@ -79,11 +97,15 @@ class HandlerManager:
 
     @property
     def handlers(self) -> MappingProxyType[str, Handler]:
-        return MappingProxyType(self._handlers)
+        return self._handlers_mapping_proxy
 
     @property
     def router(self) -> Router:
         return self._router
+
+    @property
+    def event_type(self) -> Type[Event[Any]] | None:
+        return self._event_type
 
 
 def gen_default_handler_id(func: Callable[..., Any]) -> str:

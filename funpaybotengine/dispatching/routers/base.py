@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-from typing import Any, Generic, TypeVar, Generator
-from collections.abc import Mapping
+from typing import Generator, TYPE_CHECKING
 
 from funpaybotengine.dispatching.events.base import Event
-from funpaybotengine.dispatching.handlers.handler import Handler
 from funpaybotengine.dispatching.events.builtin_events import (
     NewSaleEvent,
     ChatInitEvent,
@@ -17,37 +15,13 @@ from funpaybotengine.dispatching.events.builtin_events import (
     PurchaseStatusChangedEvent,
 )
 from funpaybotengine.dispatching.handlers.handler_manager import HandlerManager
-
-
-KT = TypeVar('KT', bound=Any)
-VT = TypeVar('VT', bound=Any)
-
-
-class ReadOnlyChainMap(Generic[KT, VT]):
-    def __init__(self, *mappings: Mapping[KT, VT]) -> None:
-        self._mappings = mappings
-        super().__init__()
-
-    def __getitem__(self, key: KT) -> VT:
-        for i in self._mappings:
-            try:
-                return i[key]
-            except KeyError:
-                continue
-        raise KeyError
-
-    def get(self, key: KT) -> VT | None:
-        for i in self._mappings:
-            try:
-                return i[key]
-            except KeyError:
-                continue
-        return None
+if TYPE_CHECKING:
+    from funpaybotengine.dispatching.handlers.handler import Handler
 
 
 class Router:
-    def __init__(self, router_id: str) -> None:
-        self._id = router_id
+    def __init__(self, id: str) -> None:
+        self._id = id
         self._parent_router: Router | None = None
         self._inner_routers: dict[str, Router] = {}
 
@@ -71,17 +45,13 @@ class Router:
             ChatChangedEvent: self.on_chat_changed_event,
             NewMessageEvent: self.on_new_message_event,
             SalesListChangedEvent: self.on_sales_list_changed_event,
-            NewSaleEvent: self.on_sale_status_changed_event,
+            NewSaleEvent: self.on_new_sale_event,
             SaleStatusChangedEvent: self.on_sale_status_changed_event,
             PurchasesListChangedEvent: self.on_purchases_list_changed_event,
-            NewPurchaseEvent: self.on_purchase_status_changed_event,
+            NewPurchaseEvent: self.on_new_purchase_event,
             PurchaseStatusChangedEvent: self.on_purchase_status_changed_event,
             Event: self.on_event,
         }
-
-        self.handlers: ReadOnlyChainMap[str, Handler] = ReadOnlyChainMap(
-            *[i._handlers for i in self.managers.values()]
-        )
 
     def connect_router(self, router: Router) -> None:
         if router.parent_router is not None:
@@ -98,6 +68,20 @@ class Router:
     def connect_routers(self, *routers: Router) -> None:
         for i in routers:
             self.connect_router(i)
+
+    def get_handler_by_id(self, handler_id: str, /) -> Handler | None:
+        for manager in self.managers.values():
+            try:
+                return manager.handlers[handler_id]
+            except KeyError:
+                continue
+
+        for router in self._inner_routers.values():
+            result = router.get_handler_by_id(handler_id)
+            if result is not None:
+                return result
+
+        return None
 
     @property
     def root_router(self) -> Router:
