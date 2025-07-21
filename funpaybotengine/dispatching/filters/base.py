@@ -85,6 +85,7 @@ class AndFilter(Filter):
     """
 
     def __init__(self, *filters: Filter) -> None:
+        assert len(filters) >= 2
         self._filters = filters
 
     async def __call__(self, event: Event[Any], *args: Any, **kwargs: Any) -> bool:
@@ -102,6 +103,7 @@ class OrFilter(Filter):
     """
 
     def __init__(self, *filters: Filter) -> None:
+        assert len(filters) >= 2
         self._filters = filters
 
     async def __call__(self, event: Event[Any], *args: Any, **kwargs: Any) -> bool:
