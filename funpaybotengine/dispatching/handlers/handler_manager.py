@@ -19,13 +19,40 @@ if TYPE_CHECKING:
     from funpaybotengine.dispatching.routers.base import Router
 
 
+EventType = TypeVar('EventType', bound=Any)
+
 P = ParamSpec('P')
 R = TypeVar('R', bound=Any)
-EventType = TypeVar('EventType', bound=Any)
 HandlerCallable = Callable[Concatenate[EventType, P], Awaitable[R]]
+Decorator = Callable[
+    [HandlerCallable[EventType, P, R]],
+    HandlerCallable[EventType, P, R]
+]
 
 
 class HandlerManager(Generic[EventType]):
+    """
+    Manages the registration and filtering of event handlers for a specific event type.
+
+    This class acts as a container and dispatcher for `Handler` instances, responsible for:
+
+    - Registering handlers via ``register_handler`` or ``__call__``.
+    - Ensuring handler ID uniqueness across the entire router network (global ID deduplication).
+    - Filtering handlers based on event type and filter attached to handler.
+    - Providing read-only access to all registered handlers.
+
+    Each ``HandlerManager`` is attached to a specific ``Router`` and can optionally be bound to a
+    specific ``Event`` subclass via ``event_type_filter``, which restricts dispatching
+    to events of that exact type (excluding subclasses).
+
+    Handlers can be registered via ``@manager`` / ``@manager(...)`` decorators.
+
+    :param router: The `Router` instance this manager is associated with.
+    :param event_type_filter: Optional `Event` type to restrict the handlers managed by this instance.
+                              If set, only events of this exact type (`type(event) is event_type_filter`)
+                              will be processed.
+    """
+
     def __init__(self, router: Router, event_type_filter: Type[EventType] | None = None) -> None:
         self._handlers: dict[str, Handler] = {}
         self._handlers_mapping_proxy = MappingProxyType(self._handlers)
@@ -95,29 +122,6 @@ class HandlerManager(Generic[EventType]):
 
         return type(event) is self.event_type_filter
 
-    @overload
-    def register_handler(
-            self,
-            func: HandlerCallable[EventType, P, R] = ...,
-            *,
-            event_type: None = ...,
-            id: None = ...,
-            filter: None = ...
-    ) -> HandlerCallable[EventType, P, R]: ...
-
-    @overload
-    def register_handler(
-            self,
-            func: None = ...,
-            *,
-            event_type: Type[Event[Any]] | None = ...,
-            id: str | None = ...,
-            filter: Filter | None = ...
-    ) -> Callable[
-        [HandlerCallable[EventType, P, R]],
-        HandlerCallable[EventType, P, R]
-    ]: ...
-
     def register_handler(
             self,
             func: HandlerCallable[EventType, P, R] | None = None,
@@ -125,31 +129,20 @@ class HandlerManager(Generic[EventType]):
             event_type: Type[Event[Any]] | None = None,
             id: str | None = None,
             filter: Filter | None = None,
-    ) -> HandlerCallable[EventType, P, R] | Callable[
-        [HandlerCallable[EventType, P, R]],
-        HandlerCallable[EventType, P, R]
-    ]:
+    ) -> None:
         if self.event_type_filter is not None and event_type is not None:
             raise ValueError(f'Cannot specify event type when using this handler manager.\n'
                              f'Use @<Router>.on_event(event_type={event_type.__name__}) instead.')
 
-        def inner(
-                handler: HandlerCallable[EventType, P, R],
-        ) -> HandlerCallable[EventType, P, R]:
-            handler_obj = Handler(
-                id=id or gen_default_handler_id(handler),
-                event_type_filter=self.event_type_filter if self.event_type_filter is not None
-                else event_type,
-                filter=filter,
-                callable=handler,
-                manager=self,
-            )
-            self._register_handler(handler_obj)
-            return handler
-
-        if func is None:
-            return inner
-        return inner(func)
+        handler_obj = Handler(
+            id=id or gen_default_handler_id(func),  # type: ignore
+            event_type_filter=self.event_type_filter if self.event_type_filter is not None
+            else event_type,
+            filter=filter,
+            callable=func,  # type: ignore
+            manager=self,
+        )
+        self._register_handler(handler_obj)
 
     @overload
     def __call__(
@@ -170,12 +163,8 @@ class HandlerManager(Generic[EventType]):
             event_type: Type[Event[Any]] | None = ...,
             id: str | None = ...,
             filter: Filter | None = ...
-    ) -> Callable[
-        [HandlerCallable[EventType, P, R]],
-        HandlerCallable[EventType, P, R]
-    ]:
+    ) -> Decorator[EventType, P, R]:
         ...
-
 
     def __call__(
             self,
@@ -184,17 +173,19 @@ class HandlerManager(Generic[EventType]):
             event_type: Type[Event[Any]] | None = None,
             id: str | None = None,
             filter: Filter | None = None,
-    ) -> HandlerCallable[EventType, P, R] | Callable[
-        [HandlerCallable[EventType, P, R]],
-        HandlerCallable[EventType, P, R]
-    ]:
-        return self.register_handler(
-            func=func,  # type: ignore
-            event_type=event_type,   # type: ignore
-            id=id,   # type: ignore
-            filter=filter   # type: ignore
-        )
+    ) -> HandlerCallable[EventType, P, R] | Decorator[EventType, P, R]:
+        def inner(func: HandlerCallable[EventType, P, R]) -> HandlerCallable[EventType, P, R]:
+            self.register_handler(
+                func=func,
+                event_type=event_type,
+                id=id,
+                filter=filter,
+            )
+            return func
 
+        if func is None:
+            return inner
+        return inner(func)
 
     @property
     def handlers(self) -> MappingProxyType[str, Handler]:
@@ -217,7 +208,7 @@ class HandlerManager(Generic[EventType]):
         return self._event_type_filter
 
 
-def gen_default_handler_id(func: Callable[..., Any]) -> str:
+def gen_default_handler_id(func: HandlerCallable[Any, Any, Any]) -> str:
     func_file = pathlib.Path(inspect.getfile(func)).resolve()
 
     main_file = pathlib.Path(sys.modules['__main__'].__file__).resolve()
