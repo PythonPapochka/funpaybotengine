@@ -14,6 +14,8 @@ from funpaybotengine.dispatching.events.base import Event
 from funpaybotengine.dispatching.filters.base import Filter
 from funpaybotengine.dispatching.handlers.handler import Handler
 
+from funpaybotengine.loggers import router_logger
+
 
 if TYPE_CHECKING:
     from funpaybotengine.dispatching.routers.base import Router
@@ -51,11 +53,17 @@ class HandlerManager(Generic[EventType]):
         will be processed.
     """
 
-    def __init__(self, router: Router, event_type_filter: Type[EventType] | None = None) -> None:
+    def __init__(
+            self,
+            router: Router,
+            name: str,
+            event_type_filter: Type[EventType] | None = None
+    ) -> None:
         self._handlers: dict[str, Handler] = {}
         self._handlers_mapping_proxy = MappingProxyType(self._handlers)
         self._router = router
         self._event_type_filter = event_type_filter
+        self._name = name
 
     def _register_handler(self, handler: Handler) -> None:
         """
@@ -74,14 +82,17 @@ class HandlerManager(Generic[EventType]):
         if (exists_handler := root_router.get_handler_by_id(handler.id)) is not None:
             raise ValueError(
                 f'Handler with ID {handler.id} already exists.\n'
-                f"Original handler in router '{exists_handler.manager.router.id}' "
+                f"Original handler in router '{exists_handler.manager.router.name}' "
                 f'in "{inspect.getsourcefile(exists_handler.callable)}:'
                 f'{inspect.getsourcelines(exists_handler.callable)[1]}"\n'
-                f"Duplicate handler in router '{handler.manager.router.id}' "
+                f"Duplicate handler in router '{handler.manager.router.name}' "
                 f'in "{inspect.getsourcefile(handler.callable)}:'
                 f'{inspect.getsourcelines(handler.callable)[1]}"'
             )
         self._handlers[handler.id] = handler
+        router_logger.debug(
+            f'{self.router.name}.{self.name} Registered handler with ID {handler.id}.'
+        )
 
     def remove_handler(self, handler_id: str) -> Handler | None:
         """
@@ -93,12 +104,22 @@ class HandlerManager(Generic[EventType]):
 
     async def get_matching_handlers(self, event: Event[Any]) -> AsyncGenerator[Handler, None]:
         if not self.check_event_type(event):
+            router_logger.debug(
+                f'{self.router.name}.{self.name} skipping handler searching: '
+                f'event type {type(event)} is not {self._event_type_filter} '
+                f'(from manager event type fileter).'
+            )
             return
 
         for handler in self._handlers.values():
             if handler.event_type_filter is not None and not isinstance(
                 event, handler.event_type_filter
             ):
+                router_logger.debug(
+                    f'{self.router.name}.{self.name} skipping handler {handler.id}: '
+                    f'event type {type(event)} is not {handler.event_type_filter} '
+                    f'(from handler event type filter).'
+                )
                 continue
 
             if handler.filter is None:
@@ -120,6 +141,7 @@ class HandlerManager(Generic[EventType]):
             return True
 
         return type(event) is self.event_type_filter
+
     def register_handler(
         self,
         func: HandlerCallable[EventType, P, R] | None = None,
@@ -205,6 +227,10 @@ class HandlerManager(Generic[EventType]):
     @property
     def event_type_filter(self) -> Type[Event[Any]] | None:
         return self._event_type_filter
+
+    @property
+    def name(self) -> str:
+        return self._name
 
 
 def gen_default_handler_id(func: HandlerCallable[Any, Any, Any]) -> str:

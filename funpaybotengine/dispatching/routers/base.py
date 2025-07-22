@@ -26,30 +26,61 @@ if TYPE_CHECKING:
 
 
 class Router:
-    def __init__(self, id: str, filter: Filter | None = None) -> None:
-        self._id = id
+    def __init__(self, name: str, filter: Filter | None = None) -> None:
+        self._name = name
         self._parent_router: Router | None = None
         self._inner_routers: dict[str, Router] = {}
         self.filter = filter
 
-        self._on_chat_init_event = HandlerManager(self, event_type_filter=ChatInitEvent)
-        self._on_chat_changed_event = HandlerManager(self, event_type_filter=ChatChangedEvent)
-        self._on_new_message_event = HandlerManager(self, event_type_filter=NewMessageEvent)
-        self._on_sales_list_changed_event = HandlerManager(
-            self, event_type_filter=SalesListChangedEvent
+        self._on_chat_init_event = HandlerManager(
+            self,
+            name='on_chat_init',
+            event_type_filter=ChatInitEvent
         )
-        self._on_new_sale_event = HandlerManager(self, event_type_filter=NewSaleEvent)
+        self._on_chat_changed_event = HandlerManager(
+            self,
+            name='on_chat_changed',
+            event_type_filter=ChatChangedEvent
+        )
+        self._on_new_message_event = HandlerManager(
+            self,
+            name='on_new_message',
+            event_type_filter=NewMessageEvent
+        )
+        self._on_sales_list_changed_event = HandlerManager(
+            self,
+            name='on_sales_list_changed',
+            event_type_filter=SalesListChangedEvent
+        )
+        self._on_new_sale_event = HandlerManager(
+            self,
+            name='on_new_sale',
+            event_type_filter=NewSaleEvent
+        )
         self._on_sale_status_changed_event = HandlerManager(
-            self, event_type_filter=SaleStatusChangedEvent
+            self,
+            name='on_sale_status_changed',
+            event_type_filter=SaleStatusChangedEvent
         )
         self._on_purchases_list_changed_event = HandlerManager(
-            self, event_type_filter=PurchasesListChangedEvent
+            self,
+            name='on_purchases_list_changed',
+            event_type_filter=PurchasesListChangedEvent
         )
-        self._on_new_purchase_event = HandlerManager(self, event_type_filter=NewPurchaseEvent)
+        self._on_new_purchase_event = HandlerManager(
+            self,
+            name='on_new_purchase',
+            event_type_filter=NewPurchaseEvent
+        )
         self._on_purchase_status_changed_event = HandlerManager(
-            self, event_type_filter=PurchaseStatusChangedEvent
+            self,
+            name='on_purchase_status_changed',
+            event_type_filter=PurchaseStatusChangedEvent
         )
-        self._on_event: HandlerManager[Event[Any]] = HandlerManager(self)
+        self._on_event: HandlerManager[Event[Any]] = HandlerManager(
+            self,
+            name='on_event',
+        )
 
         self._managers: dict[Type[Event[Any]], HandlerManager[Any]] = {
             ChatInitEvent: self._on_chat_init_event,
@@ -74,7 +105,7 @@ class Router:
         # if isinstance(router, 'RootRouter'):  # todo
 
         router._parent_router = self
-        self._inner_routers[router.id] = router
+        self._inner_routers[router.name] = router
 
     def connect_routers(self, *routers: Router) -> None:
         for i in routers:
@@ -167,5 +198,5 @@ class Router:
         return self._parent_router
 
     @property
-    def id(self) -> str:
-        return self._id
+    def name(self) -> str:
+        return self._name

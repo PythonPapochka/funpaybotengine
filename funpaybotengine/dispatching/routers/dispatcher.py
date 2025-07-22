@@ -14,9 +14,7 @@ if TYPE_CHECKING:
 
 class Dispatcher(Router):
     def __init__(self) -> None:
-        super().__init__(
-            id='dispatcher'
-        )
+        super().__init__(name='dispatcher')
 
     async def propagate_event(self, event: Event[Any]) -> None:
         async for handler in self.get_matching_handlers(event):
