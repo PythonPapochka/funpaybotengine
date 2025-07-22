@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 
-__all__ = ('HandlerManager',)
+__all__ = ('HandlerManager', 'HandlerCallable')
 
 import sys
 import inspect
 import pathlib
-from typing import TYPE_CHECKING, Any, Type
+from typing import TYPE_CHECKING, Any, Type, ParamSpec, TypeVar, Concatenate, Generic, overload
 from types import MappingProxyType
 from collections.abc import Callable, Awaitable, AsyncGenerator
 
@@ -19,44 +19,60 @@ if TYPE_CHECKING:
     from funpaybotengine.dispatching.routers.base import Router
 
 
-class HandlerManager:
-    def __init__(self, router: Router, event_type: Type[Event[Any]] | None = None) -> None:
+P = ParamSpec('P')
+R = TypeVar('R', bound=Any)
+EventType = TypeVar('EventType', bound=Any)
+HandlerCallable = Callable[Concatenate[EventType, P], Awaitable[R]]
+
+
+class HandlerManager(Generic[EventType]):
+    def __init__(self, router: Router, event_type_filter: Type[EventType] | None = None) -> None:
         self._handlers: dict[str, Handler] = {}
         self._handlers_mapping_proxy = MappingProxyType(self._handlers)
         self._router = router
-        self._event_type = event_type
+        self._event_type_filter = event_type_filter
 
-    def add_handler(self, handler: Handler) -> None:
+    def _register_handler(self, handler: Handler) -> None:
+        """
+        Registers handler to this handler manager.
+
+        Before registration, traverses the entire router network (starting from the root router)
+        to check for duplicate handler IDs. If a handler with the same ID is found anywhere
+        in the network, raises a ``ValueError``.
+
+        :param handler: ``Handler`` instance to register.
+
+        :raises ValueError: if a handler with the same ID already exists in the router network.
+        """
         root_router = self._router.root_router
 
         if (exists_handler := root_router.get_handler_by_id(handler.id)) is not None:
-            exists_function_file_path = inspect.getsourcefile(exists_handler.callable)
-            exists_line_no = inspect.getsourcelines(exists_handler.callable)[1]
-
-            function_file_path = inspect.getsourcefile(handler.callable)
-            line_no = inspect.getsourcelines(handler.callable)[1]
-
             raise ValueError(
                 f'Handler with ID {handler.id} already exists.\n'
                 
                 f'Original handler in router \'{exists_handler.manager.router.id}\' '
-                f'in \"{exists_function_file_path}:{exists_line_no}\"\n'
+                f'in \"{inspect.getsourcefile(exists_handler.callable)}:'
+                f'{inspect.getsourcelines(exists_handler.callable)[1]}\"\n'
                 
                 f'Duplicate handler in router \'{handler.manager.router.id}\' '
-                f'in \"{function_file_path}:{line_no}\"')
-
+                f'in \"{inspect.getsourcefile(handler.callable)}:'
+                f'{inspect.getsourcelines(handler.callable)[1]}\"')
         self._handlers[handler.id] = handler
 
-    def remove_handler(self, handler_id: str) -> None:
-        if handler_id in self._handlers:
-            del self._handlers[handler_id]
+    def remove_handler(self, handler_id: str) -> Handler | None:
+        """
+        Removes handler from this handler manager.
+
+        :returns: deleted ``Handler`` instance or ``None``, if ID was not found.
+        """
+        return self._handlers.pop(handler_id, None)
 
     async def filter_handlers(self, event: Event[Any]) -> AsyncGenerator[Handler, None]:
-        if self.event_type is not None and not isinstance(event, self.event_type):
+        if not self.check_event_type(event):
             return
 
         for handler in self._handlers.values():
-            if handler.event_type is not None and not isinstance(event, handler.event_type):
+            if handler.event_type_filter is not None and not isinstance(event, handler.event_type_filter):
                 continue
 
             if handler.filter is None:
@@ -66,46 +82,139 @@ class HandlerManager:
                 if filter_result:
                     yield handler
 
-    def __call__(
-        self,
-        func: Callable[[Event[Any], ...], Awaitable[Any]] | None = None,  # type: ignore[misc]
-        *,
-        event_type: Type[Event[Any]] | None = None,
-        id: str | None = None,
-        filter: Filter | None = None,
-    ) -> Any:
-        if self.event_type is not None and event_type is not None:
+    def check_event_type(self, event: Event[Any]) -> bool:
+        """
+        Checks that event type is the same as managers event type.
+
+        :param event: event instance to check.
+
+        :return: ``True`` if event type is same as managers event type, otherwise ``False``.
+        """
+        if self.event_type_filter is None or self.event_type_filter is Event:
+            return True
+
+        return type(event) is self.event_type_filter
+
+    @overload
+    def register_handler(
+            self,
+            func: HandlerCallable[EventType, P, R] = ...,
+            *,
+            event_type: None = ...,
+            id: None = ...,
+            filter: None = ...
+    ) -> HandlerCallable[EventType, P, R]: ...
+
+    @overload
+    def register_handler(
+            self,
+            func: None = ...,
+            *,
+            event_type: Type[Event[Any]] | None = ...,
+            id: str | None = ...,
+            filter: Filter | None = ...
+    ) -> Callable[
+        [HandlerCallable[EventType, P, R]],
+        HandlerCallable[EventType, P, R]
+    ]: ...
+
+    def register_handler(
+            self,
+            func: HandlerCallable[EventType, P, R] | None = None,
+            *,
+            event_type: Type[Event[Any]] | None = None,
+            id: str | None = None,
+            filter: Filter | None = None,
+    ) -> HandlerCallable[EventType, P, R] | Callable[
+        [HandlerCallable[EventType, P, R]],
+        HandlerCallable[EventType, P, R]
+    ]:
+        if self.event_type_filter is not None and event_type is not None:
             raise ValueError(f'Cannot specify event type when using this handler manager.\n'
                              f'Use @<Router>.on_event(event_type={event_type.__name__}) instead.')
 
         def inner(
-            handler: Callable[[Event[Any], ...], Awaitable[Any]],  # type: ignore[misc]
-        ) -> Callable[[Event[Any], ...], Awaitable[Any]]:  # type: ignore[misc]
+                handler: HandlerCallable[EventType, P, R],
+        ) -> HandlerCallable[EventType, P, R]:
             handler_obj = Handler(
                 id=id or gen_default_handler_id(handler),
-                event_type=self.event_type if self.event_type is not None else event_type,
+                event_type_filter=self.event_type_filter if self.event_type_filter is not None
+                else event_type,
                 filter=filter,
                 callable=handler,
                 manager=self,
             )
-            self.add_handler(handler_obj)
+            self._register_handler(handler_obj)
             return handler
 
         if func is None:
             return inner
         return inner(func)
 
+    @overload
+    def __call__(
+            self,
+            func: HandlerCallable[EventType, P, R] = ...,
+            *,
+            event_type: None = ...,
+            id: None = ...,
+            filter: None = ...
+    ) -> HandlerCallable[EventType, P, R]:
+        ...
+
+    @overload
+    def __call__(
+            self,
+            func: None = ...,
+            *,
+            event_type: Type[Event[Any]] | None = ...,
+            id: str | None = ...,
+            filter: Filter | None = ...
+    ) -> Callable[
+        [HandlerCallable[EventType, P, R]],
+        HandlerCallable[EventType, P, R]
+    ]:
+        ...
+
+
+    def __call__(
+            self,
+            func: HandlerCallable[EventType, P, R] | None = None,
+            *,
+            event_type: Type[Event[Any]] | None = None,
+            id: str | None = None,
+            filter: Filter | None = None,
+    ) -> HandlerCallable[EventType, P, R] | Callable[
+        [HandlerCallable[EventType, P, R]],
+        HandlerCallable[EventType, P, R]
+    ]:
+        return self.register_handler(
+            func=func,  # type: ignore
+            event_type=event_type,   # type: ignore
+            id=id,   # type: ignore
+            filter=filter   # type: ignore
+        )
+
+
     @property
     def handlers(self) -> MappingProxyType[str, Handler]:
+        """
+        A read-only mapping of handler IDs to their corresponding ``Handler`` instances,
+        registered in this manager.
+        """
         return self._handlers_mapping_proxy
 
     @property
     def router(self) -> Router:
+        """
+        An instance of ``Router`` to which this manager is attached.
+        :return:
+        """
         return self._router
 
     @property
-    def event_type(self) -> Type[Event[Any]] | None:
-        return self._event_type
+    def event_type_filter(self) -> Type[Event[Any]] | None:
+        return self._event_type_filter
 
 
 def gen_default_handler_id(func: Callable[..., Any]) -> str:
