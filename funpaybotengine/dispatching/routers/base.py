@@ -18,6 +18,7 @@ from funpaybotengine.dispatching.events.builtin_events import (
     PurchaseStatusChangedEvent,
 )
 from funpaybotengine.dispatching.handlers.handler_manager import HandlerManager
+from funpaybotengine.loggers import router_logger
 
 
 if TYPE_CHECKING:
@@ -106,6 +107,7 @@ class Router:
 
         router._parent_router = self
         self._inner_routers[router.name] = router
+        router_logger.debug(f'Router \'{router.name}\' connected to router \'{self.name}\'')
 
     def connect_routers(self, *routers: Router) -> None:
         for i in routers:

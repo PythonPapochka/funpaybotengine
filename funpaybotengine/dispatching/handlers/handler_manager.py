@@ -123,11 +123,24 @@ class HandlerManager(Generic[EventType]):
                 continue
 
             if handler.filter is None:
+                router_logger.debug(
+                    f'{self.router.name}.{self.name} yielding handler {handler.id}: '
+                    f'handler has no filter.'
+                )
                 yield handler
             else:
                 filter_result = await handler.filter(event)
                 if filter_result:
+                    router_logger.debug(
+                        f'{self.router.name}.{self.name} yielding handler {handler.id}: '
+                        f'handler filter result is {filter_result}.'
+                    )
                     yield handler
+                else:
+                    router_logger.debug(
+                        f'{self.router.name}.{self.name} skipping handler {handler.id}: '
+                        f'handler filter result is {filter_result}.'
+                    )
 
     def check_event_type(self, event: Event[Any]) -> bool:
         """
