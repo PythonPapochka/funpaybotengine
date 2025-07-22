@@ -91,7 +91,7 @@ class HandlerManager(Generic[EventType]):
         """
         return self._handlers.pop(handler_id, None)
 
-    async def filter_handlers(self, event: Event[Any]) -> AsyncGenerator[Handler, None]:
+    async def get_matching_handlers(self, event: Event[Any]) -> AsyncGenerator[Handler, None]:
         if not self.check_event_type(event):
             return
 
@@ -120,7 +120,6 @@ class HandlerManager(Generic[EventType]):
             return True
 
         return type(event) is self.event_type_filter
-
     def register_handler(
         self,
         func: HandlerCallable[EventType, P, R] | None = None,
