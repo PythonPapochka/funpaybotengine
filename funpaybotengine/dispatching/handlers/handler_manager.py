@@ -6,7 +6,7 @@ __all__ = ('HandlerManager', 'HandlerCallable')
 import sys
 import inspect
 import pathlib
-from typing import TYPE_CHECKING, Any, Type, ParamSpec, TypeVar, Concatenate, Generic, overload
+from typing import TYPE_CHECKING, Any, Type, Generic, TypeVar, ParamSpec, Concatenate, overload
 from types import MappingProxyType
 from collections.abc import Callable, Awaitable, AsyncGenerator
 
@@ -24,10 +24,7 @@ EventType = TypeVar('EventType', bound=Any)
 P = ParamSpec('P')
 R = TypeVar('R', bound=Any)
 HandlerCallable = Callable[Concatenate[EventType, P], Awaitable[R]]
-Decorator = Callable[
-    [HandlerCallable[EventType, P, R]],
-    HandlerCallable[EventType, P, R]
-]
+Decorator = Callable[[HandlerCallable[EventType, P, R]], HandlerCallable[EventType, P, R]]
 
 
 class HandlerManager(Generic[EventType]):
@@ -48,9 +45,10 @@ class HandlerManager(Generic[EventType]):
     Handlers can be registered via ``@manager`` / ``@manager(...)`` decorators.
 
     :param router: The `Router` instance this manager is associated with.
-    :param event_type_filter: Optional `Event` type to restrict the handlers managed by this instance.
-                              If set, only events of this exact type (`type(event) is event_type_filter`)
-                              will be processed.
+    :param event_type_filter:
+        Optional ``Event`` type to restrict the handlers managed by this instance.
+        If set, only events of this exact type (``type(event) is event_type_filter``)
+        will be processed.
     """
 
     def __init__(self, router: Router, event_type_filter: Type[EventType] | None = None) -> None:
@@ -76,14 +74,13 @@ class HandlerManager(Generic[EventType]):
         if (exists_handler := root_router.get_handler_by_id(handler.id)) is not None:
             raise ValueError(
                 f'Handler with ID {handler.id} already exists.\n'
-                
-                f'Original handler in router \'{exists_handler.manager.router.id}\' '
-                f'in \"{inspect.getsourcefile(exists_handler.callable)}:'
-                f'{inspect.getsourcelines(exists_handler.callable)[1]}\"\n'
-                
-                f'Duplicate handler in router \'{handler.manager.router.id}\' '
-                f'in \"{inspect.getsourcefile(handler.callable)}:'
-                f'{inspect.getsourcelines(handler.callable)[1]}\"')
+                f"Original handler in router '{exists_handler.manager.router.id}' "
+                f'in "{inspect.getsourcefile(exists_handler.callable)}:'
+                f'{inspect.getsourcelines(exists_handler.callable)[1]}"\n'
+                f"Duplicate handler in router '{handler.manager.router.id}' "
+                f'in "{inspect.getsourcefile(handler.callable)}:'
+                f'{inspect.getsourcelines(handler.callable)[1]}"'
+            )
         self._handlers[handler.id] = handler
 
     def remove_handler(self, handler_id: str) -> Handler | None:
@@ -99,7 +96,9 @@ class HandlerManager(Generic[EventType]):
             return
 
         for handler in self._handlers.values():
-            if handler.event_type_filter is not None and not isinstance(event, handler.event_type_filter):
+            if handler.event_type_filter is not None and not isinstance(
+                event, handler.event_type_filter
+            ):
                 continue
 
             if handler.filter is None:
@@ -123,20 +122,23 @@ class HandlerManager(Generic[EventType]):
         return type(event) is self.event_type_filter
 
     def register_handler(
-            self,
-            func: HandlerCallable[EventType, P, R] | None = None,
-            *,
-            event_type: Type[Event[Any]] | None = None,
-            id: str | None = None,
-            filter: Filter | None = None,
+        self,
+        func: HandlerCallable[EventType, P, R] | None = None,
+        *,
+        event_type: Type[Event[Any]] | None = None,
+        id: str | None = None,
+        filter: Filter | None = None,
     ) -> None:
         if self.event_type_filter is not None and event_type is not None:
-            raise ValueError(f'Cannot specify event type when using this handler manager.\n'
-                             f'Use @<Router>.on_event(event_type={event_type.__name__}) instead.')
+            raise ValueError(
+                f'Cannot specify event type when using this handler manager.\n'
+                f'Use @<Router>.on_event(event_type={event_type.__name__}) instead.'
+            )
 
         handler_obj = Handler(
             id=id or gen_default_handler_id(func),  # type: ignore
-            event_type_filter=self.event_type_filter if self.event_type_filter is not None
+            event_type_filter=self.event_type_filter
+            if self.event_type_filter is not None
             else event_type,
             filter=filter,
             callable=func,  # type: ignore
@@ -146,33 +148,31 @@ class HandlerManager(Generic[EventType]):
 
     @overload
     def __call__(
-            self,
-            func: HandlerCallable[EventType, P, R] = ...,
-            *,
-            event_type: None = ...,
-            id: None = ...,
-            filter: None = ...
-    ) -> HandlerCallable[EventType, P, R]:
-        ...
+        self,
+        func: HandlerCallable[EventType, P, R] = ...,
+        *,
+        event_type: None = ...,
+        id: None = ...,
+        filter: None = ...,
+    ) -> HandlerCallable[EventType, P, R]: ...
 
     @overload
     def __call__(
-            self,
-            func: None = ...,
-            *,
-            event_type: Type[Event[Any]] | None = ...,
-            id: str | None = ...,
-            filter: Filter | None = ...
-    ) -> Decorator[EventType, P, R]:
-        ...
+        self,
+        func: None = ...,
+        *,
+        event_type: Type[Event[Any]] | None = ...,
+        id: str | None = ...,
+        filter: Filter | None = ...,
+    ) -> Decorator[EventType, P, R]: ...
 
     def __call__(
-            self,
-            func: HandlerCallable[EventType, P, R] | None = None,
-            *,
-            event_type: Type[Event[Any]] | None = None,
-            id: str | None = None,
-            filter: Filter | None = None,
+        self,
+        func: HandlerCallable[EventType, P, R] | None = None,
+        *,
+        event_type: Type[Event[Any]] | None = None,
+        id: str | None = None,
+        filter: Filter | None = None,
     ) -> HandlerCallable[EventType, P, R] | Decorator[EventType, P, R]:
         def inner(func: HandlerCallable[EventType, P, R]) -> HandlerCallable[EventType, P, R]:
             self.register_handler(

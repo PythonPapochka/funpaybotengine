@@ -3,15 +3,17 @@ from __future__ import annotations
 
 __all__ = ('Handler',)
 
-from typing import TYPE_CHECKING, Any, Type, Concatenate, ParamSpec
+from typing import TYPE_CHECKING, Any, Type
 from dataclasses import dataclass
-from collections.abc import Callable, Awaitable
 
 
 if TYPE_CHECKING:
     from funpaybotengine.dispatching.events.base import Event
     from funpaybotengine.dispatching.filters.base import Filter
-    from funpaybotengine.dispatching.handlers.handler_manager import HandlerManager, HandlerCallable
+    from funpaybotengine.dispatching.handlers.handler_manager import (
+        HandlerManager,
+        HandlerCallable,
+    )
 
 
 @dataclass

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-__all__ = ('Router', )
 
-from typing import Generator, TYPE_CHECKING
+__all__ = ('Router',)
+
+from typing import TYPE_CHECKING, Any, Generator
 
 from funpaybotengine.dispatching.events.base import Event
 from funpaybotengine.dispatching.events.builtin_events import (
@@ -17,6 +18,8 @@ from funpaybotengine.dispatching.events.builtin_events import (
     PurchaseStatusChangedEvent,
 )
 from funpaybotengine.dispatching.handlers.handler_manager import HandlerManager
+
+
 if TYPE_CHECKING:
     from funpaybotengine.dispatching.handlers.handler import Handler
 
@@ -30,17 +33,21 @@ class Router:
         self.on_chat_init_event = HandlerManager(self, event_type_filter=ChatInitEvent)
         self.on_chat_changed_event = HandlerManager(self, event_type_filter=ChatChangedEvent)
         self.on_new_message_event = HandlerManager(self, event_type_filter=NewMessageEvent)
-        self.on_sales_list_changed_event = HandlerManager(self,
-                                                          event_type_filter=SalesListChangedEvent)
+        self.on_sales_list_changed_event = HandlerManager(
+            self, event_type_filter=SalesListChangedEvent
+        )
         self.on_new_sale_event = HandlerManager(self, event_type_filter=NewSaleEvent)
-        self.on_sale_status_changed_event = HandlerManager(self,
-                                                           event_type_filter=SaleStatusChangedEvent)
-        self.on_purchases_list_changed_event = HandlerManager(self,
-                                                              event_type_filter=PurchasesListChangedEvent)
+        self.on_sale_status_changed_event = HandlerManager(
+            self, event_type_filter=SaleStatusChangedEvent
+        )
+        self.on_purchases_list_changed_event = HandlerManager(
+            self, event_type_filter=PurchasesListChangedEvent
+        )
         self.on_new_purchase_event = HandlerManager(self, event_type_filter=NewPurchaseEvent)
-        self.on_purchase_status_changed_event = HandlerManager(self,
-                                                               event_type_filter=PurchaseStatusChangedEvent)
-        self.on_event = HandlerManager(self, event_type_filter=Event)
+        self.on_purchase_status_changed_event = HandlerManager(
+            self, event_type_filter=PurchaseStatusChangedEvent
+        )
+        self.on_event: HandlerManager[Event[Any]] = HandlerManager(self)
 
         self.managers = {
             ChatInitEvent: self.on_chat_init_event,
