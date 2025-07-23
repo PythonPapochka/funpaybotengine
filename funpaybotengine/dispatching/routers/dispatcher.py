@@ -40,4 +40,8 @@ class Dispatcher(Router):
             'handler_info': handler
         }
 
-        await handler(**workflow_data)
+        try:
+            await handler(**workflow_data)
+        except Exception as e:
+            event = ExceptionEvent(obj=event, exception=e)
+            ... # todo

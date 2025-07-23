@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 
-__all__ = ('Event', 'RunnerEvent', 'BotEngineEvent')
+__all__ = ('Event', 'RunnerEvent', 'BotEngineEvent', 'ExceptionEvent')
 
 
 from typing import Any, Generic, TypeVar
@@ -57,7 +57,7 @@ class BotEngineEvent(Event[EventObject], Generic[EventObject]):
         super().__init__(obj)
 
 
-class ExceptionEvent(Event[Any]):
+class ExceptionEvent(BotEngineEvent[Any]):
     def __init__(self, obj: Event[Any], exception: Exception) -> None:
         super().__init__(obj=obj)
 
