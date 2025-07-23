@@ -18,6 +18,7 @@ class Event(BindableObject, Generic[EventObject]):
 
         self._object: EventObject = obj
         self._data: dict[Any, Any] = {}
+        self._propagation_stopped: bool = False
 
     def __setitem__(self, key: Any, value: Any) -> None:
         self._data[key] = value
@@ -28,9 +29,16 @@ class Event(BindableObject, Generic[EventObject]):
     def get(self, key: Any) -> Any:
         return self._data.get(key, None)
 
+    def stop_propagation(self) -> None:
+        self._propagation_stopped = True
+
     @property
     def object(self) -> EventObject:
         return self._object
+
+    @property
+    def propagation_stopped(self) -> bool:
+        return self._propagation_stopped
 
 
 class RunnerEvent(Event[EventObject], Generic[EventObject]):

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 
-__all__ = ('CallableInfo', 'HandlerInfo')
+__all__ = ('CallableInfo', 'HandlerInfo', 'HandlerCallableType', 'HandlerManagerDecoratorType')
 
 
 from dataclasses import dataclass, field
-from typing import Callable, Any, TYPE_CHECKING, Type
+from typing import Any, TYPE_CHECKING, Type, ParamSpec, TypeVar
+from collections.abc import Callable, Awaitable
 import asyncio
 import inspect
 
@@ -16,13 +17,31 @@ if TYPE_CHECKING:
     from funpaybotengine.dispatching.handlers.handler_manager import HandlerManager
 
 
+P = ParamSpec('P')
+R = TypeVar('R', bound=Any)
+
+HandlerCallableType = Callable[P, Awaitable[R]]
+"""
+Represents the type of handler callables.
+
+Primarily used in ``HandlerManager`` decorators to ensure type checkers recognize
+that decorated functions are not modified or wrapped, but simply registered and
+returned unchanged.
+"""
+# todo:
+# for now this typehint supports only coroutine functions, but ``CallableInfo``.__call__
+# supports normal functions as well.
+
+HandlerManagerDecoratorType = Callable[[HandlerCallableType[P, R]], HandlerCallableType[P, R]]
+
+
 @dataclass
 class CallableInfo:
     """
     Represents information about a callable.
     """
 
-    callable: Callable[..., Any]
+    callable: HandlerCallableType[Any, Any]
     """
     The callable object this info refers to.
     """

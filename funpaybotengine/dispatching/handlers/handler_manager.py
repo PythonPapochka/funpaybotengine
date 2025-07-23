@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 
-__all__ = ('HandlerManager', 'HandlerCallable')
+__all__ = ('HandlerManager',)
 
 import sys
 import inspect
 import pathlib
-from typing import TYPE_CHECKING, Any, Type, Generic, TypeVar, ParamSpec, Concatenate, overload
+from typing import TYPE_CHECKING, Any, Type, Generic, TypeVar, ParamSpec, overload
 from types import MappingProxyType
-from collections.abc import Callable, Awaitable, AsyncGenerator
+from collections.abc import AsyncGenerator
 
 from funpaybotengine.dispatching.events.base import Event
 from funpaybotengine.dispatching.filters.base import Filter
@@ -19,14 +19,12 @@ from funpaybotengine.loggers import router_logger
 
 if TYPE_CHECKING:
     from funpaybotengine.dispatching.routers.base import Router
+    from funpaybotengine.dispatching.bases import HandlerCallableType, HandlerManagerDecoratorType
 
 
 EventType = TypeVar('EventType', bound=Any)
-
 P = ParamSpec('P')
 R = TypeVar('R', bound=Any)
-HandlerCallable = Callable[Concatenate[EventType, P], Awaitable[R]]
-Decorator = Callable[[HandlerCallable[EventType, P, R]], HandlerCallable[EventType, P, R]]
 
 
 class HandlerManager(Generic[EventType]):
@@ -157,7 +155,7 @@ class HandlerManager(Generic[EventType]):
 
     def register_handler(
         self,
-        func: HandlerCallable[EventType, P, R] | None = None,
+        func: HandlerCallableType[P, R],
         *,
         event_type: Type[Event[Any]] | None = None,
         id: str | None = None,
@@ -170,12 +168,12 @@ class HandlerManager(Generic[EventType]):
             )
 
         handler_obj = HandlerInfo(
-            id=id or gen_default_handler_id(func),  # type: ignore
+            id=id or gen_default_handler_id(func),
             event_type_filter=self.event_type_filter
             if self.event_type_filter is not None
             else event_type,
             filter=filter,
-            callable=func,  # type: ignore
+            callable=func,
             manager=self,
         )
         self._register_handler(handler_obj)
@@ -183,12 +181,12 @@ class HandlerManager(Generic[EventType]):
     @overload
     def __call__(
         self,
-        func: HandlerCallable[EventType, P, R] = ...,
+        func: HandlerCallableType[P, R] = ...,
         *,
         event_type: None = ...,
         id: None = ...,
         filter: None = ...,
-    ) -> HandlerCallable[EventType, P, R]: ...
+    ) -> HandlerCallableType[P, R]: ...
 
     @overload
     def __call__(
@@ -198,17 +196,17 @@ class HandlerManager(Generic[EventType]):
         event_type: Type[Event[Any]] | None = ...,
         id: str | None = ...,
         filter: Filter | None = ...,
-    ) -> Decorator[EventType, P, R]: ...
+    ) -> HandlerManagerDecoratorType[P, R]: ...
 
     def __call__(
         self,
-        func: HandlerCallable[EventType, P, R] | None = None,
+        func: HandlerCallableType[P, R] | None = None,
         *,
         event_type: Type[Event[Any]] | None = None,
         id: str | None = None,
         filter: Filter | None = None,
-    ) -> HandlerCallable[EventType, P, R] | Decorator[EventType, P, R]:
-        def inner(func: HandlerCallable[EventType, P, R]) -> HandlerCallable[EventType, P, R]:
+    ) -> HandlerCallableType[P, R] | HandlerManagerDecoratorType[P, R]:
+        def inner(func: HandlerCallableType[P, R]) -> HandlerCallableType[P, R]:
             self.register_handler(
                 func=func,
                 event_type=event_type,
@@ -246,7 +244,7 @@ class HandlerManager(Generic[EventType]):
         return self._name
 
 
-def gen_default_handler_id(func: HandlerCallable[Any, Any, Any]) -> str:
+def gen_default_handler_id(func: HandlerCallableType[P, R]) -> str:
     func_file = pathlib.Path(inspect.getfile(func)).resolve()
 
     main_file = pathlib.Path(sys.modules['__main__'].__file__).resolve()
