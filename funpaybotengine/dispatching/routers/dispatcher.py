@@ -20,7 +20,11 @@ class Dispatcher(Router):
             name='dispatcher'
         )
 
-        self._on_exception = HandlerManager(self, event_type_filter=ExceptionEvent, )
+        self._on_exception = HandlerManager(
+            self,
+            name='on_exception',
+            event_type_filter=ExceptionEvent,
+        )
 
         self._workflow_data = workflow_data or {}
 

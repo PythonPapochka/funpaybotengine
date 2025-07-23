@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 
-__all__ = ('CallableInfo', )
+__all__ = ('CallableInfo', 'HandlerInfo')
+
 
 from dataclasses import dataclass, field
 from typing import Callable, Any, TYPE_CHECKING, Type
