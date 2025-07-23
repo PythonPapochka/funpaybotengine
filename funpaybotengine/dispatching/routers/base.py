@@ -22,7 +22,7 @@ from funpaybotengine.loggers import router_logger
 
 
 if TYPE_CHECKING:
-    from funpaybotengine.dispatching.handlers.handler import Handler
+    from funpaybotengine.dispatching.bases import HandlerInfo
     from funpaybotengine.dispatching.filters.base import Filter
 
 
@@ -113,7 +113,7 @@ class Router:
         for i in routers:
             self.connect_router(i)
 
-    def get_handler_by_id(self, handler_id: str, /) -> Handler | None:
+    def get_handler_by_id(self, handler_id: str, /) -> HandlerInfo | None:
         for manager in self._managers.values():
             try:
                 return manager.handlers[handler_id]
@@ -127,7 +127,7 @@ class Router:
 
         return None
 
-    async def get_matching_handlers(self, event: Event[Any]) -> AsyncGenerator[Handler, None]:
+    async def get_matching_handlers(self, event: Event[Any]) -> AsyncGenerator[HandlerInfo, None]:
         for manager in self._managers.values():
             async for handler in manager.get_matching_handlers(event):
                 yield handler

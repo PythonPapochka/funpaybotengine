@@ -47,3 +47,15 @@ class RunnerEvent(Event[EventObject], Generic[EventObject]):
 class BotEngineEvent(Event[EventObject], Generic[EventObject]):
     def __init__(self, obj: EventObject) -> None:
         super().__init__(obj)
+
+
+class ExceptionEvent(Event[Any]):
+    def __init__(self, obj: Event[Any], exception: Exception) -> None:
+        super().__init__(obj=obj)
+
+        self._exception = exception
+
+
+    @property
+    def exception(self) -> Exception:
+        return self._exception

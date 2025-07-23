@@ -12,7 +12,7 @@ from collections.abc import Callable, Awaitable, AsyncGenerator
 
 from funpaybotengine.dispatching.events.base import Event
 from funpaybotengine.dispatching.filters.base import Filter
-from funpaybotengine.dispatching.handlers.handler import Handler
+from funpaybotengine.dispatching.bases import HandlerInfo
 
 from funpaybotengine.loggers import router_logger
 
@@ -59,13 +59,13 @@ class HandlerManager(Generic[EventType]):
             name: str,
             event_type_filter: Type[EventType] | None = None
     ) -> None:
-        self._handlers: dict[str, Handler] = {}
+        self._handlers: dict[str, HandlerInfo] = {}
         self._handlers_mapping_proxy = MappingProxyType(self._handlers)
         self._router = router
         self._event_type_filter = event_type_filter
         self._name = name
 
-    def _register_handler(self, handler: Handler) -> None:
+    def _register_handler(self, handler: HandlerInfo) -> None:
         """
         Registers handler to this handler manager.
 
@@ -94,7 +94,7 @@ class HandlerManager(Generic[EventType]):
             f'{self.router.name}.{self.name} Registered handler with ID {handler.id}.'
         )
 
-    def remove_handler(self, handler_id: str) -> Handler | None:
+    def remove_handler(self, handler_id: str) -> HandlerInfo | None:
         """
         Removes handler from this handler manager.
 
@@ -102,7 +102,7 @@ class HandlerManager(Generic[EventType]):
         """
         return self._handlers.pop(handler_id, None)
 
-    async def get_matching_handlers(self, event: Event[Any]) -> AsyncGenerator[Handler, None]:
+    async def get_matching_handlers(self, event: Event[Any]) -> AsyncGenerator[HandlerInfo, None]:
         if not self.check_event_type(event):
             router_logger.debug(
                 f'{self.router.name}.{self.name} skipping handler searching: '
@@ -169,7 +169,7 @@ class HandlerManager(Generic[EventType]):
                 f'Use @<Router>.on_event(event_type={event_type.__name__}) instead.'
             )
 
-        handler_obj = Handler(
+        handler_obj = HandlerInfo(
             id=id or gen_default_handler_id(func),  # type: ignore
             event_type_filter=self.event_type_filter
             if self.event_type_filter is not None
@@ -222,7 +222,7 @@ class HandlerManager(Generic[EventType]):
         return inner(func)
 
     @property
-    def handlers(self) -> MappingProxyType[str, Handler]:
+    def handlers(self) -> MappingProxyType[str, HandlerInfo]:
         """
         A read-only mapping of handler IDs to their corresponding ``Handler`` instances,
         registered in this manager.
