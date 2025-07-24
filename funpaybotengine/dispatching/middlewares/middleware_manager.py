@@ -4,7 +4,7 @@ from __future__ import annotations
 __all__ = ('MiddlewareManager',)
 
 
-from typing import TYPE_CHECKING, Any, TypeVar, Callable, Awaitable, ParamSpec, overload
+from typing import Any, TypeVar, Callable, Awaitable, ParamSpec, overload
 from functools import wraps
 from collections.abc import Sequence
 
@@ -16,18 +16,25 @@ from funpaybotengine.dispatching.bases import (
 )
 
 
-if TYPE_CHECKING:
-    from funpaybotengine.dispatching.handlers.handler_manager import HandlerManager
-
-
 P = ParamSpec('P')
 R = TypeVar('R')
 
 
-class MiddlewareManager(Sequence[MiddlewareCallableType[..., Any]]):
-    def __init__(self, handler_manager: HandlerManager[Any]):
-        self._handler_manager = handler_manager
+class WrappedWithMiddlewaresCallable:
+    def __init__(self, wrapped_callable: Callable[[], Awaitable[Any]] | None = None, /):
+        self.wrapped_callable = wrapped_callable
+        self.handler_executed: bool = False
+        self.handler_execution_result: Any = None
 
+    async def __call__(self) -> Any:
+        assert self.wrapped_callable is not None
+
+        await self.wrapped_callable()
+        return self.handler_execution_result
+
+
+class MiddlewareManager(Sequence[MiddlewareCallableType[..., Any]]):
+    def __init__(self) -> None:
         self._middlewares: list[MiddlewareCallableType[..., Any]] = []
 
     def register_middleware(
@@ -70,27 +77,33 @@ class MiddlewareManager(Sequence[MiddlewareCallableType[..., Any]]):
     def __len__(self) -> int:
         return len(self._middlewares)
 
-    @property
-    def handler_manager(self) -> HandlerManager[Any]:
-        return self._handler_manager
-
     @staticmethod
     def wrap_callable_with_middlewares(
         middlewares: Sequence[MiddlewareCallableType[..., Any]],
-        handler_to_wrap: Callable[..., Any],
+        callable_to_wrap: Callable[..., Any],
         workflow_data: dict[str, Any],
-    ) -> WrappedWithMiddlewaresType:
-        @wraps(handler_to_wrap)
-        async def wrapper() -> Any:
-            handler_obj = CallableInfo(handler_to_wrap)
-            workflow_data.pop('next_call', None)
-            return await handler_obj(**workflow_data)
+        first_to_last: bool = True,
+    ) -> WrappedWithMiddlewaresCallable:
 
-        current: Callable[[], Awaitable[Any]] = wrapper
+        obj = WrappedWithMiddlewaresCallable(None)
 
-        for middleware in reversed(middlewares):
+        @wraps(callable_to_wrap)
+        async def last_call() -> Any:
+            nonlocal obj
+
+            handler_obj = CallableInfo(callable_to_wrap)
+            result = await handler_obj(**workflow_data)
+
+            obj.handler_executed = True
+            obj.handler_execution_result = result
+
+        current: Callable[[], Awaitable[Any]] = last_call
+
+        for middleware in reversed(middlewares) if first_to_last else middlewares:
             current = MiddlewareManager._make_wrapper(current, middleware, workflow_data)
-        return current
+
+        obj.wrapped_callable = current
+        return obj
 
     @staticmethod
     def _make_wrapper(
@@ -101,8 +114,7 @@ class MiddlewareManager(Sequence[MiddlewareCallableType[..., Any]]):
         @wraps(middleware)
         async def middleware_wrapper() -> Any:
             next_call = CallableInfo(current)
-            workflow_data['next_call'] = next_call
             middleware_obj = CallableInfo(middleware)
-            return await middleware_obj(**workflow_data)
+            return await middleware_obj(**workflow_data, **{'next_call': next_call})
 
         return middleware_wrapper

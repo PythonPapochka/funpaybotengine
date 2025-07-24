@@ -143,6 +143,10 @@ class Router:
             async for handler in router.get_matching_handlers(event, workflow_data):
                 yield handler
 
+    def get_manager_by_event(self, event: Event[Any] | Type[Event[Any]]) -> HandlerManager[Any]:
+        filter = event if isinstance(event, type) else type(event)
+        return self._managers.get(filter) or self._on_event
+
     @property
     def on_init_chat_event(self) -> HandlerManager[ChatInitEvent]:
         return self._on_chat_init_event

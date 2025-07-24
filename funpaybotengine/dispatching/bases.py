@@ -18,7 +18,6 @@ from typing import TYPE_CHECKING, Any, Type, TypeVar, ParamSpec
 from dataclasses import field, dataclass
 from collections.abc import Callable, Awaitable
 
-
 if TYPE_CHECKING:
     from funpaybotengine.dispatching.events.base import Event
     from funpaybotengine.dispatching.filters.base import Filter
@@ -109,3 +108,6 @@ class HandlerInfo(CallableInfo):
 
     manager: HandlerManager[Any]
     """Handler manager to which this handler is bound."""
+
+    pre_execution_middlewares: list[MiddlewareCallableType[..., Any]] = field(default_factory=list)
+    """List of pre handler execution middlewares."""

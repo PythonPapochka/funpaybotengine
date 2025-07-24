@@ -64,9 +64,8 @@ class HandlerManager(Generic[EventType]):
         self._event_type_filter = event_type_filter
         self._name = name
 
-        self._pre_filters_middlewares = MiddlewareManager(self)
-        self._pre_handler_middlewares = MiddlewareManager(self)
-        self._post_handler_middlewares = MiddlewareManager(self)
+        self._pre_filters_middlewares = MiddlewareManager()
+        self._pre_handler_middlewares = MiddlewareManager()
 
     def _register_handler(self, handler: HandlerInfo) -> None:
         """
@@ -110,20 +109,38 @@ class HandlerManager(Generic[EventType]):
         event: Event[Any],
         workflow_data: dict[str, Any],
     ) -> AsyncGenerator[HandlerInfo, None]:
-        handler = functools.partial(self._inner_get_matching_handlers, event)
-        wrapped_get_matching_handlers = MiddlewareManager.wrap_callable_with_middlewares(
-            self._pre_filters_middlewares,
-            handler,
-            workflow_data,
-        )
+        """
+        Executes the chain of pre-filter middlewares and yields handlers
+        whose filters match the given event.
 
-        async for handler in await wrapped_get_matching_handlers():
+        :param event: The event object to be checked against handler filters.
+        :param workflow_data: A dictionary containing data related to the current workflow.
+
+        :return: An async generator of ``HandlerInfo`` objects with matching filters.
+        """
+        async def wrapped():
+            return self._inner_get_matching_handlers(event)
+
+        wrapped_get_matching_handlers = MiddlewareManager.wrap_callable_with_middlewares(
+            middlewares=self._pre_filters_middlewares, callable_to_wrap=wrapped,
+            workflow_data=workflow_data)
+
+        async for handler in (await wrapped_get_matching_handlers()):
             yield handler
 
     async def _inner_get_matching_handlers(
         self,
         event: Event[Any],
     ) -> AsyncGenerator[HandlerInfo, None]:
+        """
+        Iterates through all registered handlers and yields those whose filters
+        match the given event.
+
+        :param event: The incoming event to check against handler filters.
+
+        :return: An async generator yielding handlers that should handle the event.
+        """
+
         for handler in self._handlers.values():
             if handler.event_type_filter is not None and not isinstance(
                 event,
@@ -163,6 +180,7 @@ class HandlerManager(Generic[EventType]):
         event_type: Type[Event[Any]] | None = None,
         id: str | None = None,
         filter: Filter | None = None,
+        pre_execution_middlewares: list[Any] | None = None
     ) -> None:
         if self.event_type_filter is not None and event_type is not None:
             raise ValueError(
@@ -178,6 +196,7 @@ class HandlerManager(Generic[EventType]):
             filter=filter,
             callable=func,
             manager=self,
+            pre_execution_middlewares=pre_execution_middlewares or [],
         )
         self._register_handler(handler_obj)
 
@@ -189,6 +208,7 @@ class HandlerManager(Generic[EventType]):
         event_type: None = ...,
         id: None = ...,
         filter: None = ...,
+        pre_execution_middlewares: list[Any] | None = ...,  # todo: middleware type
     ) -> HandlerCallableType[P, R]: ...
 
     @overload
@@ -199,6 +219,7 @@ class HandlerManager(Generic[EventType]):
         event_type: Type[Event[Any]] | None = ...,
         id: str | None = ...,
         filter: Filter | None = ...,
+        pre_execution_middlewares: list[Any] | None = ...,  # todo: middleware type
     ) -> HandlerManagerDecoratorType[P, R]: ...
 
     def __call__(
@@ -209,7 +230,6 @@ class HandlerManager(Generic[EventType]):
         id: str | None = None,
         filter: Filter | None = None,
         pre_execution_middlewares: list[Any] | None = None,  # todo: middleware type
-        post_execution_middlewares: list[Any] | None = None,  # todo: middleware type
     ) -> HandlerCallableType[P, R] | HandlerManagerDecoratorType[P, R]:
         def inner(func: HandlerCallableType[P, R]) -> HandlerCallableType[P, R]:
             self.register_handler(
@@ -217,6 +237,7 @@ class HandlerManager(Generic[EventType]):
                 event_type=event_type,
                 id=id,
                 filter=filter,
+                pre_execution_middlewares=pre_execution_middlewares,
             )
             return func
 
@@ -255,10 +276,6 @@ class HandlerManager(Generic[EventType]):
     @property
     def pre_handler_middlewares(self) -> MiddlewareManager:
         return self._pre_handler_middlewares
-
-    @property
-    def post_handler_middlewares(self) -> MiddlewareManager:
-        return self._post_handler_middlewares
 
 
 def gen_default_handler_id(func: HandlerCallableType[P, R]) -> str:
