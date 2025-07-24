@@ -1,14 +1,22 @@
 from __future__ import annotations
 
 
-__all__ = ('CallableInfo', 'HandlerInfo', 'HandlerCallableType', 'HandlerManagerDecoratorType')
+__all__ = (
+    'CallableInfo',
+    'HandlerInfo',
+    'HandlerCallableType',
+    'HandlerManagerDecoratorType',
+    'MiddlewareCallableType',
+    'MiddlewareManagerDecoratorType',
+    'WrappedWithMiddlewaresType',
+)
 
 
-from dataclasses import dataclass, field
-from typing import Any, TYPE_CHECKING, Type, ParamSpec, TypeVar
-from collections.abc import Callable, Awaitable
 import asyncio
 import inspect
+from typing import TYPE_CHECKING, Any, Type, TypeVar, ParamSpec
+from dataclasses import field, dataclass
+from collections.abc import Callable, Awaitable
 
 
 if TYPE_CHECKING:
@@ -20,7 +28,8 @@ if TYPE_CHECKING:
 P = ParamSpec('P')
 R = TypeVar('R', bound=Any)
 
-HandlerCallableType = Callable[P, Awaitable[R]]
+
+HandlerCallableType = Callable[P, R]
 """
 Represents the type of handler callables.
 
@@ -34,6 +43,14 @@ returned unchanged.
 
 HandlerManagerDecoratorType = Callable[[HandlerCallableType[P, R]], HandlerCallableType[P, R]]
 
+MiddlewareCallableType = Callable[P, R]
+WrappedWithMiddlewaresType = Callable[..., Awaitable[Any]]
+MiddlewareManagerDecoratorType = Callable[
+    [MiddlewareCallableType[P, R]],
+    MiddlewareCallableType[P, R],
+]
+# todo: middleware type
+
 
 @dataclass
 class CallableInfo:
@@ -41,7 +58,7 @@ class CallableInfo:
     Represents information about a callable.
     """
 
-    callable: HandlerCallableType[Any, Any]
+    callable: Callable[..., Any]
     """
     The callable object this info refers to.
     """
@@ -65,9 +82,13 @@ class CallableInfo:
         func = self.callable
         specs = inspect.getfullargspec(func)
 
-        self.is_awaitable = inspect.isawaitable(func) or inspect.iscoroutinefunction(func)
+        self.is_awaitable = (
+            inspect.isawaitable(func)
+            or inspect.iscoroutinefunction(func)
+            or inspect.iscoroutinefunction(getattr(func, '__call__', None))
+        )
         self.has_double_star_kwargs = specs.varkw is not None
-        self.param_names = set(*specs.args, *specs.kwonlyargs)
+        self.param_names = set(specs.args + specs.kwonlyargs)
 
     async def __call__(self, *args: Any, **kwargs: Any) -> Any:
         if not self.has_double_star_kwargs:
@@ -75,7 +96,7 @@ class CallableInfo:
 
         if self.is_awaitable:
             return await self.callable(*args, **kwargs)
-        return asyncio.to_thread(self.callable, *args, **kwargs)
+        return await asyncio.to_thread(self.callable, *args, **kwargs)
 
 
 @dataclass
@@ -88,9 +109,6 @@ class HandlerInfo(CallableInfo):
 
     filter: Filter | None
     """Handler filter."""
-
-    callable: Callable[..., Any]
-    """Original callable."""
 
     manager: HandlerManager[Any]
     """Handler manager to which this handler is bound."""

@@ -44,7 +44,8 @@ class OrdersCountersRequestObject(RequestableObject, BaseModel):
     """User ID whose order counters are being requested."""
 
     runner_tag: str = Field(
-        serialization_alias='tag', validation_alias=AliasChoices('runner_tag', 'tag')
+        serialization_alias='tag',
+        validation_alias=AliasChoices('runner_tag', 'tag'),
     )
     """Runner tag used for request tracking."""
 
@@ -66,7 +67,8 @@ class ChatCounterRequestObject(RequestableObject, BaseModel):
     """User ID whose chat counter is being requested."""
 
     runner_tag: str = Field(
-        serialization_alias='tag', validation_alias=AliasChoices('runner_tag', 'tag')
+        serialization_alias='tag',
+        validation_alias=AliasChoices('runner_tag', 'tag'),
     )
     """Runner tag used for request tracking."""
 
@@ -88,7 +90,8 @@ class CPURequestObject(RequestableObject, BaseModel):
     """User ID whose currently viewed offer info is being requested."""
 
     runner_tag: str = Field(
-        serialization_alias='tag', validation_alias=AliasChoices('runner_tag', 'tag')
+        serialization_alias='tag',
+        validation_alias=AliasChoices('runner_tag', 'tag'),
     )
     """Runner tag used for request tracking."""
 
@@ -110,7 +113,8 @@ class ChatBookmarksRequestObject(RequestableObject, BaseModel):
     """User ID whose chat bookmarks are being requested."""
 
     runner_tag: str = Field(
-        serialization_alias='tag', validation_alias=AliasChoices('runner_tag', 'tag')
+        serialization_alias='tag',
+        validation_alias=AliasChoices('runner_tag', 'tag'),
     )
     """Runner tag used for request tracking."""
 
@@ -132,7 +136,8 @@ class RequestNodeInfo(BaseModel):
     """
 
     chat_id: int | str = Field(
-        serialization_alias='node', validation_alias=AliasChoices('chat_id', 'node')
+        serialization_alias='node',
+        validation_alias=AliasChoices('chat_id', 'node'),
     )
     """Chat ID or name whose message history is being requested."""
 
@@ -167,12 +172,14 @@ class NodeRequestObject(RequestableObject, BaseModel):
     """
 
     chat_id: int | str = Field(
-        serialization_alias='id', validation_alias=AliasChoices('chat_id', 'id')
+        serialization_alias='id',
+        validation_alias=AliasChoices('chat_id', 'id'),
     )
     """Chat ID or name whose history is being requested."""
 
     runner_tag: str = Field(
-        serialization_alias='tag', validation_alias=AliasChoices('runner_tag', 'tag')
+        serialization_alias='tag',
+        validation_alias=AliasChoices('runner_tag', 'tag'),
     )
     """Runner tag used for request tracking."""
 
@@ -208,7 +215,8 @@ class SendingMessageData(BaseModel):
     """
 
     chat_id: int | str = Field(
-        serialization_alias='node', validation_alias=AliasChoices('chat_id', 'node')
+        serialization_alias='node',
+        validation_alias=AliasChoices('chat_id', 'node'),
     )
     """Chat ID or name where the message should be sent."""
 
@@ -292,7 +300,7 @@ class RunnerRequestData(BindableObject, BaseModel):
         """Returns a dictionary suitable for runner HTTP requests."""
         return {
             'objects': json.dumps(
-                [i.model_dump(exclude_none=True, by_alias=True) for i in self.requested_objects]
+                [i.model_dump(exclude_none=True, by_alias=True) for i in self.requested_objects],
             )
             if self.requested_objects
             else 'false',

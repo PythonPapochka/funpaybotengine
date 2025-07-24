@@ -68,7 +68,7 @@ class AioHttpSession(BaseSession):
 
         if not method.allow_anonymous and method.bot.anonymous:
             raise Exception(
-                f"Method '{method.__class__.__name__}' cannot be executed as an anonymous user. "
+                f"Method '{method.__class__.__name__}' cannot be executed as an anonymous user. ",
             )  # todo
 
         session = await self.session()
@@ -108,7 +108,7 @@ class AioHttpSession(BaseSession):
             raise Exception('Unsupported HTTP method')  # todo: Custom exception
 
         session_logger.debug(
-            f'Requesting {url_to_log} took {time.time() - start_time}s. Status: {response.status}.'
+            f'Requesting {url_to_log} took {time.time() - start_time}s. Status: {response.status}.',
         )
 
         self.check_status_code(method, response.status)

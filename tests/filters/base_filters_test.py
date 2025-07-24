@@ -84,7 +84,11 @@ def event() -> RunnerEvent[object]:
     ],
 )
 async def test_and_operator(
-    f1: str, f2: str, expected: bool, request: FixtureRequest, event: RunnerEvent[object]
+    f1: str,
+    f2: str,
+    expected: bool,
+    request: FixtureRequest,
+    event: RunnerEvent[object],
 ) -> None:
     new_filter = request.getfixturevalue(f1) & request.getfixturevalue(f2)
     result = await new_filter(event)
@@ -102,7 +106,11 @@ async def test_and_operator(
     ],
 )
 async def test_or_operator(
-    f1: str, f2: str, expected: bool, request: FixtureRequest, event: RunnerEvent[object]
+    f1: str,
+    f2: str,
+    expected: bool,
+    request: FixtureRequest,
+    event: RunnerEvent[object],
 ) -> None:
     new_filter = request.getfixturevalue(f1) | request.getfixturevalue(f2)
     result = await new_filter(event)
@@ -118,7 +126,10 @@ async def test_or_operator(
     ],
 )
 async def test_not_operator(
-    f: str, expected: bool, request: FixtureRequest, event: RunnerEvent[object]
+    f: str,
+    expected: bool,
+    request: FixtureRequest,
+    event: RunnerEvent[object],
 ) -> None:
     new_filter = ~request.getfixturevalue(f)
     result = await new_filter(event)
@@ -136,7 +147,10 @@ async def test_not_operator(
     ],
 )
 async def test_all_of_filter(
-    f_list: list[str], expected: bool, request: FixtureRequest, event: RunnerEvent[object]
+    f_list: list[str],
+    expected: bool,
+    request: FixtureRequest,
+    event: RunnerEvent[object],
 ) -> None:
     filters = [request.getfixturevalue(i) for i in f_list]
     new_filter = all_of(*filters)
@@ -155,7 +169,10 @@ async def test_all_of_filter(
     ],
 )
 async def test_any_of_filter(
-    f_list: list[str], expected: bool, request: FixtureRequest, event: RunnerEvent[object]
+    f_list: list[str],
+    expected: bool,
+    request: FixtureRequest,
+    event: RunnerEvent[object],
 ) -> None:
     filters = [request.getfixturevalue(i) for i in f_list]
     new_filter = any_of(*filters)

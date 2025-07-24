@@ -42,12 +42,18 @@ class CategoriesCache:
 
     @overload
     def get_subcategory_category(
-        self, type: SubcategoryType, id: int, subcategory: None = ...
+        self,
+        type: SubcategoryType,
+        id: int,
+        subcategory: None = ...,
     ) -> Category | None: ...
 
     @overload
     def get_subcategory_category(
-        self, type: None = ..., id: None = ..., subcategory: Subcategory = ...
+        self,
+        type: None = ...,
+        id: None = ...,
+        subcategory: Subcategory = ...,
     ) -> Category | None: ...
 
     def get_subcategory_category(

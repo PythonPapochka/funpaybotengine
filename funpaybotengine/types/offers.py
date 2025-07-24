@@ -64,7 +64,8 @@ class OfferPreview(FunPayObject, BaseModel):
     """Information about the offer seller, if applicable."""
 
     other_data: Annotated[
-        Mapping[str, str | int], BeforeValidator(OfferPreview._convert_to_immutable)
+        Mapping[str, str | int],
+        BeforeValidator(OfferPreview._convert_to_immutable),
     ]
     """
     Additional data related to the offer, such as server ID, side ID, etc., 
@@ -72,7 +73,8 @@ class OfferPreview(FunPayObject, BaseModel):
     """
 
     other_data_names: Annotated[
-        Mapping[str, str], BeforeValidator(OfferPreview._convert_to_immutable)
+        Mapping[str, str],
+        BeforeValidator(OfferPreview._convert_to_immutable),
     ]
     """
     Human-readable names corresponding to entries in ``other_data``, if applicable.

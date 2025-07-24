@@ -103,6 +103,7 @@ select = [
     "F",
     "T20",
     "RET",
+    "COM"
 ]
 
 [tool.ruff.lint.per-file-ignores]

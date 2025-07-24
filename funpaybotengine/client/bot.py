@@ -264,7 +264,9 @@ class Bot(BaseBot):
 
     # ----- Getters -----
     async def get_chat_history(
-        self, chat_id: int | str, before_message_id: int = 999999999999
+        self,
+        chat_id: int | str,
+        before_message_id: int = 999999999999,
     ) -> list[Message]:
         """
         Retrieves the 50 most recent messages in a chat,
@@ -282,7 +284,7 @@ class Bot(BaseBot):
         :return: A list of up to 50 ``Message`` objects, sorted from oldest to newest.
         """
         result = await self.make_request(
-            GetChatHistory(chat_id=chat_id, before_message_id=before_message_id)
+            GetChatHistory(chat_id=chat_id, before_message_id=before_message_id),
         )
         return result.response_obj
 
@@ -427,11 +429,15 @@ class Bot(BaseBot):
 
     @overload
     async def get_order_page(
-        self, order_id: None = ..., order: OrderPreview | OrderPage = ...
+        self,
+        order_id: None = ...,
+        order: OrderPreview | OrderPage = ...,
     ) -> OrderPage: ...
 
     async def get_order_page(
-        self, order_id: str | None = None, order: OrderPreview | OrderPage | None = None
+        self,
+        order_id: str | None = None,
+        order: OrderPreview | OrderPage | None = None,
     ) -> OrderPage:
         assert isinstance(order_id, str) or isinstance(order, OrderPreview | OrderPage), (
             f'Invalid order_id input: '
@@ -449,7 +455,8 @@ class Bot(BaseBot):
         return result.response_obj
 
     async def make_request(
-        self, method: FunPayMethod[MethodReturnType]
+        self,
+        method: FunPayMethod[MethodReturnType],
     ) -> Response[MethodReturnType]:
         if not self.initialized:
             await self.update()
@@ -457,7 +464,7 @@ class Bot(BaseBot):
 
     async def update(self, change_locale: Language | None = None) -> Self:
         result = await self.session.make_request(
-            GetMainPage(change_locale=change_locale).as_(self)
+            GetMainPage(change_locale=change_locale).as_(self),
         )
 
         self.csrf_token = result.response_obj.app_data.csrf_token

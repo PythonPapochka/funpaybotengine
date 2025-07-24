@@ -63,7 +63,6 @@ class ExceptionEvent(BotEngineEvent[Any]):
 
         self._exception = exception
 
-
     @property
     def exception(self) -> Exception:
         return self._exception

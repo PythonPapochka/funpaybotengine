@@ -73,6 +73,6 @@ class ProfilePage(FunPayPage, BaseModel):
         result = {}
         for type_, offers in value.items():
             result[type_] = MappingProxyType(
-                {id_: tuple(offers_list) for id_, offers_list in offers.items()}
+                {id_: tuple(offers_list) for id_, offers_list in offers.items()},
             )
         return MappingProxyType(result)

@@ -43,7 +43,8 @@ class Filter(ABC):
     async def __call__(self, event: Event[Any], *args: Any, **kwargs: Any) -> bool: ...
 
     def __and__(
-        self, other: Filter | CallableFilterProtocol | AwaitableFilterProtocol
+        self,
+        other: Filter | CallableFilterProtocol | AwaitableFilterProtocol,
     ) -> AndFilter:
         """
         Combines this filter with another using logical AND.

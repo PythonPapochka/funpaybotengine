@@ -3,9 +3,10 @@ from __future__ import annotations
 
 __all__ = ('Router',)
 
-from typing import TYPE_CHECKING, Any, Generator, AsyncGenerator, Type
+from typing import TYPE_CHECKING, Any, Type, Generator, AsyncGenerator
 
-from funpaybotengine.dispatching.events.base import Event
+from funpaybotengine.loggers import router_logger
+from funpaybotengine.dispatching.events.base import Event, ExceptionEvent
 from funpaybotengine.dispatching.events.builtin_events import (
     NewSaleEvent,
     ChatInitEvent,
@@ -18,7 +19,6 @@ from funpaybotengine.dispatching.events.builtin_events import (
     PurchaseStatusChangedEvent,
 )
 from funpaybotengine.dispatching.handlers.handler_manager import HandlerManager
-from funpaybotengine.loggers import router_logger
 
 
 if TYPE_CHECKING:
@@ -36,47 +36,52 @@ class Router:
         self._on_chat_init_event = HandlerManager(
             self,
             name='on_chat_init',
-            event_type_filter=ChatInitEvent
+            event_type_filter=ChatInitEvent,
         )
         self._on_chat_changed_event = HandlerManager(
             self,
             name='on_chat_changed',
-            event_type_filter=ChatChangedEvent
+            event_type_filter=ChatChangedEvent,
         )
         self._on_new_message_event = HandlerManager(
             self,
             name='on_new_message',
-            event_type_filter=NewMessageEvent
+            event_type_filter=NewMessageEvent,
         )
         self._on_sales_list_changed_event = HandlerManager(
             self,
             name='on_sales_list_changed',
-            event_type_filter=SalesListChangedEvent
+            event_type_filter=SalesListChangedEvent,
         )
         self._on_new_sale_event = HandlerManager(
             self,
             name='on_new_sale',
-            event_type_filter=NewSaleEvent
+            event_type_filter=NewSaleEvent,
         )
         self._on_sale_status_changed_event = HandlerManager(
             self,
             name='on_sale_status_changed',
-            event_type_filter=SaleStatusChangedEvent
+            event_type_filter=SaleStatusChangedEvent,
         )
         self._on_purchases_list_changed_event = HandlerManager(
             self,
             name='on_purchases_list_changed',
-            event_type_filter=PurchasesListChangedEvent
+            event_type_filter=PurchasesListChangedEvent,
         )
         self._on_new_purchase_event = HandlerManager(
             self,
             name='on_new_purchase',
-            event_type_filter=NewPurchaseEvent
+            event_type_filter=NewPurchaseEvent,
         )
         self._on_purchase_status_changed_event = HandlerManager(
             self,
             name='on_purchase_status_changed',
-            event_type_filter=PurchaseStatusChangedEvent
+            event_type_filter=PurchaseStatusChangedEvent,
+        )
+        self._on_exception = HandlerManager(
+            self,
+            name='on_exception',
+            event_type_filter=ExceptionEvent,
         )
         self._on_event: HandlerManager[Event[Any]] = HandlerManager(
             self,
@@ -93,6 +98,7 @@ class Router:
             PurchasesListChangedEvent: self._on_purchases_list_changed_event,
             NewPurchaseEvent: self._on_new_purchase_event,
             PurchaseStatusChangedEvent: self._on_purchase_status_changed_event,
+            ExceptionEvent: self._on_exception,
             Event: self._on_event,
         }
 
@@ -107,7 +113,7 @@ class Router:
 
         router._parent_router = self
         self._inner_routers[router.name] = router
-        router_logger.debug(f'Router \'{router.name}\' connected to router \'{self.name}\'')
+        router_logger.debug(f"Router '{router.name}' connected to router '{self.name}'")
 
     def connect_routers(self, *routers: Router) -> None:
         for i in routers:
@@ -128,9 +134,10 @@ class Router:
         return None
 
     async def get_matching_handlers(self, event: Event[Any]) -> AsyncGenerator[HandlerInfo, None]:
-        for manager in self._managers.values():
-            async for handler in manager.get_matching_handlers(event):
-                yield handler
+        manager = self._managers.get(type(event)) or self._on_event
+
+        async for handler in manager.get_matching_handlers(event):
+            yield handler
 
         for router in self._inner_routers.values():
             async for handler in router.get_matching_handlers(event):

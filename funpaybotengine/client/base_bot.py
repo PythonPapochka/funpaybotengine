@@ -46,5 +46,6 @@ class BaseBot(ABC):
 
     @abstractmethod
     async def make_request(
-        self, method: FunPayMethod[MethodReturnType]
+        self,
+        method: FunPayMethod[MethodReturnType],
     ) -> Response[MethodReturnType]: ...

@@ -57,7 +57,10 @@ def check_message_text(message_text: str, /) -> None:
 
 
 def enforce_message_text_whitespaces(
-    message_text: str, /, enforce_spaces: bool = True, enforce_line_breaks: bool = True
+    message_text: str,
+    /,
+    enforce_spaces: bool = True,
+    enforce_line_breaks: bool = True,
 ) -> str:
     """
     By default, FunPay trims the message text and replaces multiple consecutive spaces
