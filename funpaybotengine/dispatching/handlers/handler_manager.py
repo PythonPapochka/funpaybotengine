@@ -15,7 +15,7 @@ from funpaybotengine.loggers import router_logger
 from funpaybotengine.dispatching.bases import HandlerInfo
 from funpaybotengine.dispatching.events.base import Event
 from funpaybotengine.dispatching.filters.base import Filter
-from funpaybotengine.dispatching.middlewares.handler_manager_middleware_manager import HandlerManagerMiddlewareManager
+from funpaybotengine.dispatching.middlewares.middleware_manager import MiddlewareManager
 
 
 if TYPE_CHECKING:
@@ -64,9 +64,9 @@ class HandlerManager(Generic[EventType]):
         self._event_type_filter = event_type_filter
         self._name = name
 
-        self._pre_filters_middlewares = HandlerManagerMiddlewareManager()
-        self._pre_handler_middlewares = HandlerManagerMiddlewareManager()
-        self._post_handler_middlewares = HandlerManagerMiddlewareManager()
+        self._pre_filters_middlewares = MiddlewareManager(self)
+        self._pre_handler_middlewares = MiddlewareManager(self)
+        self._post_handler_middlewares = MiddlewareManager(self)
 
     def _register_handler(self, handler: HandlerInfo) -> None:
         """
@@ -111,7 +111,7 @@ class HandlerManager(Generic[EventType]):
         workflow_data: dict[str, Any],
     ) -> AsyncGenerator[HandlerInfo, None]:
         handler = functools.partial(self._inner_get_matching_handlers, event)
-        wrapped_get_matching_handlers = HandlerManagerMiddlewareManager.wrap_callable_with_middlewares(
+        wrapped_get_matching_handlers = MiddlewareManager.wrap_callable_with_middlewares(
             self._pre_filters_middlewares,
             handler,
             workflow_data,
@@ -249,15 +249,15 @@ class HandlerManager(Generic[EventType]):
         return self._name
 
     @property
-    def pre_filter_middlewares(self) -> HandlerManagerMiddlewareManager:
+    def pre_filter_middlewares(self) -> MiddlewareManager:
         return self._pre_filters_middlewares
 
     @property
-    def pre_handler_middlewares(self) -> HandlerManagerMiddlewareManager:
+    def pre_handler_middlewares(self) -> MiddlewareManager:
         return self._pre_handler_middlewares
 
     @property
-    def post_handler_middlewares(self) -> HandlerManagerMiddlewareManager:
+    def post_handler_middlewares(self) -> MiddlewareManager:
         return self._post_handler_middlewares
 
 
