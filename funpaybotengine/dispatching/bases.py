@@ -37,9 +37,6 @@ Primarily used in ``HandlerManager`` decorators to ensure type checkers recogniz
 that decorated functions are not modified or wrapped, but simply registered and
 returned unchanged.
 """
-# todo:
-# for now this typehint supports only coroutine functions, but ``CallableInfo``.__call__
-# supports normal functions as well.
 
 HandlerManagerDecoratorType = Callable[[HandlerCallableType[P, R]], HandlerCallableType[P, R]]
 

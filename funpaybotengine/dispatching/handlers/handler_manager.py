@@ -105,7 +105,7 @@ class HandlerManager(Generic[EventType]):
         """
         return self._handlers.pop(handler_id, None)
 
-    async def get_matching_handler(
+    async def get_matching_handlers(
         self,
         event: Event[Any],
         workflow_data: dict[str, Any],

@@ -133,14 +133,14 @@ class Router:
 
         return None
 
-    async def get_matching_handlers(self, event: Event[Any]) -> AsyncGenerator[HandlerInfo, None]:
+    async def get_matching_handlers(self, event: Event[Any], workflow_data: dict[str, Any]) -> AsyncGenerator[HandlerInfo, None]:
         manager = self._managers.get(type(event)) or self._on_event
 
-        async for handler in manager.get_matching_handlers(event):
+        async for handler in manager.get_matching_handlers(event, workflow_data):
             yield handler
 
         for router in self._inner_routers.values():
-            async for handler in router.get_matching_handlers(event):
+            async for handler in router.get_matching_handlers(event, workflow_data):
                 yield handler
 
     @property

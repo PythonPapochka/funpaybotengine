@@ -22,7 +22,7 @@ class Dispatcher(Router):
         self._workflow_data = workflow_data or {}
 
     async def propagate_event(self, event: Event[Any]) -> None:
-        async for handler in self.get_matching_handlers(event):
+        async for handler in self.get_matching_handlers(event, workflow_data=self._workflow_data):
             await self.execute_handler(event, handler)
 
     async def execute_handler(self, event: Event[Any], handler: HandlerInfo) -> None:
