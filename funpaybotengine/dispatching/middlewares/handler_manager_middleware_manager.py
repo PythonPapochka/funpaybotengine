@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 
-__all__ = ('MiddlewareManager',)
+__all__ = ('HandlerManagerMiddlewareManager',)
 
 
 from typing import TYPE_CHECKING, Any, TypeVar, Callable, Awaitable, ParamSpec, overload
@@ -15,19 +15,15 @@ from funpaybotengine.dispatching.bases import (
     MiddlewareManagerDecoratorType,
 )
 
-
-if TYPE_CHECKING:
-    from funpaybotengine.dispatching.handlers.handler_manager import HandlerManager
+from funpaybotengine.dispatching.middlewares.base import MiddlewareManager
 
 
 P = ParamSpec('P')
 R = TypeVar('R')
 
 
-class MiddlewareManager(Sequence[MiddlewareCallableType[..., Any]]):
-    def __init__(self, handler_manager: HandlerManager[Any]):
-        self._handler_manager = handler_manager
-
+class HandlerManagerMiddlewareManager(MiddlewareManager):
+    def __init__(self):
         self._middlewares: list[MiddlewareCallableType[..., Any]] = []
 
     def register_middleware(
@@ -70,10 +66,6 @@ class MiddlewareManager(Sequence[MiddlewareCallableType[..., Any]]):
     def __len__(self) -> int:
         return len(self._middlewares)
 
-    @property
-    def handler_manager(self) -> HandlerManager[Any]:
-        return self._handler_manager
-
     @staticmethod
     def wrap_callable_with_middlewares(
         middlewares: Sequence[MiddlewareCallableType[..., Any]],
@@ -89,7 +81,7 @@ class MiddlewareManager(Sequence[MiddlewareCallableType[..., Any]]):
         current: Callable[[], Awaitable[Any]] = wrapper
 
         for middleware in reversed(middlewares):
-            current = MiddlewareManager._make_wrapper(current, middleware, workflow_data)
+            current = HandlerManagerMiddlewareManager._make_wrapper(current, middleware, workflow_data)
         return current
 
     @staticmethod
