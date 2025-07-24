@@ -86,13 +86,13 @@ class CallableInfo:
         self.has_double_star_kwargs = specs.varkw is not None
         self.param_names = set(specs.args + specs.kwonlyargs)
 
-    async def __call__(self, *args: Any, **kwargs: Any) -> Any:
+    async def __call__(self, **workflow_data: Any) -> Any:
         if not self.has_double_star_kwargs:
-            kwargs = {k: v for k, v in kwargs.items() if k in self.param_names}
+            workflow_data = {k: v for k, v in workflow_data.items() if k in self.param_names}
 
         if self.is_awaitable:
-            return await self.callable(*args, **kwargs)
-        return await asyncio.to_thread(self.callable, *args, **kwargs)
+            return await self.callable(**workflow_data)
+        return await asyncio.to_thread(self.callable, **workflow_data)
 
 
 @dataclass
