@@ -6,7 +6,6 @@ __all__ = ('HandlerManager',)
 import sys
 import inspect
 import pathlib
-import functools
 from typing import TYPE_CHECKING, Any, Type, Generic, TypeVar, ParamSpec, overload
 from types import MappingProxyType
 from collections.abc import AsyncGenerator
@@ -118,14 +117,17 @@ class HandlerManager(Generic[EventType]):
 
         :return: An async generator of ``HandlerInfo`` objects with matching filters.
         """
+
         async def wrapped():
             return self._inner_get_matching_handlers(event)
 
         wrapped_get_matching_handlers = MiddlewareManager.wrap_callable_with_middlewares(
-            middlewares=self._pre_filters_middlewares, callable_to_wrap=wrapped,
-            workflow_data=workflow_data)
+            middlewares=self._pre_filters_middlewares,
+            callable_to_wrap=wrapped,
+            workflow_data=workflow_data,
+        )
 
-        async for handler in (await wrapped_get_matching_handlers()):
+        async for handler in await wrapped_get_matching_handlers():
             yield handler
 
     async def _inner_get_matching_handlers(
@@ -180,7 +182,7 @@ class HandlerManager(Generic[EventType]):
         event_type: Type[Event[Any]] | None = None,
         id: str | None = None,
         filter: Filter | None = None,
-        pre_execution_middlewares: list[Any] | None = None
+        pre_execution_middlewares: list[Any] | None = None,
     ) -> None:
         if self.event_type_filter is not None and event_type is not None:
             raise ValueError(

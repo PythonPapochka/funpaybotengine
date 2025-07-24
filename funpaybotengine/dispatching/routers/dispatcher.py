@@ -6,10 +6,11 @@ __all__ = ('Dispatcher',)
 
 from typing import TYPE_CHECKING, Any
 
+from funpaybotengine.dispatching.bases import MiddlewareCallableType, WrappedWithMiddlewaresType
 from funpaybotengine.dispatching.events.base import ExceptionEvent
 from funpaybotengine.dispatching.middlewares import MiddlewareManager
 from funpaybotengine.dispatching.routers.base import Router
-from funpaybotengine.dispatching.bases import WrappedWithMiddlewaresType, MiddlewareCallableType
+
 
 if TYPE_CHECKING:
     from funpaybotengine.dispatching.bases import HandlerInfo
@@ -34,7 +35,9 @@ class Dispatcher(Router):
             if event.propagation_stopped:
                 break
 
-    async def execute_handler(self, event: Event[Any], handler: HandlerInfo, workflow_data: dict[str, Any]) -> None:
+    async def execute_handler(
+        self, event: Event[Any], handler: HandlerInfo, workflow_data: dict[str, Any]
+    ) -> None:
         workflow_data['handler_info'] = handler
         wrapped_handler = self._wrap_handler_with_middlewares(
             handler=handler,
@@ -49,13 +52,13 @@ class Dispatcher(Router):
             ...  # todo
 
     def _wrap_handler_with_middlewares(
-            self,
-            handler: HandlerInfo,
-            event: Event[Any],
-            workflow_data: dict[str, Any]
+        self,
+        handler: HandlerInfo,
+        event: Event[Any],
+        workflow_data: dict[str, Any],
     ) -> WrappedWithMiddlewaresType:
         pre_execution_middlewares: list[MiddlewareCallableType[Any, Any]] = list(
-            reversed(handler.pre_execution_middlewares)
+            reversed(handler.pre_execution_middlewares),
         )
 
         for router in handler.manager.router.chain_to_root_router:
@@ -66,7 +69,10 @@ class Dispatcher(Router):
             await handler.__call__(**workflow_data)
 
         handler_with_pre_middlewares = MiddlewareManager.wrap_callable_with_middlewares(
-            middlewares=pre_execution_middlewares, callable_to_wrap=wrapper,
-            workflow_data=workflow_data, first_to_last=False)
+            middlewares=pre_execution_middlewares,
+            callable_to_wrap=wrapper,
+            workflow_data=workflow_data,
+            first_to_last=False,
+        )
 
         return handler_with_pre_middlewares

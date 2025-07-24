@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-__all__ = ('Middleware', )
+
+__all__ = ('Middleware',)
 
 
-from abc import ABC, abstractmethod
 from typing import Any
+from abc import ABC, abstractmethod
 
 
 class Middleware(ABC):
-
     @abstractmethod
     async def __call__(self, *args: Any, **kwargs: Any) -> Any: ...

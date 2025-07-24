@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Any, Type, TypeVar, ParamSpec
 from dataclasses import field, dataclass
 from collections.abc import Callable, Awaitable
 
+
 if TYPE_CHECKING:
     from funpaybotengine.dispatching.events.base import Event
     from funpaybotengine.dispatching.filters.base import Filter

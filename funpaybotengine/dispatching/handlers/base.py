@@ -1,7 +1,10 @@
-__all__ = ('Handler', )
+from __future__ import annotations
 
-from abc import ABC, abstractmethod
+
+__all__ = ('Handler',)
+
 from typing import Any
+from abc import ABC, abstractmethod
 
 
 class Handler(ABC):

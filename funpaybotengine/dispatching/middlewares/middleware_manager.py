@@ -75,8 +75,7 @@ class MiddlewareManager(Sequence[MiddlewareCallableType[..., Any]]):
     ) -> MiddlewareCallableType[P, R] | MiddlewareManagerDecoratorType[P, R]:
         if middleware is None:
             return self.register_middleware
-        else:
-            return self.register_middleware(middleware)
+        return self.register_middleware(middleware)
 
     @overload
     def __getitem__(self, index: int) -> MiddlewareCallableType[..., Any]: ...
