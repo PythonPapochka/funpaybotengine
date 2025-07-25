@@ -98,5 +98,5 @@ class HandlerInfo(CallableInfo):
     manager: HandlerManager[Any]
     """Handler manager to which this handler is bound."""
 
-    pre_execution_middlewares: list[MiddlewareCallableType[..., Any]] = field(default_factory=list)
+    pre_execution_middlewares: list[MiddlewareCallableType] = field(default_factory=list)
     """List of pre handler execution middlewares."""

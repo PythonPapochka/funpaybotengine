@@ -57,7 +57,7 @@ class Dispatcher(Router):
         event: Event[Any],
         workflow_data: dict[str, Any],
     ) -> WrappedWithMiddlewaresType:
-        pre_execution_middlewares: list[MiddlewareCallableType[Any, Any]] = list(
+        pre_execution_middlewares: list[MiddlewareCallableType] = list(
             reversed(handler.pre_execution_middlewares),
         )
 

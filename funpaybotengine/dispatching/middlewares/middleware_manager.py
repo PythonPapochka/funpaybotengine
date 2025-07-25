@@ -118,10 +118,11 @@ class MiddlewareManager(Sequence[MiddlewareCallableType]):
             The original callable to be executed at the end of the middleware chain.
 
         :param workflow_data:
-            A dictionary of keyword arguments used to populate parameters for all callables in the chain.
+            A dictionary of keyword arguments used to populate parameters
+            for all callables in the chain.
 
         :param first_to_last:
-            If ``True`` (default), middlewares are applied in the given order (first wraps first);
+            If ``True`` (default), middlewares are applied in the given order (first wraps last);
             if ``False``, middlewares are applied in reverse order.
 
         :returns:
