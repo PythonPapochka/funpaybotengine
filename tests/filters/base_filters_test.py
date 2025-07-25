@@ -1,15 +1,13 @@
 from __future__ import annotations
 
-from typing import Any
-
 import pytest
 from pytest import FixtureRequest
 
-from funpaybotengine.dispatching.events import Event, RunnerEvent
+from funpaybotengine.dispatching.events import RunnerEvent
 from funpaybotengine.dispatching.filters import (
     Filter,
-    CallableFilterProtocol,
-    AwaitableFilterProtocol,
+    CallableFilter,
+    AwaitableFilter,
     all_of,
     any_of,
 )
@@ -17,12 +15,12 @@ from funpaybotengine.dispatching.filters.base import _convert_filters
 
 
 class TrueFilter(Filter):
-    async def __call__(self, event: Event[Any], *args: Any, **kwargs: Any) -> bool:
+    async def __call__(self) -> bool:
         return True
 
 
 class FalseFilter(Filter):
-    async def __call__(self, event: Event[Any], *args: Any, **kwargs: Any) -> bool:
+    async def __call__(self) -> bool:
         return False
 
 
@@ -37,32 +35,32 @@ def false_filter() -> FalseFilter:
 
 
 @pytest.fixture
-def true_filter_function() -> CallableFilterProtocol:
-    def true_filter_function(event: Event[Any], *args: Any, **kwargs: Any) -> bool:
+def true_filter_function() -> CallableFilter:
+    def true_filter_function() -> bool:
         return True
 
     return true_filter_function
 
 
 @pytest.fixture
-def false_filter_function() -> CallableFilterProtocol:
-    def false_filter_function(event: Event[Any], *args: Any, **kwargs: Any) -> bool:
+def false_filter_function() -> CallableFilter:
+    def false_filter_function() -> bool:
         return False
 
     return false_filter_function
 
 
 @pytest.fixture
-def true_filter_async_function() -> AwaitableFilterProtocol:
-    async def true_filter_async_function(event: Event[Any], *args: Any, **kwargs: Any) -> bool:
+def true_filter_async_function() -> AwaitableFilter:
+    async def true_filter_async_function() -> bool:
         return True
 
     return true_filter_async_function
 
 
 @pytest.fixture
-def false_filter_async_function() -> AwaitableFilterProtocol:
-    async def false_filter_async_function(event: Event[Any], *args: Any, **kwargs: Any) -> bool:
+def false_filter_async_function() -> AwaitableFilter:
+    async def false_filter_async_function() -> bool:
         return False
 
     return false_filter_async_function
@@ -91,7 +89,7 @@ async def test_and_operator(
     event: RunnerEvent[object],
 ) -> None:
     new_filter = request.getfixturevalue(f1) & request.getfixturevalue(f2)
-    result = await new_filter(event)
+    result = await new_filter()
     assert result is expected
 
 
@@ -113,7 +111,7 @@ async def test_or_operator(
     event: RunnerEvent[object],
 ) -> None:
     new_filter = request.getfixturevalue(f1) | request.getfixturevalue(f2)
-    result = await new_filter(event)
+    result = await new_filter()
     assert result is expected
 
 
@@ -132,7 +130,7 @@ async def test_not_operator(
     event: RunnerEvent[object],
 ) -> None:
     new_filter = ~request.getfixturevalue(f)
-    result = await new_filter(event)
+    result = await new_filter()
     assert result is expected
 
 
@@ -154,7 +152,7 @@ async def test_all_of_filter(
 ) -> None:
     filters = [request.getfixturevalue(i) for i in f_list]
     new_filter = all_of(*filters)
-    result = await new_filter(event)
+    result = await new_filter()
     assert result is expected
 
 
@@ -176,7 +174,7 @@ async def test_any_of_filter(
 ) -> None:
     filters = [request.getfixturevalue(i) for i in f_list]
     new_filter = any_of(*filters)
-    result = await new_filter(event)
+    result = await new_filter()
     assert result is expected
 
 
@@ -198,5 +196,5 @@ async def test_function_filters_conversion(
 ) -> None:
     filter_func = request.getfixturevalue(f_func)
     filter_obj = _convert_filters([filter_func])[0]
-    result = await filter_obj(event)
+    result = await filter_obj()
     assert result is expected

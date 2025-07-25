@@ -79,7 +79,6 @@ class AndFilter(Filter):
     """
 
     def __init__(self, *filters: Filter) -> None:
-        assert len(filters) >= 2
         self._filters = [CallableInfo(i) for i in filters]
 
     async def __call__(self, **workflow_data: Any) -> bool:
@@ -97,12 +96,11 @@ class OrFilter(Filter):
     """
 
     def __init__(self, *filters: Filter) -> None:
-        assert len(filters) >= 2
         self._filters = [CallableInfo(i) for i in filters]
 
     async def __call__(self, **workflow_data: Any) -> bool:
         for i in self._filters:
-            if not await i(**workflow_data):
+            if await i(**workflow_data):
                 return True
         return False
 
