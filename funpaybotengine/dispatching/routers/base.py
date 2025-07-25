@@ -134,7 +134,9 @@ class Router:
         return None
 
     async def get_matching_handlers(
-        self, event: Event[Any], workflow_data: dict[str, Any]
+        self,
+        event: Event[Any],
+        workflow_data: dict[str, Any],
     ) -> AsyncGenerator[HandlerInfo, None]:
         manager = self._managers.get(type(event)) or self._on_event
 

@@ -36,7 +36,10 @@ class Dispatcher(Router):
                 break
 
     async def execute_handler(
-        self, event: Event[Any], handler: HandlerInfo, workflow_data: dict[str, Any]
+        self,
+        event: Event[Any],
+        handler: HandlerInfo,
+        workflow_data: dict[str, Any],
     ) -> None:
         workflow_data = {
             **workflow_data,

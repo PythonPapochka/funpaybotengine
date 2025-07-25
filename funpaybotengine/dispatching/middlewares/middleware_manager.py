@@ -5,9 +5,9 @@ __all__ = ('MiddlewareManager', 'WrappedWithMiddlewaresCallable', 'CallState')
 
 
 from typing import Any, TypeVar, Callable, Awaitable, overload
+from dataclasses import dataclass
 from functools import wraps
 from collections.abc import Sequence
-from dataclasses import dataclass
 
 from funpaybotengine.dispatching.bases import (
     CallableInfo,
@@ -40,10 +40,11 @@ class WrappedWithMiddlewaresCallable:
 
     :returns: ``CallState`` instance representing the execution state and result.
     """
+
     def __init__(
-            self,
-            wrapped_callable: Callable[[CallState], Awaitable[Any]] | None = None,
-            /
+        self,
+        wrapped_callable: Callable[[CallState], Awaitable[Any]] | None = None,
+        /,
     ):
         self.wrapped_callable = wrapped_callable
 
@@ -106,10 +107,11 @@ class MiddlewareManager(Sequence[MiddlewareCallableType]):
         Wraps ``callable_to_wrap`` into middlewares.
 
         Both middlewares and original callable should be callables (synchronous or asynchronous).
-        Internally for all of middlewares and callable creates a ``CallableInfo`` object, that
-        stores info about callable signatures. Thus, both middlewares and original callable can
+        Internally for all of middlewares and original callable creates a ``CallableInfo`` object,
+        that stores info about callable signatures. Thus, both middlewares and original callable can
         accept any set of arguments, ``CallableInfo`` will automatically provide values for them
-        from the given ``workflow_data``.
+        from the given ``workflow_data`` when calling
+        ``await CallableInfo.__call__(**workflow_data)``.
 
         Additionally, every middleware can accept ``next_call`` argument, that represents a
         next middleware (or original callable) in the chain of middlewares. If ``next_call`` will
@@ -117,11 +119,10 @@ class MiddlewareManager(Sequence[MiddlewareCallableType]):
         interrupted.
 
         Internally, every middleware invocation wrapped in function, that accepts ``CallState`` obj.
-        This object should be created by ``WrappedWithMiddlewaresCallable``, when invoked its
+        This object will be created by ``WrappedWithMiddlewaresCallable``, when invoked its
         ``__call__`` method.
         The last callable in middlewares chain (original callable) is wrapped in function,
-        that executes this callable and stores it result in ``CallState`` instance.
-
+        that executes it and stores its result in ``CallState`` instance.
 
         :param middlewares: list of middlewares.
         :param callable_to_wrap: callable to wrap.
@@ -135,10 +136,7 @@ class MiddlewareManager(Sequence[MiddlewareCallableType]):
         :return: ``WrappedWithMiddlewaresCallable``, that contains wrapped in middlewares
         original callable and can be called with ``async obj()``.
         """
-        # Last call in the middlewares chain, that will call ``callable_to_wrap``.
 
-        # Every callable in the chain wraps in another callable, that accepts state obj.
-        # Last call modifies this state and stores original callable execution result in it.
         @wraps(callable_to_wrap)
         async def last_call(state: CallState) -> Any:
             handler_obj = CallableInfo(callable_to_wrap)
@@ -146,7 +144,6 @@ class MiddlewareManager(Sequence[MiddlewareCallableType]):
 
             state.callable_executed = True
             state.callable_return = result
-
 
         current: Callable[[CallState], Awaitable[Any]] = last_call
 
@@ -161,11 +158,11 @@ class MiddlewareManager(Sequence[MiddlewareCallableType]):
         middleware: MiddlewareCallableType,
         workflow_data: dict[str, Any],
     ) -> WrappedWithMiddlewaresType:
-
         @wraps(current)
         def next_call_factory(state: CallState) -> Callable[..., Any]:
             async def next_call() -> Any:
                 return await current(state)
+
             return next_call
 
         @wraps(middleware)

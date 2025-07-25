@@ -8,14 +8,14 @@ import inspect
 import pathlib
 from typing import TYPE_CHECKING, Any, Type, Generic, TypeVar, overload
 from types import MappingProxyType
-from collections.abc import AsyncGenerator, Callable
+from collections.abc import Callable, AsyncGenerator
 
 from funpaybotengine.loggers import router_logger
-from funpaybotengine.dispatching.bases import HandlerInfo
+from funpaybotengine.dispatching.bases import HandlerInfo, HandlerCallableType
 from funpaybotengine.dispatching.events.base import Event
 from funpaybotengine.dispatching.filters.base import Filter
 from funpaybotengine.dispatching.middlewares.middleware_manager import MiddlewareManager
-from funpaybotengine.dispatching.bases import HandlerCallableType
+
 
 if TYPE_CHECKING:
     from funpaybotengine.dispatching.routers.base import Router
