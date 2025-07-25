@@ -27,21 +27,19 @@ class CallState:
 
 class WrappedWithMiddlewaresCallable:
     """
-    Represents a callable object wrapped in a chain of middlewares.
+    A callable object returned by ``MiddlewareManager.wrap_callable_with_middlewares``.
 
-    This class allows executing a middleware chain and
-    accessing the result of the final (original) callable.
-    It is typically returned by the ``MiddlewareManager.wrap_callable_with_middlewares``
-    function and is meant to be awaited as ``await obj()``.
+    Represents a handler wrapped in a chain of middleware functions.
+    Can be invoked as a regular asynchronous function without arguments (i.e. ``await obj()``).
 
-    After invocation, ``callable_executed`` will be set to ``False`` if the original callable
-    was successfully executed and its result with be stored in ``callable_return``.
+    On each call, a fresh ``CallState`` instance is created and passed through the middleware
+    chain to the original callable.
 
-    :param wrapped_callable:
-        The fully wrapped callable (with all middlewares applied).
-        This callable should not be passed manually in normal usage; it's set by the wrapper utility.
+    The returned ``CallState`` contains information about whether the original callable
+    was executed and what it returned.
+
+    :returns: ``CallState`` instance representing the execution state and result.
     """
-
     def __init__(
             self,
             wrapped_callable: Callable[[CallState], Awaitable[Any]] | None = None,
@@ -105,51 +103,49 @@ class MiddlewareManager(Sequence[MiddlewareCallableType]):
         first_to_last: bool = True,
     ) -> WrappedWithMiddlewaresCallable:
         """
-        Wraps the given callable into a middleware chain.
+        Wraps ``callable_to_wrap`` into middlewares.
 
-        Each middleware must be a callable object (either asynchronous or synchronous).
-        Both the middlewares and the original callable may have arbitrary signatures —
-        all required arguments will be injected from the provided ``workflow_data`` dictionary.
+        Both middlewares and original callable should be callables (synchronous or asynchronous).
+        Internally for all of middlewares and callable creates a ``CallableInfo`` object, that
+        stores info about callable signatures. Thus, both middlewares and original callable can
+        accept any set of arguments, ``CallableInfo`` will automatically provide values for them
+        from the given ``workflow_data``.
 
-        In addition to ``workflow_data``, each middleware (but not the original callable)
-        receives a ``next_call`` argument, which represents the next step in the middleware chain.
-        To continue the chain, the middleware must explicitly call ``await next_call()``.
-        If ``next_call`` is not present in the middleware's signature, it will not be passed,
-        and the chain will not continue beyond that middleware.
+        Additionally, every middleware can accept ``next_call`` argument, that represents a
+        next middleware (or original callable) in the chain of middlewares. If ``next_call`` will
+        not be explicitly called via ``await next_call()``, the middleware chain will be
+        interrupted.
 
-        Internally, a ``CallableInfo`` object is created for each callable
-        (middlewares and the original),  which resolves its signature and injects the
-        required arguments from ``workflow_data``.
+        Internally, every middleware invocation wrapped in function, that accepts ``CallState`` obj.
+        This object should be created by ``WrappedWithMiddlewaresCallable``, when invoked its
+        ``__call__`` method.
+        The last callable in middlewares chain (original callable) is wrapped in function,
+        that executes this callable and stores it result in ``CallState`` instance.
 
-        :param middlewares:
-            A sequence of middleware callables that will wrap the original callable.
 
-        :param callable_to_wrap:
-            The original callable to be executed at the end of the middleware chain.
+        :param middlewares: list of middlewares.
+        :param callable_to_wrap: callable to wrap.
+        :param workflow_data: workflow data, that will be passed to each middleware and
+        original callable.
 
-        :param workflow_data:
-            A dictionary of keyword arguments used to populate parameters
-            for all callables in the chain.
+        :param first_to_last: whether the passed ``middlewares`` has order from first middleware
+        to the last middleware. If ``True``, will wrap reversely
+        (the first middleware is applied last, will be executed first)
 
-        :param first_to_last:
-            If ``True`` (default), middlewares are applied in the given order (first wraps last);
-            if ``False``, middlewares are applied in reverse order.
-
-        :returns:
-            A ``WrappedWithMiddlewaresCallable`` object.
+        :return: ``WrappedWithMiddlewaresCallable``, that contains wrapped in middlewares
+        original callable and can be called with ``async obj()``.
         """
-
         # Last call in the middlewares chain, that will call ``callable_to_wrap``.
 
         # Every callable in the chain wraps in another callable, that accepts state obj.
         # Last call modifies this state and stores original callable execution result in it.
         @wraps(callable_to_wrap)
-        async def last_call(_state: CallState) -> Any:
+        async def last_call(state: CallState) -> Any:
             handler_obj = CallableInfo(callable_to_wrap)
             result = await handler_obj(**workflow_data)
 
-            _state.callable_executed = True
-            _state.callable_return = result
+            state.callable_executed = True
+            state.callable_return = result
 
 
         current: Callable[[CallState], Awaitable[Any]] = last_call
@@ -167,14 +163,14 @@ class MiddlewareManager(Sequence[MiddlewareCallableType]):
     ) -> WrappedWithMiddlewaresType:
 
         @wraps(current)
-        def next_call_factory(_state: CallState) -> Callable[..., Any]:
+        def next_call_factory(state: CallState) -> Callable[..., Any]:
             async def next_call() -> Any:
-                return await current(_state)
+                return await current(state)
             return next_call
 
         @wraps(middleware)
-        async def middleware_wrapper(_state: CallState) -> Any:
+        async def middleware_wrapper(state: CallState) -> Any:
             middleware_obj = CallableInfo(middleware)
-            return await middleware_obj(**workflow_data | {'next_call': next_call_factory(_state)})
+            return await middleware_obj(**workflow_data | {'next_call': next_call_factory(state)})
 
         return middleware_wrapper
