@@ -3,14 +3,15 @@ from __future__ import annotations
 
 __all__ = (
     'Filter',
+    'CallableFilter',
+    'AwaitableFilter',
     'any_of',
     'all_of',
-    'CallableFilterProtocol',
-    'AwaitableFilterProtocol',
 )
 
 import inspect
-from typing import TYPE_CHECKING, Any, Iterable, Protocol, Awaitable
+from typing import TYPE_CHECKING, Any, Iterable, Protocol, Callable, Awaitable
+from funpaybotengine.dispatching.bases import CallableInfo
 from abc import ABC, abstractmethod
 
 
@@ -18,12 +19,9 @@ if TYPE_CHECKING:
     from funpaybotengine.dispatching.events.base import Event
 
 
-class CallableFilterProtocol(Protocol):
-    def __call__(self, event: Event[Any], *args: Any, **kwargs: Any) -> bool: ...
 
-
-class AwaitableFilterProtocol(Protocol):
-    def __call__(self, event: Event[Any], *args: Any, **kwargs: Any) -> Awaitable[bool]: ...
+CallableFilter = Callable[..., bool]
+AwaitableFilter = Callable[..., Awaitable[bool]]
 
 
 class Filter(ABC):
@@ -40,11 +38,11 @@ class Filter(ABC):
     """
 
     @abstractmethod
-    async def __call__(self, event: Event[Any], *args: Any, **kwargs: Any) -> bool: ...
+    async def __call__(self, *args: Any, **kwargs: Any) -> bool: ...
 
     def __and__(
         self,
-        other: Filter | CallableFilterProtocol | AwaitableFilterProtocol,
+        other: Filter | CallableFilter | AwaitableFilter,
     ) -> AndFilter:
         """
         Combines this filter with another using logical AND.
@@ -56,7 +54,7 @@ class Filter(ABC):
             other = _convert_filters([other])[0]
         return AndFilter(self, other)
 
-    def __or__(self, other: Filter | CallableFilterProtocol | AwaitableFilterProtocol) -> OrFilter:
+    def __or__(self, other: Filter | CallableFilter | AwaitableFilter) -> OrFilter:
         """
         Combines this filter with another using logical OR.
 
@@ -87,11 +85,11 @@ class AndFilter(Filter):
 
     def __init__(self, *filters: Filter) -> None:
         assert len(filters) >= 2
-        self._filters = filters
+        self._filters = [CallableInfo(i) for i in filters]
 
-    async def __call__(self, event: Event[Any], *args: Any, **kwargs: Any) -> bool:
+    async def __call__(self, **workflow_data: Any) -> bool:
         for i in self._filters:
-            if not (await i(event, *args, **kwargs)):
+            if not await i(**workflow_data):
                 return False
         return True
 
@@ -105,11 +103,11 @@ class OrFilter(Filter):
 
     def __init__(self, *filters: Filter) -> None:
         assert len(filters) >= 2
-        self._filters = filters
+        self._filters = [CallableInfo(i) for i in filters]
 
-    async def __call__(self, event: Event[Any], *args: Any, **kwargs: Any) -> bool:
+    async def __call__(self, **workflow_data: Any) -> bool:
         for i in self._filters:
-            if await i(event, *args, **kwargs):
+            if not await i(**workflow_data):
                 return True
         return False
 
@@ -122,10 +120,10 @@ class NotFilter(Filter):
     """
 
     def __init__(self, filter: Filter) -> None:
-        self._filter = filter
+        self._filter = CallableInfo(filter)
 
-    async def __call__(self, event: Event[Any], *args: Any, **kwargs: Any) -> bool:
-        return not (await self._filter(event, *args, **kwargs))
+    async def __call__(self, **workflow_data: Any) -> bool:
+        return not (await self._filter(**workflow_data))
 
 
 class FilterFromFunction(Filter):
@@ -135,17 +133,15 @@ class FilterFromFunction(Filter):
     Used internally to adapt user-defined callables into the filter system.
     """
 
-    def __init__(self, function: CallableFilterProtocol | AwaitableFilterProtocol) -> None:
-        self._function = function
+    def __init__(self, function: CallableFilter | AwaitableFilter) -> None:
+        self._function = CallableInfo(function)
 
-    async def __call__(self, event: Event[Any], *args: Any, **kwargs: Any) -> bool:
-        if inspect.iscoroutinefunction(self._function):
-            return await self._function(event, *args, **kwargs)  # type: ignore[no-any-return]
-        return self._function(event, *args, **kwargs)  # type: ignore[return-value]
+    async def __call__(self, **workflow_data: Any) -> bool:
+        return await self._function(**workflow_data)
 
 
 def _convert_filters(
-    filters: Iterable[CallableFilterProtocol | AwaitableFilterProtocol | Filter],
+    filters: Iterable[CallableFilter | AwaitableFilter | Filter],
 ) -> list[Filter]:
     """
     Converts all function filters to ``FilterFromFunction`` objects.
@@ -163,7 +159,7 @@ def _convert_filters(
     return converted_filters
 
 
-def any_of(*filters: CallableFilterProtocol | AwaitableFilterProtocol | Filter) -> OrFilter:
+def any_of(*filters: CallableFilter | AwaitableFilter | Filter) -> OrFilter:
     """
     Creates a composite filter that returns ``True``
     if at least one of the given filters returns ``True``.
@@ -181,7 +177,7 @@ def any_of(*filters: CallableFilterProtocol | AwaitableFilterProtocol | Filter) 
     return OrFilter(*_convert_filters(filters))
 
 
-def all_of(*filters: CallableFilterProtocol | AwaitableFilterProtocol | Filter) -> AndFilter:
+def all_of(*filters: CallableFilter | AwaitableFilter | Filter) -> AndFilter:
     """
     Creates a composite filter that returns ``True`` only if all the given filters return ``True``.
 

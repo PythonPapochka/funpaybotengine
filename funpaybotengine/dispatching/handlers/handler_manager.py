@@ -11,9 +11,9 @@ from types import MappingProxyType
 from collections.abc import Callable, AsyncGenerator
 
 from funpaybotengine.loggers import router_logger
-from funpaybotengine.dispatching.bases import HandlerInfo, HandlerCallableType
+from funpaybotengine.dispatching.bases import CallableInfo, HandlerInfo, HandlerCallableType
 from funpaybotengine.dispatching.events.base import Event
-from funpaybotengine.dispatching.filters.base import Filter
+from funpaybotengine.dispatching.filters.base import Filter, CallableFilter, AwaitableFilter
 from funpaybotengine.dispatching.middlewares.middleware_manager import MiddlewareManager
 
 
@@ -117,7 +117,7 @@ class HandlerManager(Generic[EventType]):
         """
 
         async def wrapped():
-            return self._inner_get_matching_handlers(event)
+            return self._inner_get_matching_handlers(event, workflow_data)
 
         wrapped_get_matching_handlers = MiddlewareManager.wrap_callable_with_middlewares(
             middlewares=self._pre_filters_middlewares,
@@ -133,6 +133,7 @@ class HandlerManager(Generic[EventType]):
     async def _inner_get_matching_handlers(
         self,
         event: Event[Any],
+        workflow_data: dict[str, Any]
     ) -> AsyncGenerator[HandlerInfo, None]:
         """
         Iterates through all registered handlers and yields those whose filters
@@ -162,7 +163,7 @@ class HandlerManager(Generic[EventType]):
                 )
                 yield handler
             else:
-                filter_result = await handler.filter(event)
+                filter_result = await handler.filter(**workflow_data)
                 if filter_result:
                     router_logger.debug(
                         f'{self.router.name}.{self.name} yielding handler {handler.id}: '
@@ -181,7 +182,7 @@ class HandlerManager(Generic[EventType]):
         *,
         event_type: Type[Event[Any]] | None = None,
         id: str | None = None,
-        filter: Filter | None = None,
+        filter: Filter | CallableFilter | AwaitableFilter | None = None,
         pre_execution_middlewares: list[Any] | None = None,
     ) -> None:
         if self.event_type_filter is not None and event_type is not None:
@@ -195,7 +196,7 @@ class HandlerManager(Generic[EventType]):
             event_type_filter=self.event_type_filter
             if self.event_type_filter is not None
             else event_type,
-            filter=filter,
+            filter=CallableInfo(filter) if filter is not None else None,
             callable=func,
             manager=self,
             pre_execution_middlewares=pre_execution_middlewares or [],
@@ -211,7 +212,7 @@ class HandlerManager(Generic[EventType]):
         *,
         event_type: Type[Event[Any]] | None = None,
         id: str | None = None,
-        filter: Filter | None = None,
+        filter: Filter | CallableFilter | AwaitableFilter | None = None,
         pre_execution_middlewares: list[Any] | None = None,  # todo: middleware type
     ) -> Callable[[F], F]: ...
 
@@ -221,7 +222,7 @@ class HandlerManager(Generic[EventType]):
         *,
         event_type: Type[Event[Any]] | None = None,
         id: str | None = None,
-        filter: Filter | None = None,
+        filter: Filter | CallableFilter | AwaitableFilter | None = None,
         pre_execution_middlewares: list[Any] | None = None,  # todo: middleware type
     ) -> F | Callable[[F], F]:
         def inner(func: F) -> F:

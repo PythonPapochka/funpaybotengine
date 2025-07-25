@@ -12,7 +12,7 @@ __all__ = (
 
 import asyncio
 import inspect
-from typing import TYPE_CHECKING, Any, Type
+from typing import TYPE_CHECKING, Any, Type, TypeVar
 from dataclasses import field, dataclass
 from collections.abc import Callable, Awaitable
 
@@ -92,7 +92,7 @@ class HandlerInfo(CallableInfo):
     event_type_filter: Type[Event[Any]] | None
     """Event type on which this handler should be executed."""
 
-    filter: Filter | None
+    filter: CallableInfo | None
     """Handler filter."""
 
     manager: HandlerManager[Any]
