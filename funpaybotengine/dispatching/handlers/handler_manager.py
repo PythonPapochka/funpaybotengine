@@ -115,14 +115,20 @@ class HandlerManager(Generic[EventType]):
 
         :return: An async generator of ``HandlerInfo`` objects with matching filters.
         """
+
+        async def wrapped():
+            return self._inner_get_matching_handlers(event)
+
         wrapped_get_matching_handlers = MiddlewareManager.wrap_callable_with_middlewares(
             middlewares=self._pre_filters_middlewares,
-            callable_to_wrap=lambda: self._inner_get_matching_handlers(event),
+            callable_to_wrap=wrapped,
             workflow_data=workflow_data,
         )
 
-        async for handler in await wrapped_get_matching_handlers():
-            yield handler
+        middlewares_result = await wrapped_get_matching_handlers()
+        if middlewares_result.callable_executed:
+            async for handler in middlewares_result.callable_return:
+                yield handler
 
     async def _inner_get_matching_handlers(
         self,

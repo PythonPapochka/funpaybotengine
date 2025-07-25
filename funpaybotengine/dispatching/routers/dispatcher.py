@@ -38,7 +38,13 @@ class Dispatcher(Router):
     async def execute_handler(
         self, event: Event[Any], handler: HandlerInfo, workflow_data: dict[str, Any]
     ) -> None:
-        workflow_data['handler_info'] = handler
+        workflow_data = {
+            **workflow_data,
+            'handler_info': handler,
+            'router': handler.manager.router,
+            'manager': handler.manager,
+        }
+
         wrapped_handler = self._wrap_handler_with_middlewares(
             handler=handler,
             event=event,
@@ -49,7 +55,7 @@ class Dispatcher(Router):
             await wrapped_handler()
         except Exception as e:
             event = ExceptionEvent(obj=event, exception=e)
-            ...  # todo
+            ...
 
     def _wrap_handler_with_middlewares(
         self,
