@@ -11,7 +11,7 @@ from types import MappingProxyType
 from collections.abc import Callable, AsyncGenerator
 
 from funpaybotengine.loggers import router_logger
-from funpaybotengine.dispatching.bases import CallableInfo, HandlerInfo, HandlerCallableType
+from funpaybotengine.dispatching.bases import HandlerInfo, CallableInfo, HandlerCallableType
 from funpaybotengine.dispatching.events.base import Event
 from funpaybotengine.dispatching.filters.base import Filter, CallableFilter, AwaitableFilter
 from funpaybotengine.dispatching.middlewares.middleware_manager import MiddlewareManager
@@ -133,7 +133,7 @@ class HandlerManager(Generic[EventType]):
     async def _inner_get_matching_handlers(
         self,
         event: Event[Any],
-        workflow_data: dict[str, Any]
+        workflow_data: dict[str, Any],
     ) -> AsyncGenerator[HandlerInfo, None]:
         """
         Iterates through all registered handlers and yields those whose filters

@@ -12,14 +12,13 @@ __all__ = (
 
 import asyncio
 import inspect
-from typing import TYPE_CHECKING, Any, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Type
 from dataclasses import field, dataclass
 from collections.abc import Callable, Awaitable
 
 
 if TYPE_CHECKING:
     from funpaybotengine.dispatching.events.base import Event
-    from funpaybotengine.dispatching.filters.base import Filter
     from funpaybotengine.dispatching.handlers.handler_manager import HandlerManager
 
 

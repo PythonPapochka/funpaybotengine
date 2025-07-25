@@ -9,15 +9,10 @@ __all__ = (
     'all_of',
 )
 
-import inspect
-from typing import TYPE_CHECKING, Any, Iterable, Protocol, Callable, Awaitable
-from funpaybotengine.dispatching.bases import CallableInfo
+from typing import Any, Callable, Iterable, Awaitable
 from abc import ABC, abstractmethod
 
-
-if TYPE_CHECKING:
-    from funpaybotengine.dispatching.events.base import Event
-
+from funpaybotengine.dispatching.bases import CallableInfo
 
 
 CallableFilter = Callable[..., bool]
@@ -137,7 +132,7 @@ class FilterFromFunction(Filter):
         self._function = CallableInfo(function)
 
     async def __call__(self, **workflow_data: Any) -> bool:
-        return await self._function(**workflow_data)
+        return bool(await self._function(**workflow_data))
 
 
 def _convert_filters(
