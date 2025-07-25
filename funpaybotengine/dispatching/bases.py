@@ -5,16 +5,14 @@ __all__ = (
     'CallableInfo',
     'HandlerInfo',
     'HandlerCallableType',
-    'HandlerManagerDecoratorType',
     'MiddlewareCallableType',
-    'MiddlewareManagerDecoratorType',
     'WrappedWithMiddlewaresType',
 )
 
 
 import asyncio
 import inspect
-from typing import TYPE_CHECKING, Any, Type, TypeVar, ParamSpec
+from typing import TYPE_CHECKING, Any, Type
 from dataclasses import field, dataclass
 from collections.abc import Callable, Awaitable
 
@@ -25,11 +23,7 @@ if TYPE_CHECKING:
     from funpaybotengine.dispatching.handlers.handler_manager import HandlerManager
 
 
-P = ParamSpec('P')
-R = TypeVar('R', bound=Any)
-
-
-HandlerCallableType = Callable[P, R]
+HandlerCallableType = Callable[..., Any]
 """
 Represents the type of handler callables.
 
@@ -38,14 +32,8 @@ that decorated functions are not modified or wrapped, but simply registered and
 returned unchanged.
 """
 
-HandlerManagerDecoratorType = Callable[[HandlerCallableType[P, R]], HandlerCallableType[P, R]]
-
-MiddlewareCallableType = Callable[P, R]
+MiddlewareCallableType = Callable[..., Any]
 WrappedWithMiddlewaresType = Callable[..., Awaitable[Any]]
-MiddlewareManagerDecoratorType = Callable[
-    [MiddlewareCallableType[P, R]],
-    MiddlewareCallableType[P, R],
-]
 # todo: middleware type
 
 

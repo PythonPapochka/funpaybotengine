@@ -4,7 +4,7 @@ from __future__ import annotations
 __all__ = ('MiddlewareManager',)
 
 
-from typing import Any, TypeVar, Callable, Awaitable, ParamSpec, overload
+from typing import Any, TypeVar, Callable, Awaitable, overload
 from functools import wraps
 from collections.abc import Sequence
 
@@ -12,12 +12,10 @@ from funpaybotengine.dispatching.bases import (
     CallableInfo,
     MiddlewareCallableType,
     WrappedWithMiddlewaresType,
-    MiddlewareManagerDecoratorType,
 )
 
 
-P = ParamSpec('P')
-R = TypeVar('R')
+F = TypeVar('F', bound=MiddlewareCallableType)
 
 
 class WrappedWithMiddlewaresCallable:
@@ -49,44 +47,41 @@ class WrappedWithMiddlewaresCallable:
         return self.callable_return
 
 
-class MiddlewareManager(Sequence[MiddlewareCallableType[..., Any]]):
+class MiddlewareManager(Sequence[MiddlewareCallableType]):
     def __init__(self) -> None:
-        self._middlewares: list[MiddlewareCallableType[..., Any]] = []
+        self._middlewares: list[MiddlewareCallableType] = []
 
     def register_middleware(
         self,
-        middleware: MiddlewareCallableType[P, R],
-    ) -> MiddlewareCallableType[P, R]:
+        middleware: F,
+    ) -> F:
         self._middlewares.append(middleware)
         return middleware
 
     @overload
-    def __call__(self, middleware: None = ...) -> MiddlewareManagerDecoratorType[P, R]: ...
+    def __call__(self, middleware: F, /) -> F: ...
 
     @overload
-    def __call__(
-        self,
-        middleware: MiddlewareCallableType[P, R] = ...,
-    ) -> MiddlewareCallableType[P, R]: ...
+    def __call__(self) -> Callable[[F], F]: ...
 
     def __call__(
         self,
-        middleware: MiddlewareCallableType[P, R] | None = None,
-    ) -> MiddlewareCallableType[P, R] | MiddlewareManagerDecoratorType[P, R]:
+        middleware: F | None = None,
+    ) -> F | Callable[[F], F]:
         if middleware is None:
             return self.register_middleware
         return self.register_middleware(middleware)
 
     @overload
-    def __getitem__(self, index: int) -> MiddlewareCallableType[..., Any]: ...
+    def __getitem__(self, index: int) -> MiddlewareCallableType: ...
 
     @overload
-    def __getitem__(self, index: slice) -> list[MiddlewareCallableType[..., Any]]: ...
+    def __getitem__(self, index: slice) -> list[MiddlewareCallableType]: ...
 
     def __getitem__(
         self,
         index: int | slice,
-    ) -> MiddlewareCallableType[Any, Any] | list[MiddlewareCallableType[..., Any]]:
+    ) -> MiddlewareCallableType | list[MiddlewareCallableType]:
         return self._middlewares[index]
 
     def __len__(self) -> int:
@@ -94,7 +89,7 @@ class MiddlewareManager(Sequence[MiddlewareCallableType[..., Any]]):
 
     @staticmethod
     def wrap_callable_with_middlewares(
-        middlewares: Sequence[MiddlewareCallableType[..., Any]],
+        middlewares: Sequence[MiddlewareCallableType],
         callable_to_wrap: Callable[..., Any],
         workflow_data: dict[str, Any],
         first_to_last: bool = True,
@@ -156,7 +151,7 @@ class MiddlewareManager(Sequence[MiddlewareCallableType[..., Any]]):
     @staticmethod
     def _make_wrapper(
         current: Callable[[], Any],
-        middleware: MiddlewareCallableType[..., Any],
+        middleware: MiddlewareCallableType,
         workflow_data: dict[str, Any],
     ) -> WrappedWithMiddlewaresType:
         @wraps(middleware)

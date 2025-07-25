@@ -6,25 +6,23 @@ __all__ = ('HandlerManager',)
 import sys
 import inspect
 import pathlib
-from typing import TYPE_CHECKING, Any, Type, Generic, TypeVar, ParamSpec, overload
+from typing import TYPE_CHECKING, Any, Type, Generic, TypeVar, overload
 from types import MappingProxyType
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Callable
 
 from funpaybotengine.loggers import router_logger
 from funpaybotengine.dispatching.bases import HandlerInfo
 from funpaybotengine.dispatching.events.base import Event
 from funpaybotengine.dispatching.filters.base import Filter
 from funpaybotengine.dispatching.middlewares.middleware_manager import MiddlewareManager
-
+from funpaybotengine.dispatching.bases import HandlerCallableType
 
 if TYPE_CHECKING:
-    from funpaybotengine.dispatching.bases import HandlerCallableType, HandlerManagerDecoratorType
     from funpaybotengine.dispatching.routers.base import Router
 
 
 EventType = TypeVar('EventType', bound=Any)
-P = ParamSpec('P')
-R = TypeVar('R', bound=Any)
+F = TypeVar('F', bound=HandlerCallableType)
 
 
 class HandlerManager(Generic[EventType]):
@@ -117,13 +115,9 @@ class HandlerManager(Generic[EventType]):
 
         :return: An async generator of ``HandlerInfo`` objects with matching filters.
         """
-
-        async def wrapped():
-            return self._inner_get_matching_handlers(event)
-
         wrapped_get_matching_handlers = MiddlewareManager.wrap_callable_with_middlewares(
             middlewares=self._pre_filters_middlewares,
-            callable_to_wrap=wrapped,
+            callable_to_wrap=lambda: self._inner_get_matching_handlers(event),
             workflow_data=workflow_data,
         )
 
@@ -177,7 +171,7 @@ class HandlerManager(Generic[EventType]):
 
     def register_handler(
         self,
-        func: HandlerCallableType[P, R],
+        func: HandlerCallableType,
         *,
         event_type: Type[Event[Any]] | None = None,
         id: str | None = None,
@@ -203,37 +197,28 @@ class HandlerManager(Generic[EventType]):
         self._register_handler(handler_obj)
 
     @overload
-    def __call__(
-        self,
-        func: HandlerCallableType[P, R] = ...,
-        *,
-        event_type: None = ...,
-        id: None = ...,
-        filter: None = ...,
-        pre_execution_middlewares: list[Any] | None = ...,  # todo: middleware type
-    ) -> HandlerCallableType[P, R]: ...
+    def __call__(self, func: F, /) -> F: ...
 
     @overload
     def __call__(
         self,
-        func: None = ...,
-        *,
-        event_type: Type[Event[Any]] | None = ...,
-        id: str | None = ...,
-        filter: Filter | None = ...,
-        pre_execution_middlewares: list[Any] | None = ...,  # todo: middleware type
-    ) -> HandlerManagerDecoratorType[P, R]: ...
-
-    def __call__(
-        self,
-        func: HandlerCallableType[P, R] | None = None,
         *,
         event_type: Type[Event[Any]] | None = None,
         id: str | None = None,
         filter: Filter | None = None,
         pre_execution_middlewares: list[Any] | None = None,  # todo: middleware type
-    ) -> HandlerCallableType[P, R] | HandlerManagerDecoratorType[P, R]:
-        def inner(func: HandlerCallableType[P, R]) -> HandlerCallableType[P, R]:
+    ) -> Callable[[F], F]: ...
+
+    def __call__(
+        self,
+        func: F | None = None,
+        *,
+        event_type: Type[Event[Any]] | None = None,
+        id: str | None = None,
+        filter: Filter | None = None,
+        pre_execution_middlewares: list[Any] | None = None,  # todo: middleware type
+    ) -> F | Callable[[F], F]:
+        def inner(func: F) -> F:
             self.register_handler(
                 func=func,
                 event_type=event_type,
@@ -280,7 +265,7 @@ class HandlerManager(Generic[EventType]):
         return self._pre_handler_middlewares
 
 
-def gen_default_handler_id(func: HandlerCallableType[P, R]) -> str:
+def gen_default_handler_id(func: HandlerCallableType) -> str:
     func_file = pathlib.Path(inspect.getfile(func)).resolve()
 
     main_file = pathlib.Path(sys.modules['__main__'].__file__).resolve()
