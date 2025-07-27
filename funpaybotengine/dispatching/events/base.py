@@ -19,12 +19,33 @@ class Event(BindableObject, Generic[EventObject]):
         self._object: EventObject = obj
         self._data: dict[Any, Any] = {}
         self._propagation_stopped: bool = False
+        self._flags: set[str] = set()
 
     def __setitem__(self, key: Any, value: Any) -> None:
         self._data[key] = value
 
     def __getitem__(self, key: Any) -> Any:
         return self._data[key]
+
+    def set_flag(self, flag: str) -> None:
+        self._flags.add(flag)
+
+    def unset_flag(self, flag: str) -> None:
+        try:
+            self._flags.remove(flag)
+        except KeyError:
+            pass
+
+    def set_flags(self, *flags: str) -> None:
+        for i in flags:
+            self.set_flag(i)
+
+    def unset_flags(self, *flags: str) -> None:
+        for i in flags:
+            self.unset_flag(i)
+
+    def flags(self) -> tuple[str, ...]:
+        return tuple(self._flags)
 
     def get(self, key: Any) -> Any:
         return self._data.get(key, None)
