@@ -4,6 +4,7 @@ from __future__ import annotations
 __all__ = (
     'CallableInfo',
     'HandlerInfo',
+    'HandlerMeta',
     'HandlerCallableType',
     'MiddlewareCallableType',
     'WrappedWithMiddlewaresType',
@@ -83,6 +84,14 @@ class CallableInfo:
         return await asyncio.to_thread(self.callable, **workflow_data)
 
 
+@dataclass(frozen=True)
+class HandlerMeta:
+    definition_filename: str | None
+    definition_lineno: int
+    registration_filename: str
+    registration_lineno: int
+
+
 @dataclass
 class HandlerInfo(CallableInfo):
     id: str
@@ -96,6 +105,8 @@ class HandlerInfo(CallableInfo):
 
     manager: HandlerManager[Any]
     """Handler manager to which this handler is bound."""
+
+    meta: HandlerMeta
 
     pre_execution_middlewares: list[MiddlewareCallableType] = field(default_factory=list)
     """List of pre handler execution middlewares."""

@@ -11,7 +11,8 @@ from types import MappingProxyType
 from collections.abc import Callable, AsyncGenerator
 
 from funpaybotengine.loggers import router_logger
-from funpaybotengine.dispatching.bases import HandlerInfo, CallableInfo, HandlerCallableType
+from funpaybotengine.dispatching.bases import HandlerInfo, CallableInfo, HandlerCallableType, HandlerMeta
+from funpaybotengine.dispatching.handlers.base import Handler
 from funpaybotengine.dispatching.events.base import Event
 from funpaybotengine.dispatching.filters.base import Filter, CallableFilter, AwaitableFilter
 from funpaybotengine.dispatching.middlewares.middleware_manager import MiddlewareManager
@@ -81,12 +82,16 @@ class HandlerManager(Generic[EventType]):
         if (exists_handler := root_router.get_handler_by_id(handler.id)) is not None:
             raise ValueError(
                 f'Handler with ID {handler.id} already exists.\n'
-                f"Original handler in router '{exists_handler.manager.router.name}' "
-                f'in "{inspect.getsourcefile(exists_handler.callable)}:'
-                f'{inspect.getsourcelines(exists_handler.callable)[1]}"\n'
-                f"Duplicate handler in router '{handler.manager.router.name}' "
-                f'in "{inspect.getsourcefile(handler.callable)}:'
-                f'{inspect.getsourcelines(handler.callable)[1]}"',
+                f"Original handler registered in router '{exists_handler.manager.router.name}':\n"
+                f'    Defined in "{exists_handler.meta.definition_filename}:'
+                f'{exists_handler.meta.definition_lineno}"\n'
+                f'    Registered in {exists_handler.meta.registration_filename}:'
+                f'{exists_handler.meta.registration_lineno}\n\n'
+                f"Duplicate handler in router '{handler.manager.router.name}':\n"
+                f'    Defined in "{handler.meta.definition_filename}:'
+                f'{handler.meta.definition_lineno}"\n'
+                f'    Registered in {handler.meta.registration_filename}:'
+                f'{handler.meta.registration_lineno}'
             )
         self._handlers[handler.id] = handler
         router_logger.debug(
@@ -178,12 +183,13 @@ class HandlerManager(Generic[EventType]):
 
     def register_handler(
         self,
-        func: HandlerCallableType,
+        handler: HandlerCallableType,
         *,
         event_type: Type[Event[Any]] | None = None,
         id: str | None = None,
         filter: Filter | CallableFilter | AwaitableFilter | None = None,
         pre_execution_middlewares: list[Any] | None = None,
+        meta: HandlerMeta | None = None
     ) -> None:
         if self.event_type_filter is not None and event_type is not None:
             raise ValueError(
@@ -191,15 +197,23 @@ class HandlerManager(Generic[EventType]):
                 f'Use @<Router>.on_event(event_type={event_type.__name__}) instead.',
             )
 
+        if meta is None:
+            stack = inspect.stack()
+            meta = gen_handler_meta(
+                handler=handler,
+                reg_frame=stack[1]
+            )
+
         handler_obj = HandlerInfo(
-            id=id or gen_default_handler_id(func),
+            id=id or gen_default_handler_id(handler, self),
             event_type_filter=self.event_type_filter
             if self.event_type_filter is not None
             else event_type,
             filter=CallableInfo(filter) if filter is not None else None,
-            callable=func,
+            callable=handler,
             manager=self,
             pre_execution_middlewares=pre_execution_middlewares or [],
+            meta=meta
         )
         self._register_handler(handler_obj)
 
@@ -225,15 +239,21 @@ class HandlerManager(Generic[EventType]):
         filter: Filter | CallableFilter | AwaitableFilter | None = None,
         pre_execution_middlewares: list[Any] | None = None,  # todo: middleware type
     ) -> F | Callable[[F], F]:
-        def inner(func: F) -> F:
+        def inner(handler: F) -> F:
+            stack = inspect.stack()
+
             self.register_handler(
-                func=func,
+                handler=handler,
                 event_type=event_type,
                 id=id,
                 filter=filter,
                 pre_execution_middlewares=pre_execution_middlewares,
+                meta=gen_handler_meta(
+                    handler=handler,
+                    reg_frame=stack[2 if func is not None else 1]
+                )
             )
-            return func
+            return handler
 
         if func is None:
             return inner
@@ -272,8 +292,12 @@ class HandlerManager(Generic[EventType]):
         return self._pre_handler_middlewares
 
 
-def gen_default_handler_id(func: HandlerCallableType) -> str:
-    func_file = pathlib.Path(inspect.getfile(func)).resolve()
+def gen_default_handler_id(
+        handler: HandlerCallableType | Handler,
+        manager: HandlerManager[Any]
+) -> str:
+    handler = handler if not is_instance(handler) else handler.__class__
+    func_file = pathlib.Path(inspect.getfile(handler)).resolve()
 
     main_file = pathlib.Path(sys.modules['__main__'].__file__).resolve()
     project_root = main_file.parent
@@ -285,4 +309,22 @@ def gen_default_handler_id(func: HandlerCallableType) -> str:
 
     module_path = '.'.join(rel_path.parts)
 
-    return f'{module_path}.{func.__qualname__}'
+    return f'{manager.router.name}.{manager.name}--{module_path}.{handler.__qualname__}'
+
+
+def is_instance(handler: Any) -> bool:
+    return not (
+            inspect.isfunction(handler) or
+            inspect.ismethod(handler) or
+            inspect.isclass(handler)
+    )
+
+def gen_handler_meta(handler: HandlerCallableType, reg_frame: inspect.FrameInfo) -> HandlerMeta:
+    h = handler.__class__ if is_instance(handler) else handler
+
+    return HandlerMeta(
+        definition_filename=inspect.getsourcefile(h),
+        definition_lineno=inspect.getsourcelines(h)[1],
+        registration_filename=reg_frame.filename,
+        registration_lineno=reg_frame.lineno,
+    )

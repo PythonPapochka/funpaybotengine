@@ -1,4 +1,4 @@
 from __future__ import annotations
 
 from .base import *
-from .dispatcher import Dispatcher
+from .dispatcher import *
