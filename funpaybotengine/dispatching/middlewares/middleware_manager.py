@@ -5,7 +5,7 @@ __all__ = ('MiddlewareManager', 'WrappedWithMiddlewaresCallable', 'CallState')
 
 
 from typing import Any, TypeVar, Callable, Awaitable, overload
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import wraps
 from collections.abc import Sequence
 
@@ -23,6 +23,7 @@ F = TypeVar('F', bound=MiddlewareCallableType)
 class CallState:
     callable_executed: bool = False
     callable_return: Any = None
+    local_scope_workflow_data: dict[str, Any] = field(default_factory=dict)
 
 
 class WrappedWithMiddlewaresCallable:
@@ -140,7 +141,9 @@ class MiddlewareManager(Sequence[MiddlewareCallableType]):
         @wraps(callable_to_wrap)
         async def last_call(state: CallState) -> Any:
             handler_obj = CallableInfo(callable_to_wrap)
-            result = await handler_obj(**workflow_data)
+            result = await handler_obj(
+                **workflow_data | {'local_workflow_data': state.local_scope_workflow_data}
+            )
 
             state.callable_executed = True
             state.callable_return = result
@@ -148,26 +151,34 @@ class MiddlewareManager(Sequence[MiddlewareCallableType]):
         current: Callable[[CallState], Awaitable[Any]] = last_call
 
         for middleware in reversed(middlewares) if first_to_last else middlewares:
-            current = MiddlewareManager._make_wrapper(current, middleware, workflow_data)
+            current = MiddlewareManager._wrap_with_middleware(current, middleware, workflow_data)
 
         return WrappedWithMiddlewaresCallable(current)
 
     @staticmethod
-    def _make_wrapper(
-        current: Callable[[CallState], Any],
+    def _wrap_with_middleware(
+        callable_to_wrap: Callable[[CallState], Any],
         middleware: MiddlewareCallableType,
         workflow_data: dict[str, Any],
     ) -> WrappedWithMiddlewaresType:
-        @wraps(current)
+        @wraps(callable_to_wrap)
         def next_call_factory(state: CallState) -> Callable[..., Any]:
             async def next_call() -> Any:
-                return await current(state)
+                return await callable_to_wrap(state)
 
             return next_call
 
         @wraps(middleware)
-        async def middleware_wrapper(state: CallState) -> Any:
+        async def wrapped(state: CallState) -> Any:
             middleware_obj = CallableInfo(middleware)
-            return await middleware_obj(**workflow_data | {'next_call': next_call_factory(state)})
+            result = await middleware_obj(
+                **workflow_data |
+                  {
+                      'next_call': next_call_factory(state),
+                      'local_workflow_data': state.local_scope_workflow_data
+                  }
+            )
 
-        return middleware_wrapper
+            return result
+
+        return wrapped
