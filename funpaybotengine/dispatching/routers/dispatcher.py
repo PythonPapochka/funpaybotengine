@@ -30,17 +30,38 @@ class Dispatcher(Router):
             'dispatcher': self,
         }
 
+        executed_handlers: dict[str, bool] = {}
+        awaiting_handlers: list[HandlerInfo] = []
+
         async for handler in self.get_matching_handlers(event, workflow_data=workflow_data):
-            await self.execute_handler(event, handler, workflow_data=workflow_data)
+            if not handler.can_be_executed(executed_handlers):
+                awaiting_handlers.append(handler)
+                continue
+
+            r = await self.execute_handler(event, handler, workflow_data=workflow_data)
+            executed_handlers[handler.id] = r
             if event.propagation_stopped:
                 break
+
+            while True:
+                for awaiting_handler in awaiting_handlers:
+                    if not awaiting_handler.can_be_executed(executed_handlers):
+                        continue
+
+                    awaiting_handlers.remove(awaiting_handler)
+                    r = await self.execute_handler(event, awaiting_handler,
+                                                   workflow_data=workflow_data)
+                    executed_handlers[awaiting_handler.id] = r
+                    break
+                else:
+                    break
 
     async def execute_handler(
         self,
         event: Event[Any],
         handler: HandlerInfo,
         workflow_data: dict[str, Any],
-    ) -> None:
+    ) -> bool:
         workflow_data = {
             **workflow_data,
             'handler_info': handler,
@@ -56,9 +77,10 @@ class Dispatcher(Router):
 
         try:
             await wrapped_handler()
+            return True
         except Exception as e:
             event = ExceptionEvent(obj=event, exception=e)
-            ...
+            return False
 
     def _wrap_handler_with_middlewares(
         self,

@@ -193,6 +193,7 @@ class HandlerManager(Generic[EventType]):
         id: str | None = None,
         filter: Filter | CallableFilter | AwaitableFilter | None = None,
         middlewares: list[Any] | None = None,
+        ensure_after: dict[str, Any] | None = None,
         meta: HandlerMeta | None = None,
     ) -> None:
         if self.event_type_filter is not None and event_type is not None:
@@ -217,6 +218,7 @@ class HandlerManager(Generic[EventType]):
             callable=handler,
             manager=self,
             middlewares=middlewares or [],
+            ensure_after=ensure_after or {},
             meta=meta,
         )
         self._register_handler(handler_obj)
@@ -232,6 +234,7 @@ class HandlerManager(Generic[EventType]):
         id: str | None = None,
         filter: Filter | CallableFilter | AwaitableFilter | None = None,
         middlewares: list[Any] | None = None,  # todo: middleware type
+        ensure_after: dict[str, Any] | None = None,
     ) -> Callable[[F], F]: ...
 
     def __call__(
@@ -242,6 +245,7 @@ class HandlerManager(Generic[EventType]):
         id: str | None = None,
         filter: Filter | CallableFilter | AwaitableFilter | None = None,
         middlewares: list[Any] | None = None,  # todo: middleware type
+        ensure_after: dict[str, Any] | None = None,
     ) -> F | Callable[[F], F]:
         def inner(handler: F) -> F:
             stack = inspect.stack()
@@ -252,6 +256,7 @@ class HandlerManager(Generic[EventType]):
                 id=id,
                 filter=filter,
                 middlewares=middlewares,
+                ensure_after=ensure_after,
                 meta=gen_handler_meta(
                     handler=handler,
                     reg_frame=stack[2 if func is not None else 1],
@@ -297,7 +302,7 @@ class HandlerManager(Generic[EventType]):
 
 
 def gen_default_handler_id(
-    handler: HandlerCallableType | Handler,
+    handler: HandlerCallableType,
     manager: HandlerManager[Any],
 ) -> str:
     handler = handler if not is_instance(handler) else handler.__class__

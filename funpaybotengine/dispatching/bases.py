@@ -110,3 +110,23 @@ class HandlerInfo(CallableInfo):
 
     middlewares: list[MiddlewareCallableType] = field(default_factory=list)
     """List of middlewares."""
+
+    ensure_after: dict[str, Any] = field(default_factory=dict)
+
+    def can_be_executed(self, executed_handlers: dict[str, Any]) -> bool:
+        if not self.ensure_after:
+            return True
+
+        for i in self.ensure_after:
+            if i not in executed_handlers:
+                return False
+
+            if self.ensure_after[i] is Ellipsis:
+                continue
+
+            result = executed_handlers[i]
+
+            if result != self.ensure_after[i]:
+                return False
+        else:
+            return True

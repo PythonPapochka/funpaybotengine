@@ -127,7 +127,6 @@ class Router:
         workflow_data: dict[str, Any],
     ) -> AsyncGenerator[HandlerInfo, None]:
         manager = self._managers.get(type(event)) or self._on_event
-
         async for handler in manager.get_matching_handlers(event, workflow_data):
             yield handler
 
