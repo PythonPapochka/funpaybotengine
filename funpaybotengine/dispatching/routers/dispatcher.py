@@ -67,12 +67,12 @@ class Dispatcher(Router):
         workflow_data: dict[str, Any],
     ) -> WrappedWithMiddlewaresType:
         pre_execution_middlewares: list[MiddlewareCallableType] = list(
-            reversed(handler.pre_execution_middlewares),
+            reversed(handler.middlewares),
         )
 
         for router in handler.manager.router.chain_to_root_router:
             manager = router.get_manager_by_event(event)
-            pre_execution_middlewares.extend(reversed(manager.pre_handler_middlewares))
+            pre_execution_middlewares.extend(reversed(manager.handler_middlewares))
 
         async def wrapper() -> Any:
             await handler.__call__(**workflow_data)

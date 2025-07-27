@@ -108,5 +108,5 @@ class HandlerInfo(CallableInfo):
 
     meta: HandlerMeta
 
-    pre_execution_middlewares: list[MiddlewareCallableType] = field(default_factory=list)
-    """List of pre handler execution middlewares."""
+    middlewares: list[MiddlewareCallableType] = field(default_factory=list)
+    """List of middlewares."""
