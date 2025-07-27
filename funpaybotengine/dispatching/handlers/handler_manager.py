@@ -12,7 +12,6 @@ from collections.abc import Callable, AsyncGenerator
 
 from funpaybotengine.loggers import router_logger
 from funpaybotengine.dispatching.bases import HandlerInfo, CallableInfo, HandlerCallableType, HandlerMeta
-from funpaybotengine.dispatching.handlers.base import Handler
 from funpaybotengine.dispatching.events.base import Event
 from funpaybotengine.dispatching.filters.base import Filter, CallableFilter, AwaitableFilter
 from funpaybotengine.dispatching.middlewares.middleware_manager import MiddlewareManager
