@@ -206,18 +206,18 @@ class Router:
     def parent_router(self, router: Router) -> None:
         if self.parent_router:
             raise RuntimeError(
-                f'Router \'{self.name}\' is already connected to router '
-                f'\'{self.parent_router.name}\'.'
+                f"Router '{self.name}' is already connected to router "
+                f"'{self.parent_router.name}'.",
             )
 
         if not isinstance(router, Router):
             raise ValueError(
-                f'Router should be an instance of Router, not {type(router).__name__!r}'
+                f'Router should be an instance of Router, not {type(router).__name__!r}',
             )
 
         if router is self:
             raise RuntimeError(
-                f'Cannot connect router to itself.'
+                'Cannot connect router to itself.',
             )
 
         for i in router.chain_to_root_router:
@@ -229,9 +229,8 @@ class Router:
         self._parent_router = router
         router._inner_routers[self.name] = self
         router_logger.info(
-            f'Router \'{self.name}\' connected to router \'{self.parent_router.name}\'.'
+            f"Router '{self.name}' connected to router '{self.parent_router.name}'.",
         )
-
 
     @property
     def name(self) -> str:

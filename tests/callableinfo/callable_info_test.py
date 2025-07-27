@@ -1,8 +1,11 @@
-from funpaybotengine.dispatching.bases import CallableInfo
-from collections.abc import Callable
-import pytest
-from typing import Any
+from __future__ import annotations
 
+from typing import Any
+from collections.abc import Callable
+
+import pytest
+
+from funpaybotengine.dispatching.bases import CallableInfo
 
 
 @pytest.fixture
@@ -11,7 +14,7 @@ def workflow_data() -> dict[str, Any]:
         'arg1': 'arg1',
         'arg2': 2,
         'arg3': True,
-        'arg4': False
+        'arg4': False,
     }
 
 
@@ -41,11 +44,12 @@ def function_with_kwonly_params() -> Callable[..., Any]:
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    'function,expected', [
+    'function,expected',
+    [
         ('function_without_params', True),
         ('function_with_params', ('arg1', 2, True, False)),
         ('function_with_kwonly_params', ('arg1', 1)),
-    ]
+    ],
 )
 async def test_callable_info(workflow_data, function, expected, request):
     real_function = request.getfixturevalue(function)

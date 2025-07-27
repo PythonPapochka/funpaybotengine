@@ -1,20 +1,14 @@
 from __future__ import annotations
 
-import sys
-import time
-import logging
-from logging.config import dictConfig
+import asyncio
 
 from funpaybotengine.types.messages import Message
-from funpaybotengine.dispatching.bases import HandlerInfo
 from funpaybotengine.dispatching.events import NewMessageEvent
-from funpaybotengine.dispatching.filters import MessageTextFilter
 from funpaybotengine.dispatching.routers import Router, Dispatcher
-import asyncio
 
 
 # --- loggers ---
-'''
+"""
 dictConfig(
     config={
         'version': 1,
@@ -44,7 +38,7 @@ dictConfig(
         },
     },
 )
-'''
+"""
 # --- Event preparation ---
 message = Message(
     raw_source='',
@@ -69,15 +63,16 @@ e = NewMessageEvent(
 # Program
 dp = Dispatcher()
 router = Router(
-    'some_router'
+    'some_router',
 )
 
 router2 = Router(
-    'some_router'
+    'some_router',
 )
 
 dp.connect_router(router)
 dp.connect_router(router2)
+
 
 # Start
 async def main() -> None:

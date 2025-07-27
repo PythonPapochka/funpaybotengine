@@ -5,7 +5,7 @@ __all__ = ('MiddlewareManager', 'WrappedWithMiddlewaresCallable', 'CallState')
 
 
 from typing import Any, TypeVar, Callable, Awaitable, overload
-from dataclasses import dataclass, field
+from dataclasses import field, dataclass
 from functools import wraps
 from collections.abc import Sequence
 
@@ -142,7 +142,7 @@ class MiddlewareManager(Sequence[MiddlewareCallableType]):
         async def last_call(state: CallState) -> Any:
             handler_obj = CallableInfo(callable_to_wrap)
             result = await handler_obj(
-                **workflow_data | {'local_workflow_data': state.local_scope_workflow_data}
+                **workflow_data | {'local_workflow_data': state.local_scope_workflow_data},
             )
 
             state.callable_executed = True
@@ -172,11 +172,11 @@ class MiddlewareManager(Sequence[MiddlewareCallableType]):
         async def wrapped(state: CallState) -> Any:
             middleware_obj = CallableInfo(middleware)
             result = await middleware_obj(
-                **workflow_data |
-                  {
-                      'next_call': next_call_factory(state),
-                      'local_workflow_data': state.local_scope_workflow_data
-                  }
+                **workflow_data
+                | {
+                    'next_call': next_call_factory(state),
+                    'local_workflow_data': state.local_scope_workflow_data,
+                },
             )
 
             return result

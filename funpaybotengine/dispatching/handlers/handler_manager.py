@@ -11,7 +11,12 @@ from types import MappingProxyType
 from collections.abc import Callable, AsyncGenerator
 
 from funpaybotengine.loggers import router_logger
-from funpaybotengine.dispatching.bases import HandlerInfo, CallableInfo, HandlerCallableType, HandlerMeta
+from funpaybotengine.dispatching.bases import (
+    HandlerInfo,
+    HandlerMeta,
+    CallableInfo,
+    HandlerCallableType,
+)
 from funpaybotengine.dispatching.events.base import Event
 from funpaybotengine.dispatching.filters.base import Filter, CallableFilter, AwaitableFilter
 from funpaybotengine.dispatching.middlewares.middleware_manager import MiddlewareManager
@@ -90,7 +95,7 @@ class HandlerManager(Generic[EventType]):
                 f'    Defined in "{handler.meta.definition_filename}:'
                 f'{handler.meta.definition_lineno}"\n'
                 f'    Registered in {handler.meta.registration_filename}:'
-                f'{handler.meta.registration_lineno}'
+                f'{handler.meta.registration_lineno}',
             )
         self._handlers[handler.id] = handler
         router_logger.debug(
@@ -188,7 +193,7 @@ class HandlerManager(Generic[EventType]):
         id: str | None = None,
         filter: Filter | CallableFilter | AwaitableFilter | None = None,
         middlewares: list[Any] | None = None,
-        meta: HandlerMeta | None = None
+        meta: HandlerMeta | None = None,
     ) -> None:
         if self.event_type_filter is not None and event_type is not None:
             raise ValueError(
@@ -200,7 +205,7 @@ class HandlerManager(Generic[EventType]):
             stack = inspect.stack()
             meta = gen_handler_meta(
                 handler=handler,
-                reg_frame=stack[1]
+                reg_frame=stack[1],
             )
 
         handler_obj = HandlerInfo(
@@ -212,7 +217,7 @@ class HandlerManager(Generic[EventType]):
             callable=handler,
             manager=self,
             middlewares=middlewares or [],
-            meta=meta
+            meta=meta,
         )
         self._register_handler(handler_obj)
 
@@ -241,11 +246,17 @@ class HandlerManager(Generic[EventType]):
         def inner(handler: F) -> F:
             stack = inspect.stack()
 
-            self.register_handler(handler=handler, event_type=event_type, id=id, filter=filter,
-                                  middlewares=middlewares, meta=gen_handler_meta(
+            self.register_handler(
+                handler=handler,
+                event_type=event_type,
+                id=id,
+                filter=filter,
+                middlewares=middlewares,
+                meta=gen_handler_meta(
                     handler=handler,
-                    reg_frame=stack[2 if func is not None else 1]
-                ))
+                    reg_frame=stack[2 if func is not None else 1],
+                ),
+            )
             return handler
 
         if func is None:
@@ -286,8 +297,8 @@ class HandlerManager(Generic[EventType]):
 
 
 def gen_default_handler_id(
-        handler: HandlerCallableType | Handler,
-        manager: HandlerManager[Any]
+    handler: HandlerCallableType | Handler,
+    manager: HandlerManager[Any],
 ) -> str:
     handler = handler if not is_instance(handler) else handler.__class__
     func_file = pathlib.Path(inspect.getfile(handler)).resolve()
@@ -307,10 +318,9 @@ def gen_default_handler_id(
 
 def is_instance(handler: Any) -> bool:
     return not (
-            inspect.isfunction(handler) or
-            inspect.ismethod(handler) or
-            inspect.isclass(handler)
+        inspect.isfunction(handler) or inspect.ismethod(handler) or inspect.isclass(handler)
     )
+
 
 def gen_handler_meta(handler: HandlerCallableType, reg_frame: inspect.FrameInfo) -> HandlerMeta:
     h = handler.__class__ if is_instance(handler) else handler
