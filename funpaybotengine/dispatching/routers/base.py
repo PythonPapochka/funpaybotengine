@@ -23,15 +23,13 @@ from funpaybotengine.dispatching.handlers.handler_manager import HandlerManager
 
 if TYPE_CHECKING:
     from funpaybotengine.dispatching.bases import HandlerInfo
-    from funpaybotengine.dispatching.filters.base import Filter
 
 
 class Router:
-    def __init__(self, name: str, filter: Filter | None = None) -> None:
-        self._name = name
+    def __init__(self, name: str | None = None) -> None:
+        self._name = name or f'Router{id(self)}'
         self._parent_router: Router | None = None
         self._inner_routers: dict[str, Router] = {}
-        self.filter = filter
 
         self._on_chat_init_event = HandlerManager(
             self,
@@ -103,17 +101,7 @@ class Router:
         }
 
     def connect_router(self, router: Router) -> None:
-        if router.parent_router is not None:
-            raise Exception('Router is already connected to ...')  # todo: exception
-
-        if router is self:
-            raise Exception('Cannot connect self')  # todo: exception
-
-        # if isinstance(router, 'RootRouter'):  # todo
-
-        router._parent_router = self
-        self._inner_routers[router.name] = router
-        router_logger.debug(f"Router '{router.name}' connected to router '{self.name}'")
+        router.parent_router = self
 
     def connect_routers(self, *routers: Router) -> None:
         for i in routers:
@@ -213,6 +201,34 @@ class Router:
     @property
     def parent_router(self) -> Router | None:
         return self._parent_router
+
+    @parent_router.setter
+    def parent_router(self, router: Router) -> None:
+        if self.parent_router:
+            raise RuntimeError(
+                f'Router \'{self.name}\' is already connected to router '
+                f'\'{self.parent_router.name}\'.'
+            )
+
+        if not isinstance(router, Router):
+            raise ValueError(
+                f'Router should be an instance of Router, not {type(router).__name__!r}'
+            )
+
+        if router is self:
+            raise RuntimeError(
+                f'Cannot connect router to itself.'
+            )
+
+        for i in router.chain_to_root_router:
+            if i.parent_router is self:
+                raise RuntimeError('Circular connection of routers is not allowed.')  # todo: tree
+
+        # todo: add name check
+
+        self._parent_router = router
+        router._inner_routers[self.name] = self
+
 
     @property
     def name(self) -> str:

@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 class Dispatcher(Router):
     def __init__(self, workflow_data: dict[str, Any] | None = None) -> None:
-        super().__init__(name='dispatcher')
+        super().__init__(name='Dispatcher')
 
         self._workflow_data = workflow_data or {}
 
