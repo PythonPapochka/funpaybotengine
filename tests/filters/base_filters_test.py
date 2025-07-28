@@ -68,7 +68,7 @@ def false_filter_async_function() -> AwaitableFilter:
 
 @pytest.fixture
 def event() -> RunnerEvent[object]:
-    return RunnerEvent(object, 'tag')
+    return RunnerEvent(object=object, tag='tag')
 
 
 @pytest.mark.asyncio
