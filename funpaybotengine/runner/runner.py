@@ -16,6 +16,7 @@ from funpaybotengine.types.requests.runner import (
 )
 from funpaybotengine.dispatching.events.base import RunnerEvent
 from funpaybotengine.dispatching.events.builtin_events import ChatChangedEvent
+import time
 import asyncio
 
 
@@ -91,12 +92,13 @@ class Runner:
         self._messages_tag = runner_response.chat_bookmarks.tag
         return result
 
-    async def listen(self) -> AsyncGenerator[RunnerEvent[Any]]:
+    async def listen(self, interval: int | float = 3) -> AsyncGenerator[RunnerEvent[Any]]:
         await self.discover_sales()
         await self.discover_purchases()
         await self.discover_chats()
 
         while True:
+            start = time.time()
             counters = OrdersCountersRequestObject(
                 id=self.bot._userid, runner_tag=self.counters_tag
             )
@@ -114,7 +116,8 @@ class Runner:
             for i in events:
                 yield i
 
-            await asyncio.sleep(3)
+            time_to_sleep = interval - (time.time() - start)
+            await asyncio.sleep(time_to_sleep if time_to_sleep > 0 else 0)
 
     @property
     def messages_tag(self) -> str:
