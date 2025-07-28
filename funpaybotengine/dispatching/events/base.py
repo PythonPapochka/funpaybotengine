@@ -14,6 +14,11 @@ EventObject = TypeVar('EventObject', bound=Any)
 
 
 class Event(BindableObject, Generic[EventObject], BaseModel):
+
+    _data: dict[str, Any] = PrivateAttr(default_factory=dict)
+    _propagation_stopped: bool = PrivateAttr(default=False)
+    _flags: set[str] = PrivateAttr(default_factory=set)
+
     def __init__(self, obj: EventObject) -> None:
         super().__init__()
 
