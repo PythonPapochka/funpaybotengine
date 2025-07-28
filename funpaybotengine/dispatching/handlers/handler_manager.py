@@ -192,6 +192,7 @@ class HandlerManager(Generic[EventType]):
         event_type: Type[Event[Any]] | None = None,
         id: str | None = None,
         filter: Filter | CallableFilter | AwaitableFilter | None = None,
+        as_task: bool = False,
         middlewares: list[Any] | None = None,
         ensure_after: dict[str, Any] | None = None,
         meta: HandlerMeta | None = None,
@@ -215,6 +216,7 @@ class HandlerManager(Generic[EventType]):
             if self.event_type_filter is not None
             else event_type,
             filter=CallableInfo(filter) if filter is not None else None,
+            as_task=as_task,
             callable=handler,
             manager=self,
             middlewares=middlewares or [],
@@ -233,6 +235,7 @@ class HandlerManager(Generic[EventType]):
         event_type: Type[Event[Any]] | None = None,
         id: str | None = None,
         filter: Filter | CallableFilter | AwaitableFilter | None = None,
+        as_task: bool = False,
         middlewares: list[Any] | None = None,  # todo: middleware type
         ensure_after: dict[str, Any] | None = None,
     ) -> Callable[[F], F]: ...
@@ -244,6 +247,7 @@ class HandlerManager(Generic[EventType]):
         event_type: Type[Event[Any]] | None = None,
         id: str | None = None,
         filter: Filter | CallableFilter | AwaitableFilter | None = None,
+        as_task: bool = False,
         middlewares: list[Any] | None = None,  # todo: middleware type
         ensure_after: dict[str, Any] | None = None,
     ) -> F | Callable[[F], F]:
@@ -255,6 +259,7 @@ class HandlerManager(Generic[EventType]):
                 event_type=event_type,
                 id=id,
                 filter=filter,
+                as_task=as_task,
                 middlewares=middlewares,
                 ensure_after=ensure_after,
                 meta=gen_handler_meta(

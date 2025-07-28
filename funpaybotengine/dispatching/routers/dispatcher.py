@@ -10,6 +10,9 @@ from funpaybotengine.dispatching.bases import MiddlewareCallableType, WrappedWit
 from funpaybotengine.dispatching.events.base import ExceptionEvent
 from funpaybotengine.dispatching.middlewares import MiddlewareManager
 from funpaybotengine.dispatching.routers.base import Router
+from funpaybotengine.loggers import dispatcher_logger
+import time
+import asyncio
 
 
 if TYPE_CHECKING:
@@ -33,14 +36,22 @@ class Dispatcher(Router):
         executed_handlers: dict[str, bool] = {}
         awaiting_handlers: list[HandlerInfo] = []
 
+        dispatcher_logger.debug(f'New event {id(event)}: {type(event)}')
+
         async for handler in self.get_matching_handlers(event, workflow_data=workflow_data):
             if not handler.can_be_executed(executed_handlers):
+                dispatcher_logger.debug(
+                    f'{id(event)} Execution of handler \'{handler.id}\''
+                    f' delayed because of ensure_after.'
+                )
                 awaiting_handlers.append(handler)
                 continue
 
             r = await self.execute_handler(event, handler, workflow_data=workflow_data)
             executed_handlers[handler.id] = r
+
             if event.propagation_stopped:
+                dispatcher_logger.debug(f'({id(event)}) Event propagation stopped.')
                 break
 
             while True:
@@ -75,12 +86,27 @@ class Dispatcher(Router):
             workflow_data=workflow_data,
         )
 
+        dispatcher_logger.debug(f'({id(event)}) Executing handler \'{handler.id}\'...')
+        start = time.time()
         try:
-            await wrapped_handler()
-            return True
+            if not handler.as_task:
+                await wrapped_handler()
+                return True
+            else:
+                asyncio.create_task(wrapped_handler())
+                return True
         except Exception as e:
-            event = ExceptionEvent(obj=event, exception=e)
+            dispatcher_logger.debug(
+                f'({id(event)}) An error occurred while executing handler \'{handler.id}\'.',
+                exc_info=e
+            )
+            event = ExceptionEvent(object=e, event=event)
+            # todo: to exceptions
             return False
+        finally:
+            dispatcher_logger.debug(
+                f'({id(event)}) Handler \'{handler.id}\' executed in {time.time() - start} seconds.'
+            )
 
     def _wrap_handler_with_middlewares(
         self,

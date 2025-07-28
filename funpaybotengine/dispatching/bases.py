@@ -107,6 +107,10 @@ class HandlerInfo(CallableInfo):
     """Handler manager to which this handler is bound."""
 
     meta: HandlerMeta
+    """Handler meta."""
+
+    as_task: bool = False
+    """Whether to run handler as task or not."""
 
     middlewares: list[MiddlewareCallableType] = field(default_factory=list)
     """List of middlewares."""
