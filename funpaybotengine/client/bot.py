@@ -50,10 +50,11 @@ from funpaybotengine.types.requests import (
     SendMessageAction,
     SendingMessageData,
 )
-from funpaybotengine.client.base_bot import BaseBot
 from funpaybotengine.client.session.base import Response
 from funpaybotengine.client.categories_cache import CategoriesCache
 from funpaybotengine.client.session.aiohttp_session import AioHttpSession
+from funpaybotengine.storage.base import Storage
+from funpaybotengine.storage.inmemory_storage import InMemoryStorage
 
 
 if TYPE_CHECKING:
@@ -79,12 +80,14 @@ def need_preinitialization(
     return wrapper
 
 
-class Bot(BaseBot):
-    def __init__(self, golden_key: str, session: BaseSession | None = None):
+class Bot:
+    def __init__(self, golden_key: str, session: BaseSession | None = None, storage: Storage | None = None) -> None:
         self._golden_key = golden_key
         self._csrf_token: str | None = None
         self._phpsessid: str | None = None
         self._session = session or AioHttpSession(proxy=None)
+        self._storage = storage or InMemoryStorage()
+
         self._locale: Language = Language.RU
 
         self._userid: int | None = None
@@ -140,6 +143,10 @@ class Bot(BaseBot):
         Bot session.
         """
         return self._session
+
+    @property
+    def storage(self) -> Storage:
+        return self._storage
 
     @property
     def locale(self) -> Language:

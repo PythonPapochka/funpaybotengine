@@ -19,7 +19,7 @@ from funpaybotengine.client.session.http_methods import HTTPMethod
 
 if TYPE_CHECKING:
     from funpaybotengine.methods.base import FunPayMethod, MethodReturnType
-    from funpaybotengine.client.base_bot import BaseBot
+    from funpaybotengine.client.bot import Bot
 
 
 class AioHttpSession(BaseSession):
@@ -57,7 +57,7 @@ class AioHttpSession(BaseSession):
     async def make_request(
         self,
         method: FunPayMethod[MethodReturnType],
-        bot: BaseBot | None = None,
+        bot: Bot | None = None,
         timeout: float | None = None,
     ) -> Response[MethodReturnType]:
         if bot is not None:

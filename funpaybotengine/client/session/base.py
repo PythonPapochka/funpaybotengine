@@ -21,7 +21,7 @@ from funpaybotengine.exceptions import (
 
 if TYPE_CHECKING:
     from funpaybotengine.methods.base import FunPayMethod, MethodReturnType
-    from funpaybotengine.client.base_bot import BaseBot
+    from funpaybotengine.client.bot import Bot
 
 
 _exceptions: dict[int, Any] = {
@@ -54,7 +54,7 @@ class BaseSession(ABC):
     async def make_request(
         self,
         method: FunPayMethod[MethodReturnType],
-        bot: BaseBot | None = None,
+        bot: Bot | None = None,
         timeout: float | None = None,
     ) -> Response[MethodReturnType]: ...
 

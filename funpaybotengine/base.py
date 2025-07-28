@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from typing import Any, TypeVar, ParamSpec, Concatenate
+from typing import Any, TypeVar, ParamSpec, Concatenate, TYPE_CHECKING
 from collections.abc import Callable
 
 from pydantic import BaseModel, PrivateAttr
 from typing_extensions import Self
 
-from funpaybotengine.client.base_bot import BaseBot
+if TYPE_CHECKING:
+    from funpaybotengine.client.bot import Bot
 
 
 P = ParamSpec('P')
@@ -15,25 +16,23 @@ R = TypeVar('R')
 
 
 class BindableObject(BaseModel):
-    _bot: BaseBot | None = PrivateAttr()
+    _bot: Bot | None = PrivateAttr()
 
     def model_post_init(self, context: dict[Any, Any]) -> None:
         self._bot = context.get('bot') if context else None
 
-    def as_(self, bot: BaseBot | None, /) -> Self:
+    def as_(self, bot: Bot | None, /) -> Self:
         self.bind_to(bot)
         return self
 
     def unbind(self) -> None:
         self._bot = None
 
-    def bind_to(self, bot: BaseBot | None, /) -> None:
-        if not isinstance(bot, BaseBot | None):
-            raise TypeError(f'{bot} is not a bot instance.')
+    def bind_to(self, bot: Bot | None, /) -> None:
         self._bot = bot
 
     @property
-    def bot(self) -> BaseBot | None:
+    def bot(self) -> Bot | None:
         return self._bot
 
 
