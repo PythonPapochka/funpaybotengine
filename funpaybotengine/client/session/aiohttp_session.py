@@ -18,8 +18,8 @@ from funpaybotengine.client.session.http_methods import HTTPMethod
 
 
 if TYPE_CHECKING:
-    from funpaybotengine.methods.base import FunPayMethod, MethodReturnType
     from funpaybotengine.client.bot import Bot
+    from funpaybotengine.methods.base import FunPayMethod, MethodReturnType
 
 
 class AioHttpSession(BaseSession):

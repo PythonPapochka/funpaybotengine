@@ -20,8 +20,8 @@ from funpaybotengine.exceptions import (
 
 
 if TYPE_CHECKING:
-    from funpaybotengine.methods.base import FunPayMethod, MethodReturnType
     from funpaybotengine.client.bot import Bot
+    from funpaybotengine.methods.base import FunPayMethod, MethodReturnType
 
 
 _exceptions: dict[int, Any] = {

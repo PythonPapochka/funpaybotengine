@@ -61,7 +61,9 @@ class Dispatcher(Router):
 
                     awaiting_handlers.remove(awaiting_handler)
                     r = await self.execute_handler(
-                        event, awaiting_handler, workflow_data=workflow_data
+                        event,
+                        awaiting_handler,
+                        workflow_data=workflow_data,
                     )
                     executed_handlers[awaiting_handler.id] = r
                     break

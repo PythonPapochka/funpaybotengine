@@ -3,9 +3,9 @@ from __future__ import annotations
 
 __all__ = ('Bot',)
 
-from typing import TYPE_CHECKING, TypeVar, ParamSpec, overload
+from typing import TYPE_CHECKING, Any, TypeVar, ParamSpec, overload
 from io import BytesIO
-from collections.abc import Callable, Awaitable
+from collections.abc import Callable
 
 from typing_extensions import Self
 
@@ -44,6 +44,7 @@ from funpaybotengine.types.pages import (
     ProfilePage,
     SubcategoryPage,
 )
+from funpaybotengine.storage.base import Storage
 from funpaybotengine.types.requests import (
     NodeRequestObject,
     RunnerRequestData,
@@ -52,23 +53,23 @@ from funpaybotengine.types.requests import (
 )
 from funpaybotengine.client.session.base import Response
 from funpaybotengine.client.categories_cache import CategoriesCache
-from funpaybotengine.client.session.aiohttp_session import AioHttpSession
-from funpaybotengine.storage.base import Storage
 from funpaybotengine.storage.inmemory_storage import InMemoryStorage
+from funpaybotengine.client.session.aiohttp_session import AioHttpSession
+from funpaybotengine.runner import Runner
 
 
 if TYPE_CHECKING:
     from funpaybotengine.client.session.base import BaseSession
+    from funpaybotengine.dispatching.routers.dispatcher import Dispatcher
 
 
 P = ParamSpec('P')
 R = TypeVar('R')
+F = TypeVar('F', bound=Callable[..., Any])
 
 
-def need_preinitialization(
-    func: Callable[P, Awaitable[R]],
-) -> Callable[P, Awaitable[R]]:
-    async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+def need_preinitialization(func: F) -> F:
+    async def wrapper(*args: Any, **kwargs: Any) -> Any:
         if not args or not isinstance(args[0], Bot):
             raise RuntimeError('Can be used only with Bot methods.')  # todo
 
@@ -77,16 +78,19 @@ def need_preinitialization(
             await self.update()
         return await func(*args, **kwargs)
 
-    return wrapper
+    return wrapper  # type: ignore
 
 
 class Bot:
-    def __init__(self, golden_key: str, session: BaseSession | None = None, storage: Storage | None = None) -> None:
+    def __init__(
+        self, golden_key: str, session: BaseSession | None = None, storage: Storage | None = None
+    ) -> None:
         self._golden_key = golden_key
         self._csrf_token: str | None = None
         self._phpsessid: str | None = None
         self._session = session or AioHttpSession(proxy=None)
         self._storage = storage or InMemoryStorage()
+        self._runner = Runner(self)
 
         self._locale: Language = Language.RU
 
@@ -482,3 +486,14 @@ class Bot:
         self._categories_cache = CategoriesCache(result.response_obj.categories)
 
         return self
+
+    @need_preinitialization
+    async def start_polling(self, dp: Dispatcher, /) -> None:
+        try:
+            async with self.session:
+                async for i in self._runner.listen():
+                    await dp.propagate_event(i)
+
+                return None
+        except KeyboardInterrupt:
+            await self.session.close()

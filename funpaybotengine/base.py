@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, TypeVar, ParamSpec, Concatenate, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, TypeVar, ParamSpec, Concatenate
 from collections.abc import Callable
 
 from pydantic import BaseModel, PrivateAttr
 from typing_extensions import Self
+
 
 if TYPE_CHECKING:
     from funpaybotengine.client.bot import Bot
