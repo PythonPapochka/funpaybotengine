@@ -5,7 +5,8 @@ __all__ = ('Event', 'RunnerEvent', 'BotEngineEvent', 'ExceptionEvent')
 
 
 from typing import Any, Generic, TypeVar
-from pydantic import BaseModel, PrivateAttr, Field
+
+from pydantic import Field, BaseModel, PrivateAttr
 
 from funpaybotengine.base import BindableObject
 
@@ -15,7 +16,7 @@ EventObject = TypeVar('EventObject', bound=Any)
 
 class Event(BindableObject, BaseModel, Generic[EventObject]):
     model_config = {
-        'arbitrary_types_allowed': True
+        'arbitrary_types_allowed': True,
     }
 
     object: EventObject = Field(frozen=True)
@@ -67,8 +68,7 @@ class RunnerEvent(Event[EventObject], BaseModel, Generic[EventObject]):
     tag: str = Field(frozen=True)
 
 
-class BotEngineEvent(Event[EventObject], BaseModel, Generic[EventObject]):
-    ...
+class BotEngineEvent(Event[EventObject], BaseModel, Generic[EventObject]): ...
 
 
 class ExceptionEvent(BotEngineEvent[Exception]):

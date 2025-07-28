@@ -1,6 +1,10 @@
+from __future__ import annotations
+
+
 __all__ = ('Storage',)
 
 from abc import ABC, abstractmethod
+
 from funpaybotengine.types.enums import OrderStatus
 
 

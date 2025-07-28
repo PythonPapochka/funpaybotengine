@@ -1,7 +1,10 @@
-from funpaybotengine.storage.base import Storage
-from funpaybotengine.types.enums import OrderStatus
+from __future__ import annotations
 
-__all__ = ('InMemoryStorage', )
+from funpaybotengine.types.enums import OrderStatus
+from funpaybotengine.storage.base import Storage
+
+
+__all__ = ('InMemoryStorage',)
 
 
 class InMemoryStorage(Storage):

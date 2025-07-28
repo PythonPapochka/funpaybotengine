@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 
-__all__ = ('Runner', )
+__all__ = ('Runner',)
 
 
 from typing import TYPE_CHECKING
+
 from funpaybotengine.utils import random_runner_tag
+
 
 if TYPE_CHECKING:
     from funpaybotengine.client.base_bot import BaseBot
@@ -21,4 +23,3 @@ class Runner(BaseBot):
     @property
     def bot(self) -> BaseBot:
         return self._bot
-    
