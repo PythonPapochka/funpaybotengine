@@ -26,11 +26,16 @@ class Dispatcher(Router):
 
         self._workflow_data = workflow_data or {}
 
-    async def propagate_event(self, event: Event[Any]) -> None:
+    async def propagate_event(
+            self,
+            event: Event[Any],
+            events_stack: tuple[Event[Any], ...] | None = None
+    ) -> None:
         workflow_data = {
             **self._workflow_data,
             'event': event,
             'dispatcher': self,
+            'events_stack': events_stack or (event, ),
         }
 
         executed_handlers: dict[str, bool] = {}

@@ -109,13 +109,11 @@ class Runner:
         ...
 
 
-
-
     async def listen(
             self,
             discover_chat_histories: bool = True,
             interval: int | float = 3
-    ) -> AsyncGenerator[RunnerEvent[Any]]:
+    ) -> AsyncGenerator[tuple[RunnerEvent[Any], tuple[RunnerEvent[Any], ...]]]:
         await self.discover_sales()
         await self.discover_purchases()
         await self.discover_chats()
@@ -134,9 +132,9 @@ class Runner:
                 print('err')  # todo
                 continue
 
-            events = await self.extract_chat_changed_updates(result)
+            events = tuple(await self.extract_chat_changed_updates(result))
             for i in events:
-                yield i
+                yield i, events
 
             time_to_sleep = interval - (time.time() - start)
             await asyncio.sleep(time_to_sleep if time_to_sleep > 0 else 0)

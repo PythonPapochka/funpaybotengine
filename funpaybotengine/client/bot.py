@@ -497,8 +497,8 @@ class Bot:
     async def start_polling(self, dp: Dispatcher, /) -> None:
         try:
             async with self.session:
-                async for i in self._runner.listen(interval=1):
-                    await dp.propagate_event(i)
+                async for event, stack in self._runner.listen(interval=1):
+                    await dp.propagate_event(event, stack)
 
                 return None
         except KeyboardInterrupt:
