@@ -3,9 +3,9 @@ from __future__ import annotations
 
 __all__ = ('Bot',)
 
-from typing import TYPE_CHECKING, Any, TypeVar, ParamSpec, overload
+from typing import TYPE_CHECKING, Any, TypeVar, ParamSpec, overload, Literal
 from io import BytesIO
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 
 from typing_extensions import Self
 
@@ -46,6 +46,8 @@ from funpaybotengine.types.pages import (
 )
 from funpaybotengine.storage.base import Storage
 from funpaybotengine.types.requests import (
+    Action,
+    RequestableObject,
     NodeRequestObject,
     RunnerRequestData,
     SendMessageAction,
@@ -168,15 +170,20 @@ class Bot:
         return self._categories_cache
 
     @need_preinitialization
-    async def runner_request(self, data: RunnerRequestData) -> RunnerResponse:
+    async def runner_request(
+            self,
+            requested_objects: list[RequestableObject] | Literal[False] = False,
+            action: Action | Literal[False] = False,
+    ) -> RunnerResponse:
         """
         Makes request to the runner.
-
-        :param data: runner data.
-
         :return: Runner response.
         """
-        data.csrf_token = self.csrf_token
+        data = RunnerRequestData(
+            requested_objects=requested_objects,
+            action=action,
+            csrf_token=self.csrf_token,
+        )
         result = await self.make_request(RunnerRequest(request=data))
         return result.response_obj
 
@@ -263,11 +270,10 @@ class Bot:
             check_message_text(text)
 
         msg_data = SendingMessageData(chat_id=chat_id, message_text=text or '', image_id=image_id)
-        data = RunnerRequestData(
+        result: RunnerResponse = await self.runner_request(
             requested_objects=[NodeRequestObject(chat_id=chat_id, runner_tag=random_runner_tag())],
             action=SendMessageAction(message_data=msg_data),
         )
-        result: RunnerResponse = await self.runner_request(data=data)
         if result.response and result.response.error:
             raise Exception(result.response.error)  # todo
 
