@@ -228,7 +228,7 @@ class Router:
         self._parent_router = router
         router._inner_routers[self.name] = self
         router_logger.info(
-            f"Router '{self.name}' connected to router '{self.parent_router.name}'.",
+            f"Router '{self.name}' connected to router '{router.name}'.",
         )
 
     @property

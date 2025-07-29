@@ -6,7 +6,6 @@ __all__ = (
     'MessageSenderUsernameFilter',
     'MessageSenderIDFilter',
     'MessageHasImageFilter',
-    'MessageTypeFilter',
 )
 
 
@@ -52,9 +51,11 @@ class MessageHasImageFilter(Filter):
         return bool(event.object.image_url)
 
 
+'''
 class MessageTypeFilter(Filter):
     def __init__(self, message_type: ..., /):
         self.message_type = message_type
 
     async def __call__(self, event: Event[Message], *args: Any, **kwargs: Any) -> bool:
         raise NotImplementedError()  # todo
+'''

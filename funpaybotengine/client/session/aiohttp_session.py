@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 
 from aiohttp import ClientSession, ClientTimeout
 from aiohttp.hdrs import USER_AGENT
-from aiohttp.helpers import URL
+from yarl import URL
 
 from funpaybotengine.loggers import session_logger
 from funpaybotengine.client.session.base import Response, BaseSession
@@ -138,9 +138,9 @@ class AioHttpSession(BaseSession):
         if method.ignore_locale:
             locale = ''
         elif method.locale is not None:
-            locale = method.locale.value
+            locale = method.locale.value.url_alias
         else:
-            locale = method.bot.locale.value  # type: ignore[union-attr] # always has bound bot
+            locale = method.bot.locale.value.url_alias  # type: ignore[union-attr] # always has bound bot
 
         if locale == 'ru':
             locale = ''

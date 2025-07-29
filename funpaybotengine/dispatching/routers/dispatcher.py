@@ -9,9 +9,9 @@ import asyncio
 from typing import TYPE_CHECKING, Any
 
 from funpaybotengine.loggers import dispatcher_logger
-from funpaybotengine.dispatching.bases import MiddlewareCallableType, WrappedWithMiddlewaresType
+from funpaybotengine.dispatching.bases import MiddlewareCallableType
 from funpaybotengine.dispatching.events.base import ExceptionEvent
-from funpaybotengine.dispatching.middlewares import MiddlewareManager
+from funpaybotengine.dispatching.middlewares import MiddlewareManager, WrappedWithMiddlewaresCallable
 from funpaybotengine.dispatching.routers.base import Router
 
 
@@ -81,6 +81,7 @@ class Dispatcher(Router):
             'handler_info': handler,
             'router': handler.manager.router,
             'manager': handler.manager,
+            'bot': event.bot
         }
 
         wrapped_handler = self._wrap_handler_with_middlewares(
@@ -91,31 +92,31 @@ class Dispatcher(Router):
 
         dispatcher_logger.debug(f"({id(event)}) Executing handler '{handler.id}'...")
         start = time.time()
+        result = True
         try:
             if not handler.as_task:
                 await wrapped_handler()
-                return True
-            asyncio.create_task(wrapped_handler())
-            return True
+            else:
+                asyncio.create_task(wrapped_handler())
         except Exception as e:
             dispatcher_logger.debug(
                 f"({id(event)}) An error occurred while executing handler '{handler.id}'.",
                 exc_info=e,
             )
-            event = ExceptionEvent(object=e, event=event)
-            # todo: to exceptions
-            return False
+            event = ExceptionEvent(object=e, event=event)  # todo: exception
+            result = False
         finally:
             dispatcher_logger.debug(
                 f"({id(event)}) Handler '{handler.id}' executed in {time.time() - start} seconds.",
             )
+        return result
 
     def _wrap_handler_with_middlewares(
         self,
         handler: HandlerInfo,
         event: Event[Any],
         workflow_data: dict[str, Any],
-    ) -> WrappedWithMiddlewaresType:
+    ) -> WrappedWithMiddlewaresCallable:
         pre_execution_middlewares: list[MiddlewareCallableType] = list(
             reversed(handler.middlewares),
         )
@@ -124,12 +125,9 @@ class Dispatcher(Router):
             manager = router.get_manager_by_event(event)
             pre_execution_middlewares.extend(reversed(manager.handler_middlewares))
 
-        async def wrapper() -> Any:
-            await handler.__call__(**workflow_data)
-
         handler_with_pre_middlewares = MiddlewareManager.wrap_callable_with_middlewares(
             middlewares=pre_execution_middlewares,
-            callable_to_wrap=wrapper,
+            callable_to_wrap=handler.callable,
             workflow_data=workflow_data,
             first_to_last=False,
         )
