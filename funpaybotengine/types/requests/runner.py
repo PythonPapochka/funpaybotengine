@@ -19,7 +19,7 @@ from typing import Literal
 from abc import ABC, abstractmethod
 
 from pydantic import Field, BaseModel, AliasChoices, computed_field
-
+from collections.abc import Sequence
 from funpaybotengine.base import BindableObject
 
 
@@ -267,7 +267,7 @@ class RunnerRequestData(BindableObject, BaseModel):
     Payload structure for requests sent to https://funpay.com/runner/.
     """
 
-    requested_objects: list[RequestableObject] | Literal[False] = Field(
+    requested_objects: Sequence[RequestableObject] | Literal[False] = Field(
         default=False,
         serialization_alias='objects',
         validation_alias=AliasChoices('objects', 'requested_objects'),

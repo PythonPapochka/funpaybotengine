@@ -5,7 +5,7 @@ __all__ = ('Bot',)
 
 from typing import TYPE_CHECKING, Any, TypeVar, ParamSpec, overload, Literal
 from io import BytesIO
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Sequence
 
 from typing_extensions import Self
 
@@ -172,7 +172,7 @@ class Bot:
     @need_preinitialization
     async def runner_request(
             self,
-            requested_objects: list[RequestableObject] | Literal[False] = False,
+            requested_objects: Sequence[RequestableObject] | Literal[False] = False,
             action: Action | Literal[False] = False,
     ) -> RunnerResponse:
         """

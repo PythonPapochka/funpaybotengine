@@ -81,7 +81,7 @@ class GetPurchases(FunPayMethod[OrderPreviewsBatch], BaseModel):
         game_id_filter: str | None = None,
         other_filters: dict[str, str] | None = None,
     ) -> str:
-        url = 'orders/trade'
+        url = 'orders/'
 
         queries = []
         if order_id_filter is not None:
