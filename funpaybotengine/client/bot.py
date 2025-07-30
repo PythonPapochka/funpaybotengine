@@ -494,10 +494,10 @@ class Bot:
         return self
 
     @need_preinitialization
-    async def start_polling(self, dp: Dispatcher, /) -> None:
+    async def start_polling(self, dp: Dispatcher, /, *, interval: int | float = 3) -> None:
         try:
             async with self.session:
-                async for event, stack in self._runner.listen(interval=1):
+                async for event, stack in self._runner.listen(interval=interval):
                     await dp.propagate_event(event, stack)
 
                 return None

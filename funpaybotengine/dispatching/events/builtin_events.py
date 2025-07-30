@@ -23,7 +23,8 @@ from .base import RunnerEvent
 class ChatInitEvent(RunnerEvent[PrivateChatPreview]): ...
 
 
-class ChatChangedEvent(RunnerEvent[PrivateChatPreview]): ...
+class ChatChangedEvent(RunnerEvent[PrivateChatPreview]):
+    previous: PrivateChatPreview | None = None
 
 
 class NewMessageEvent(RunnerEvent[Message]): ...

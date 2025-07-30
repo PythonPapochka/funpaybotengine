@@ -54,6 +54,11 @@ class PrivateChatPreview(FunPayObject, BaseModel):
         - ``DD.MM`` if the message was sent the day before yesterday or earlier.
     """
 
+    def __eq__(self, other: PrivateChatPreview) -> bool:
+        if not isinstance(other, PrivateChatPreview):
+            return False
+        return self.last_message_id == other.last_message_id
+
 
 class Chat(FunPayObject, BaseModel):
     """Represents a chat."""

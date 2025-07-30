@@ -27,7 +27,6 @@ if TYPE_CHECKING:
 class Runner:
     def __init__(self, bot: Bot):
         self._bot = bot
-
         self._counters_tag = random_runner_tag()
 
     @property
@@ -74,51 +73,54 @@ class Runner:
     async def extract_chat_changed_updates(
             self,
             runner_response: RunnerResponse
-    ) -> list[tuple[ChatChangedEvent, int]]:
+    ) -> list[ChatChangedEvent]:
         if runner_response.chat_bookmarks is None:
             return []
 
         result = []
         for chat_preview in runner_response.chat_bookmarks.data.chat_previews:
             cached_chat = await self.bot.storage.get_chat(chat_preview.id)
-            if cached_chat and cached_chat.last_message_id == chat_preview.last_message_id:
+            if cached_chat == chat_preview:
                 continue
+
             event = ChatChangedEvent(
+                previous=cached_chat,
                 object=chat_preview,
                 tag=runner_response.chat_bookmarks.tag
             ).as_(self.bot)
 
-            result.append((event, cached_chat.last_message_id if cached_chat else 0))
+            result.append(event)
             await self.bot.storage.update_chat(chat_preview)
 
         return result
 
     async def _extract_chat_histories(
             self,
-            events: list[tuple[ChatChangedEvent, int]],
+            events: list[ChatChangedEvent],
     ) -> list[ChatChangedEvent | NewMessageEvent]:
         events_dict = {
-            event.object.id: (event, last_message_id) for event, last_message_id in events
+            event.object.id: event for event in events
         }
-
-        events_result = []
+        result: list[ChatChangedEvent | NewMessageEvent] = []
 
         objs = [
-            NodeRequestObject(chat_id=i[0].object.id, runner_tag=random_runner_tag()) for i in events
+            NodeRequestObject(chat_id=i.object.id, runner_tag=random_runner_tag()) for i in events
         ]
-        result = await self.bot.runner_request(requested_objects=objs)
+        histories = await self.bot.runner_request(requested_objects=objs)
 
-        if not result.nodes:
+        if not histories.nodes:
             raise Exception  # todo
 
-        for node in result.nodes:
-            chat_id = node.data.node.id
-            changed_event, last_message_id = events_dict[chat_id]
-            new_message_events = [NewMessageEvent(object=i, tag=node.tag)
-                                  for i in node.data.messages if i.id > last_message_id]
-            events_result.extend([changed_event, *new_message_events])
-        return events_result
-
+        for node in histories.nodes:
+            chat_changed_event = events_dict[node.data.node.id]
+            from_id = chat_changed_event.previous.last_message_id if chat_changed_event.previous else 0
+            to_id = chat_changed_event.object.last_message_id
+            result.append(chat_changed_event)
+            result.extend(
+                NewMessageEvent(object=message, tag=node.tag)
+                for message in node.data.messages if from_id < message.id <= to_id
+            )
+        return result
 
     async def listen(
             self,
