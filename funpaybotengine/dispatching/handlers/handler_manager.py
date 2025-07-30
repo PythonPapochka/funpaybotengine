@@ -66,7 +66,7 @@ class HandlerManager(Generic[EventType]):
         self._event_type_filter = event_type_filter
         self._name = name
 
-        self._filter_middlewares = MiddlewareManager()
+        self._filtering_middlewares = MiddlewareManager()
         self._handler_middlewares = MiddlewareManager()
 
     def register_handler(
@@ -87,12 +87,6 @@ class HandlerManager(Generic[EventType]):
                 f'Use @<Router>.on_event(event_type={event_type.__name__}) instead.',
             )
 
-        if meta is None:
-            meta = gen_handler_meta(
-                handler=handler,
-                reg_frame=inspect.stack()[1],
-            )
-
         handler_obj = HandlerInfo(
             name=name or gen_default_handler_id(handler, self),
             event_type_filter=event_type,
@@ -102,7 +96,10 @@ class HandlerManager(Generic[EventType]):
             manager=self,
             middlewares=middlewares or [],
             ensure_after=ensure_after or {},
-            meta=meta,
+            meta=meta or HandlerMeta.from_callable(
+                callable=handler,
+                registration_frame=inspect.stack()[1]
+            )
         )
         self._register_handler(handler_obj)
 
@@ -166,7 +163,7 @@ class HandlerManager(Generic[EventType]):
             return self._inner_get_matching_handlers(event, workflow_data)
 
         wrapped_get_matching_handlers = MiddlewareManager.wrap_callable_with_middlewares(
-            middlewares=self._filter_middlewares,
+            middlewares=self._filtering_middlewares,
             callable_to_wrap=wrapped,
             workflow_data=workflow_data,
         )
@@ -254,10 +251,10 @@ class HandlerManager(Generic[EventType]):
                 as_task=as_task,
                 middlewares=middlewares,
                 ensure_after=ensure_after,
-                meta=gen_handler_meta(
-                    handler=handler,
-                    reg_frame=inspect.stack()[2 if func is not None else 1],
-                )
+                meta=HandlerMeta.from_callable(
+                    callable=handler,
+                    registration_frame=inspect.stack()[2 if func is not None else 1]
+                ),
             )
             return handler
 
@@ -290,8 +287,8 @@ class HandlerManager(Generic[EventType]):
         return self._name
 
     @property
-    def filter_middlewares(self) -> MiddlewareManager:
-        return self._filter_middlewares
+    def filtering_middlewares(self) -> MiddlewareManager:
+        return self._filtering_middlewares
 
     @property
     def handler_middlewares(self) -> MiddlewareManager:
@@ -302,7 +299,11 @@ def gen_default_handler_id(
     handler: HandlerCallableType,
     manager: HandlerManager[Any],
 ) -> str:
-    handler = handler if not is_instance(handler) else handler.__class__
+    is_class_based = not (inspect.isfunction(handler) or
+                          inspect.ismethod(handler) or
+                          inspect.isclass(handler))
+
+    handler = handler if not is_class_based else handler.__class__
     func_file = pathlib.Path(inspect.getfile(handler)).resolve()
 
     main_file = pathlib.Path(sys.modules['__main__'].__file__).resolve()
@@ -316,20 +317,3 @@ def gen_default_handler_id(
     module_path = '.'.join(rel_path.parts)
 
     return f'{manager.router.name}.{manager.name}--{module_path}.{handler.__qualname__}'
-
-
-def is_instance(handler: Any) -> bool:
-    return not (
-        inspect.isfunction(handler) or inspect.ismethod(handler) or inspect.isclass(handler)
-    )
-
-
-def gen_handler_meta(handler: HandlerCallableType, reg_frame: inspect.FrameInfo) -> HandlerMeta:
-    h = handler.__class__ if is_instance(handler) else handler
-
-    return HandlerMeta(
-        definition_filename=inspect.getsourcefile(h),
-        definition_lineno=inspect.getsourcelines(h)[1],
-        registration_filename=reg_frame.filename,
-        registration_lineno=reg_frame.lineno,
-    )
