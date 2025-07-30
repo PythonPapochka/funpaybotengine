@@ -9,7 +9,6 @@ from funpaybotengine.loggers import router_logger
 from funpaybotengine.dispatching.events.base import Event, ExceptionEvent
 from funpaybotengine.dispatching.events.builtin_events import (
     NewSaleEvent,
-    ChatInitEvent,
     NewMessageEvent,
     ChatChangedEvent,
     NewPurchaseEvent,
@@ -31,7 +30,6 @@ class Router:
         self._inner_routers: dict[str, Router] = {}
 
         self._managers: dict[Type[Event[Any]], HandlerManager[Any]] = {
-            ChatInitEvent: HandlerManager(self, 'chat_init', ChatInitEvent),
             ChatChangedEvent: HandlerManager(self, 'chat_changed', ChatChangedEvent),
             NewMessageEvent: HandlerManager(self, 'new_message', NewMessageEvent),
             CountersChangedEvent: HandlerManager(self, 'counters_changed', CountersChangedEvent),
@@ -81,35 +79,31 @@ class Router:
         return self._managers.get(filter) or self.on_event
 
     @property
-    def on_init_chat_event(self) -> HandlerManager[ChatInitEvent]:
-        return self._managers[ChatInitEvent]
-
-    @property
-    def on_chat_changed_event(self) -> HandlerManager[ChatChangedEvent]:
+    def on_chat_changed(self) -> HandlerManager[ChatChangedEvent]:
         return self._managers[ChatChangedEvent]
 
     @property
-    def on_new_message_event(self) -> HandlerManager[NewMessageEvent]:
+    def on_new_message(self) -> HandlerManager[NewMessageEvent]:
         return self._managers[NewMessageEvent]
 
     @property
-    def on_orders_counters_changed_event(self) -> HandlerManager[CountersChangedEvent]:
+    def on_orders_counters_changed(self) -> HandlerManager[CountersChangedEvent]:
         return self._managers[CountersChangedEvent]
 
     @property
-    def on_new_sale_event(self) -> HandlerManager[NewSaleEvent]:
+    def on_new_sale(self) -> HandlerManager[NewSaleEvent]:
         return self._managers[NewSaleEvent]
 
     @property
-    def on_sale_status_changed_event(self) -> HandlerManager[SaleStatusChangedEvent]:
+    def on_sale_status_changed(self) -> HandlerManager[SaleStatusChangedEvent]:
         return self._managers[SaleStatusChangedEvent]
 
     @property
-    def on_new_purchase_event(self) -> HandlerManager[NewPurchaseEvent]:
+    def on_new_purchase(self) -> HandlerManager[NewPurchaseEvent]:
         return self._managers[NewPurchaseEvent]
 
     @property
-    def on_purchase_status_changed_event(self) -> HandlerManager[PurchaseStatusChangedEvent]:
+    def on_purchase_status_changed(self) -> HandlerManager[PurchaseStatusChangedEvent]:
         return self._managers[PurchaseStatusChangedEvent]
 
     @property

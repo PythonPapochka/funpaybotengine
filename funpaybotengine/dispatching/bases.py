@@ -94,8 +94,8 @@ class HandlerMeta:
 
 @dataclass
 class HandlerInfo(CallableInfo):
-    id: str
-    """Handler ID."""
+    name: str
+    """Handler name."""
 
     event_type_filter: Type[Event[Any]] | None
     """Event type on which this handler should be executed."""

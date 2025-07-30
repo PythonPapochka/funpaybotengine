@@ -46,14 +46,14 @@ class Dispatcher(Router):
         async for handler in self.get_matching_handlers(event, workflow_data=workflow_data):
             if not handler.can_be_executed(executed_handlers):
                 dispatcher_logger.debug(
-                    f"{id(event)} Execution of handler '{handler.id}'"
+                    f"{id(event)} Execution of handler '{handler.name}'"
                     f' delayed because of ensure_after.',
                 )
                 awaiting_handlers.append(handler)
                 continue
 
             r = await self.execute_handler(event, handler, workflow_data=workflow_data)
-            executed_handlers[handler.id] = r
+            executed_handlers[handler.name] = r
 
             if event.propagation_stopped:
                 dispatcher_logger.debug(f'({id(event)}) Event propagation stopped.')
@@ -70,7 +70,7 @@ class Dispatcher(Router):
                         awaiting_handler,
                         workflow_data=workflow_data,
                     )
-                    executed_handlers[awaiting_handler.id] = r
+                    executed_handlers[awaiting_handler.name] = r
                     break
                 else:
                     break
@@ -95,7 +95,7 @@ class Dispatcher(Router):
             workflow_data=workflow_data,
         )
 
-        dispatcher_logger.debug(f"({id(event)}) Executing handler '{handler.id}'...")
+        dispatcher_logger.debug(f"({id(event)}) Executing handler '{handler.name}'...")
         start = time.time()
         result = True
         try:
@@ -105,14 +105,14 @@ class Dispatcher(Router):
                 asyncio.create_task(wrapped_handler())
         except Exception as e:
             dispatcher_logger.debug(
-                f"({id(event)}) An error occurred while executing handler '{handler.id}'.",
+                f"({id(event)}) An error occurred while executing handler '{handler.name}'.",
                 exc_info=e,
             )
             event = ExceptionEvent(object=e, event=event)  # todo: exception
             result = False
         finally:
             dispatcher_logger.debug(
-                f"({id(event)}) Handler '{handler.id}' executed in {time.time() - start} seconds.",
+                f"({id(event)}) Handler '{handler.name}' executed in {time.time() - start} seconds.",
             )
         return result
 

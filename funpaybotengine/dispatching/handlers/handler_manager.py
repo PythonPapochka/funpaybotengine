@@ -69,6 +69,43 @@ class HandlerManager(Generic[EventType]):
         self._filter_middlewares = MiddlewareManager()
         self._handler_middlewares = MiddlewareManager()
 
+    def register_handler(
+        self,
+        handler: HandlerCallableType,
+        *,
+        event_type: Type[Event[Any]] | None = None,
+        name: str | None = None,
+        filter: Filter | CallableFilter | AwaitableFilter | None = None,
+        as_task: bool = False,
+        middlewares: list[Any] | None = None,
+        ensure_after: dict[str, Any] | None = None,
+        meta: HandlerMeta | None = None,
+    ) -> None:
+        if self.event_type_filter is not None and event_type is not None:
+            raise ValueError(
+                f'Cannot specify event type when using this handler manager.\n'
+                f'Use @<Router>.on_event(event_type={event_type.__name__}) instead.',
+            )
+
+        if meta is None:
+            meta = gen_handler_meta(
+                handler=handler,
+                reg_frame=inspect.stack()[1],
+            )
+
+        handler_obj = HandlerInfo(
+            name=name or gen_default_handler_id(handler, self),
+            event_type_filter=event_type,
+            filter=CallableInfo(filter) if filter is not None else None,
+            as_task=as_task,
+            callable=handler,
+            manager=self,
+            middlewares=middlewares or [],
+            ensure_after=ensure_after or {},
+            meta=meta,
+        )
+        self._register_handler(handler_obj)
+
     def _register_handler(self, handler: HandlerInfo) -> None:
         """
         Registers handler to this handler manager.
@@ -83,9 +120,9 @@ class HandlerManager(Generic[EventType]):
         """
         root_router = self._router.root_router
 
-        if (exists_handler := root_router.get_handler_by_id(handler.id)) is not None:
+        if (exists_handler := root_router.get_handler_by_id(handler.name)) is not None:
             raise ValueError(
-                f'Handler with ID {handler.id} already exists.\n'
+                f'Handler with ID {handler.name} already exists.\n'
                 f"Original handler registered in router '{exists_handler.manager.router.name}':\n"
                 f'    Defined in "{exists_handler.meta.definition_filename}:'
                 f'{exists_handler.meta.definition_lineno}"\n'
@@ -97,9 +134,9 @@ class HandlerManager(Generic[EventType]):
                 f'    Registered in {handler.meta.registration_filename}:'
                 f'{handler.meta.registration_lineno}',
             )
-        self._handlers[handler.id] = handler
+        self._handlers[handler.name] = handler
         router_logger.debug(
-            f'{self.router.name}.{self.name} Registered handler with ID {handler.id}.',
+            f'{self.router.name}.{self.name} Registered handler with ID {handler.name}.',
         )
 
     def remove_handler(self, handler_id: str) -> HandlerInfo | None:
@@ -154,12 +191,9 @@ class HandlerManager(Generic[EventType]):
         """
 
         for handler in self._handlers.values():
-            if handler.event_type_filter is not None and not isinstance(
-                event,
-                handler.event_type_filter,
-            ):
+            if handler.event_type_filter is not None and type(event) != handler.event_type_filter:
                 router_logger.debug(
-                    f'{self.router.name}.{self.name} skipping handler {handler.id}: '
+                    f'{self.router.name}.{self.name} skipping handler {handler.name}: '
                     f'event type {type(event)} is not {handler.event_type_filter} '
                     f'(from handler event type filter).',
                 )
@@ -167,7 +201,7 @@ class HandlerManager(Generic[EventType]):
 
             if handler.filter is None:
                 router_logger.debug(
-                    f'{self.router.name}.{self.name} yielding handler {handler.id}: '
+                    f'{self.router.name}.{self.name} yielding handler {handler.name}: '
                     f'handler has no filter.',
                 )
                 yield handler
@@ -175,55 +209,15 @@ class HandlerManager(Generic[EventType]):
                 filter_result = await handler.filter(**workflow_data)
                 if filter_result:
                     router_logger.debug(
-                        f'{self.router.name}.{self.name} yielding handler {handler.id}: '
+                        f'{self.router.name}.{self.name} yielding handler {handler.name}: '
                         f'handler filter result is {filter_result}.',
                     )
                     yield handler
                 else:
                     router_logger.debug(
-                        f'{self.router.name}.{self.name} skipping handler {handler.id}: '
+                        f'{self.router.name}.{self.name} skipping handler {handler.name}: '
                         f'handler filter result is {filter_result}.',
                     )
-
-    def register_handler(
-        self,
-        handler: HandlerCallableType,
-        *,
-        event_type: Type[Event[Any]] | None = None,
-        id: str | None = None,
-        filter: Filter | CallableFilter | AwaitableFilter | None = None,
-        as_task: bool = False,
-        middlewares: list[Any] | None = None,
-        ensure_after: dict[str, Any] | None = None,
-        meta: HandlerMeta | None = None,
-    ) -> None:
-        if self.event_type_filter is not None and event_type is not None:
-            raise ValueError(
-                f'Cannot specify event type when using this handler manager.\n'
-                f'Use @<Router>.on_event(event_type={event_type.__name__}) instead.',
-            )
-
-        if meta is None:
-            stack = inspect.stack()
-            meta = gen_handler_meta(
-                handler=handler,
-                reg_frame=stack[1],
-            )
-
-        handler_obj = HandlerInfo(
-            id=id or gen_default_handler_id(handler, self),
-            event_type_filter=self.event_type_filter
-            if self.event_type_filter is not None
-            else event_type,
-            filter=CallableInfo(filter) if filter is not None else None,
-            as_task=as_task,
-            callable=handler,
-            manager=self,
-            middlewares=middlewares or [],
-            ensure_after=ensure_after or {},
-            meta=meta,
-        )
-        self._register_handler(handler_obj)
 
     @overload
     def __call__(self, func: F, /) -> F: ...
@@ -233,7 +227,7 @@ class HandlerManager(Generic[EventType]):
         self,
         *,
         event_type: Type[Event[Any]] | None = None,
-        id: str | None = None,
+        name: str | None = None,
         filter: Filter | CallableFilter | AwaitableFilter | None = None,
         as_task: bool = False,
         middlewares: list[Any] | None = None,  # todo: middleware type
@@ -245,27 +239,25 @@ class HandlerManager(Generic[EventType]):
         func: F | None = None,
         *,
         event_type: Type[Event[Any]] | None = None,
-        id: str | None = None,
+        name: str | None = None,
         filter: Filter | CallableFilter | AwaitableFilter | None = None,
         as_task: bool = False,
         middlewares: list[Any] | None = None,  # todo: middleware type
         ensure_after: dict[str, Any] | None = None,
     ) -> F | Callable[[F], F]:
         def inner(handler: F) -> F:
-            stack = inspect.stack()
-
             self.register_handler(
                 handler=handler,
                 event_type=event_type,
-                id=id,
+                name=name,
                 filter=filter,
                 as_task=as_task,
                 middlewares=middlewares,
                 ensure_after=ensure_after,
                 meta=gen_handler_meta(
                     handler=handler,
-                    reg_frame=stack[2 if func is not None else 1],
-                ),
+                    reg_frame=inspect.stack()[2 if func is not None else 1],
+                )
             )
             return handler
 
