@@ -5,10 +5,9 @@ __all__ = (
     'ChatInitEvent',
     'ChatChangedEvent',
     'NewMessageEvent',
-    'SalesListChangedEvent',
+    'CountersChangedEvent',
     'NewSaleEvent',
     'SaleStatusChangedEvent',
-    'PurchasesListChangedEvent',
     'NewPurchaseEvent',
     'PurchaseStatusChangedEvent',
 )
@@ -30,16 +29,13 @@ class ChatChangedEvent(RunnerEvent[PrivateChatPreview]): ...
 class NewMessageEvent(RunnerEvent[Message]): ...
 
 
-class SalesListChangedEvent(RunnerEvent[int]): ...
+class CountersChangedEvent(RunnerEvent[tuple[int, int]]): ...
 
 
 class NewSaleEvent(RunnerEvent[OrderPreview]): ...
 
 
 class SaleStatusChangedEvent(RunnerEvent[OrderPreview]): ...
-
-
-class PurchasesListChangedEvent(RunnerEvent[int]): ...
 
 
 class NewPurchaseEvent(RunnerEvent[OrderPreview]): ...
