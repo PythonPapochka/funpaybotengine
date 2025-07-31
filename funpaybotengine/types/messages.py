@@ -107,7 +107,6 @@ class Message(FunPayObject, BaseModel):
 
     _type: MessageType | _UNSET = PrivateAttr(default=_unset)
     _related_order_id: str | None | _UNSET = PrivateAttr(default=_unset)
-
     _chat_page: ChatPage | None = PrivateAttr(default=None)
     _sender_profile: ProfilePage | None = PrivateAttr(default=None)
 
@@ -175,6 +174,12 @@ class Message(FunPayObject, BaseModel):
             image=image,  # type: ignore[arg-type]  # todo
             enforce_whitespaces=enforce_whitespaces
         )
+
+    @property
+    def from_me(self) -> bool:
+        if not self.bot:
+            return False
+        return self.bot.userid == self.sender_id
 
     async def chat(self, update: bool = False) -> None:
         raise NotImplementedError
