@@ -6,6 +6,7 @@ __all__ = ('Bot',)
 from typing import TYPE_CHECKING, Any, TypeVar, ParamSpec, overload, Literal
 from io import BytesIO
 from collections.abc import Callable, Sequence
+from funpaybotengine.runner.config import RunnerConfig
 
 from typing_extensions import Self
 
@@ -494,10 +495,16 @@ class Bot:
         return self
 
     @need_preinitialization
-    async def start_polling(self, dp: Dispatcher, /, *, interval: int | float = 3) -> None:
+    async def start_polling(
+            self,
+            dp: Dispatcher,
+            /, *,
+            config: RunnerConfig | None = None) -> None:
+        if config:
+            self._runner.config = config
         try:
             async with self.session:
-                async for event, stack in self._runner.listen(interval=interval):
+                async for event, stack in self._runner.listen():
                     await dp.propagate_event(event, stack)
 
                 return None

@@ -16,6 +16,7 @@ from funpaybotengine.types.requests.runner import (
 )
 from funpaybotengine.dispatching.events.base import RunnerEvent
 from funpaybotengine.dispatching.events.builtin_events import ChatChangedEvent, NewMessageEvent
+from funpaybotengine.runner.config import RunnerConfig
 import time
 import asyncio
 
@@ -28,6 +29,7 @@ class Runner:
     def __init__(self, bot: Bot):
         self._bot = bot
         self._counters_tag = random_runner_tag()
+        self._config = RunnerConfig()
 
     @property
     def bot(self) -> Bot:
@@ -122,11 +124,7 @@ class Runner:
             )
         return result
 
-    async def listen(
-            self,
-            discover_chat_histories: bool = True,
-            interval: int | float = 3
-    ) -> AsyncGenerator[tuple[RunnerEvent[Any], tuple[RunnerEvent[Any], ...]]]:
+    async def listen(self) -> AsyncGenerator[tuple[RunnerEvent[Any], tuple[RunnerEvent[Any], ...]]]:
         await self.discover_sales()
         await self.discover_purchases()
         await self.discover_chats()
@@ -146,7 +144,7 @@ class Runner:
                 continue
 
             chat_changed_events = await self.extract_chat_changed_updates(result)
-            if discover_chat_histories and chat_changed_events:
+            if self.config.discover_new_messages and chat_changed_events:
                 total_events = await self._extract_chat_histories(chat_changed_events)
             else:
                 total_events = [i[0] for i in chat_changed_events]
@@ -156,9 +154,17 @@ class Runner:
             for i in total_events:
                 yield i, events_stack
 
-            time_to_sleep = interval - (time.time() - start)
+            time_to_sleep = self.config.interval - (time.time() - start)
             await asyncio.sleep(time_to_sleep if time_to_sleep > 0 else 0)
 
     @property
     def counters_tag(self) -> str:
         return self._counters_tag
+
+    @property
+    def config(self) -> RunnerConfig:
+        return self._config
+
+    @config.setter
+    def config(self, config: RunnerConfig) -> None:
+        self._config = config
