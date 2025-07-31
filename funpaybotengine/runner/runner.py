@@ -35,48 +35,42 @@ class Runner:
     def bot(self) -> Bot:
         return self._bot
 
+    @property
+    def counters_tag(self) -> str:
+        return self._counters_tag
+
+    @property
+    def config(self) -> RunnerConfig:
+        return self._config
+
+    @config.setter
+    def config(self, config: RunnerConfig) -> None:
+        self._config = config
+
     async def discover_sales(self) -> None:
-        while True:
-            try:
-                result = await self.bot.get_sales()
-                break
-            except:
-                continue
+        result = await self.bot.get_sales()
 
         for i in result.orders:
             await self.bot.storage.update_order(i)
 
     async def discover_purchases(self) -> None:
-        while True:
-            try:
-                result = await self.bot.get_purchases()
-                break
-            except:
-                continue
+        result = await self.bot.get_purchases()
 
         for i in result.orders:
             await self.bot.storage.update_order(i)
 
     async def discover_chats(self) -> None:
-        while True:
-            try:
-                obj = ChatBookmarksRequestObject(
-                    id=self.bot._userid,
-                    runner_tag=random_runner_tag(),
-                )
-                result = await self.bot.runner_request(requested_objects=[obj])
-                break
-            except:
-                continue
+        obj = ChatBookmarksRequestObject(
+            id=self.bot.userid,
+            runner_tag=random_runner_tag(),
+        )
+        result = await self.bot.runner_request(requested_objects=[obj])
 
         if result.chat_bookmarks is not None:
             for i in result.chat_bookmarks.data.chat_previews:
                 await self.bot.storage.update_chat(i)
 
-    async def extract_chat_changed_updates(
-        self,
-        runner_response: RunnerResponse,
-    ) -> list[ChatChangedEvent]:
+    async def _get_chats_changed(self, runner_response: RunnerResponse) -> list[ChatChangedEvent]:
         if runner_response.chat_bookmarks is None:
             return []
 
@@ -97,33 +91,56 @@ class Runner:
 
         return result
 
-    async def _extract_chat_histories(
-        self,
-        events: list[ChatChangedEvent],
+    async def _get_new_messages(
+            self,
+            events: list[ChatChangedEvent]
     ) -> list[ChatChangedEvent | NewMessageEvent]:
-        events_dict = {event.object.id: event for event in events}
+        chat_changed_events = {e.object.id: e for e in events}
+        nodes = {}
+
+        objs = [NodeRequestObject(chat_id=i.object.id, runner_tag=random_runner_tag()) for i in events]
+
+        for i in range(0, len(objs), 10):
+            histories = await self.bot.runner_request(requested_objects=objs[i:i + 10])
+            if histories.nodes is None:
+                raise Exception  # todo
+            nodes.update({i.data.node.id: i for i in histories.nodes})
+
         result: list[ChatChangedEvent | NewMessageEvent] = []
+        for chat_id, event in chat_changed_events.items():
+            node = nodes[chat_id]
+            from_id = event.previous.last_message_id if event.previous else 0
+            to_id = event.object.last_message_id
 
-        objs = [
-            NodeRequestObject(chat_id=i.object.id, runner_tag=random_runner_tag()) for i in events
-        ]
-        histories = await self.bot.runner_request(requested_objects=objs)
-
-        if not histories.nodes:
-            raise Exception  # todo
-
-        for node in histories.nodes:
-            chat_changed_event = events_dict[node.data.node.id]
-            from_id = (
-                chat_changed_event.previous.last_message_id if chat_changed_event.previous else 0
-            )
-            to_id = chat_changed_event.object.last_message_id
-            result.append(chat_changed_event)
+            result.append(event)
             result.extend(
                 NewMessageEvent(object=message, tag=node.tag)
                 for message in node.data.messages
                 if from_id < message.id <= to_id
             )
+        return result
+
+    async def make_events(self, runner_response: RunnerResponse) -> list[RunnerEvent[Any]]:
+        total_events: list[RunnerEvent[Any]] = []
+        chat_changed_events = await self._get_chats_changed(runner_response)
+
+        if self.config.discover_new_messages and chat_changed_events:
+            total_events.extend(await self._get_new_messages(chat_changed_events))
+        else:
+            total_events.extend(i[0] for i in chat_changed_events)
+
+        return total_events
+
+    async def get_runner_updates(self) -> RunnerResponse:
+        counters = OrdersCountersRequestObject(
+            id=self.bot.userid,
+            runner_tag=self.counters_tag,
+        )
+        chats = ChatBookmarksRequestObject(id=self.bot.userid, runner_tag=random_runner_tag())
+        result = await self.bot.runner_request(requested_objects=[counters, chats])
+
+        if result.orders_counters:
+            self._counters_tag = result.orders_counters.tag
         return result
 
     async def listen(
@@ -135,41 +152,15 @@ class Runner:
 
         while True:
             start = time.time()
-            counters = OrdersCountersRequestObject(
-                id=self.bot.userid,
-                runner_tag=self.counters_tag,
-            )
-            chats = ChatBookmarksRequestObject(id=self.bot.userid, runner_tag=random_runner_tag())
             try:
-                result = await self.bot.runner_request(
-                    requested_objects=[counters, chats],
-                )
+                result = await self.get_runner_updates()
             except Exception:
                 print('err')  # todo
                 continue
 
-            chat_changed_events = await self.extract_chat_changed_updates(result)
-            if self.config.discover_new_messages and chat_changed_events:
-                total_events = await self._extract_chat_histories(chat_changed_events)
-            else:
-                total_events = [i[0] for i in chat_changed_events]
-            # todo: order events
-
-            events_stack = tuple(total_events)
-            for i in total_events:
+            events_stack = tuple(await self.make_events(result))
+            for i in events_stack:
                 yield i, events_stack
 
             time_to_sleep = self.config.interval - (time.time() - start)
             await asyncio.sleep(time_to_sleep if time_to_sleep > 0 else 0)
-
-    @property
-    def counters_tag(self) -> str:
-        return self._counters_tag
-
-    @property
-    def config(self) -> RunnerConfig:
-        return self._config
-
-    @config.setter
-    def config(self, config: RunnerConfig) -> None:
-        self._config = config
