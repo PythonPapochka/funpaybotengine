@@ -33,13 +33,23 @@ class NewMessageEvent(RunnerEvent[Message]): ...
 class CountersChangedEvent(RunnerEvent[tuple[int, int]]): ...
 
 
-class NewSaleEvent(RunnerEvent[OrderPreview]): ...
+class NewSaleEvent(RunnerEvent[OrderPreview]):
+    related_system_message: NewMessageEvent | None = None
+    related_goods_message: NewMessageEvent | None = None
+    related_auto_message: NewMessageEvent | None = None
 
 
-class SaleStatusChangedEvent(RunnerEvent[OrderPreview]): ...
+class SaleStatusChangedEvent(RunnerEvent[OrderPreview]):
+    previous: OrderPreview | None = None
+    related_system_message: NewMessageEvent | None = None
 
 
-class NewPurchaseEvent(RunnerEvent[OrderPreview]): ...
+class NewPurchaseEvent(RunnerEvent[OrderPreview]):
+    related_system_message: NewMessageEvent | None = None
+    related_goods_message: NewMessageEvent | None = None
+    related_auto_message: NewMessageEvent | None = None
 
 
-class PurchaseStatusChangedEvent(RunnerEvent[OrderPreview]): ...
+class PurchaseStatusChangedEvent(RunnerEvent[OrderPreview]):
+    previous: OrderPreview | None = None
+    related_system_message: NewMessageEvent | None = None
