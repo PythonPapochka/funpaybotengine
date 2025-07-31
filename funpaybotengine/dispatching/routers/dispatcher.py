@@ -41,6 +41,7 @@ class Dispatcher(Router):
             'event': event,
             'dispatcher': self,
             'events_stack': events_stack or (event,),
+            'bot': event.bot
         }
 
         executed_handlers: dict[str, bool] = {}
@@ -92,9 +93,6 @@ class Dispatcher(Router):
         workflow_data = {
             **workflow_data,
             'handler_info': handler,
-            'router': handler.manager.router,
-            'manager': handler.manager,
-            'bot': event.bot,
         }
 
         wrapped_handler = self._wrap_handler_with_middlewares(

@@ -133,7 +133,7 @@ class HandlerManager(Generic[EventType]):
                 f'{handler.meta.registration_lineno}',
             )
         self._handlers[handler.name] = handler
-        router_logger.debug(
+        router_logger.info(
             f'{self.router.name}.{self.name} Registered handler with ID {handler.name}.',
         )
 
@@ -207,6 +207,8 @@ class HandlerManager(Generic[EventType]):
 
             try:
                 filter_result = await handler.filter(**workflow_data)
+            except KeyboardInterrupt:
+                raise
             except Exception as e:
                 yield handler, e
                 continue
