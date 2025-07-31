@@ -148,7 +148,7 @@ class HandlerManager(Generic[EventType]):
         self,
         event: Event[Any],
         workflow_data: dict[str, Any],
-    ) -> AsyncGenerator[HandlerInfo, None]:
+    ) -> AsyncGenerator[tuple[HandlerInfo, Exception | None], None]:
         """
         Executes the chain of pre-filter middlewares and yields handlers
         whose filters match the given event.
@@ -159,7 +159,7 @@ class HandlerManager(Generic[EventType]):
         :return: An async generator of ``HandlerInfo`` objects with matching filters.
         """
 
-        async def wrapped() -> AsyncGenerator[HandlerInfo, None]:
+        async def wrapped() -> AsyncGenerator[tuple[HandlerInfo, Exception | None], None]:
             return self._inner_get_matching_handlers(event, workflow_data)
 
         wrapped_get_matching_handlers = MiddlewareManager.wrap_callable_with_middlewares(
@@ -170,14 +170,14 @@ class HandlerManager(Generic[EventType]):
 
         middlewares_result = await wrapped_get_matching_handlers()
         if middlewares_result.callable_executed:
-            async for handler in middlewares_result.callable_return:
-                yield handler
+            async for handler, e in middlewares_result.callable_return:
+                yield handler, e
 
     async def _inner_get_matching_handlers(
         self,
         event: Event[Any],
         workflow_data: dict[str, Any],
-    ) -> AsyncGenerator[HandlerInfo, None]:
+    ) -> AsyncGenerator[tuple[HandlerInfo, Exception | None], None]:
         """
         Iterates through all registered handlers and yields those whose filters
         match the given event.
@@ -201,20 +201,26 @@ class HandlerManager(Generic[EventType]):
                     f'{self.router.name}.{self.name} yielding handler {handler.name}: '
                     f'handler has no filter.',
                 )
-                yield handler
-            else:
+                yield handler, None
+                continue
+
+            try:
                 filter_result = await handler.filter(**workflow_data)
-                if filter_result:
-                    router_logger.debug(
-                        f'{self.router.name}.{self.name} yielding handler {handler.name}: '
-                        f'handler filter result is {filter_result}.',
-                    )
-                    yield handler
-                else:
-                    router_logger.debug(
-                        f'{self.router.name}.{self.name} skipping handler {handler.name}: '
-                        f'handler filter result is {filter_result}.',
-                    )
+            except Exception as e:
+                yield handler, e
+                continue
+
+            if filter_result:
+                router_logger.debug(
+                    f'{self.router.name}.{self.name} yielding handler {handler.name}: '
+                    f'handler filter result is {filter_result}.',
+                )
+                yield handler, None
+            else:
+                router_logger.debug(
+                    f'{self.router.name}.{self.name} skipping handler {handler.name}: '
+                    f'handler filter result is {filter_result}.',
+                )
 
     @overload
     def __call__(self, func: F, /) -> F: ...

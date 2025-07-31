@@ -31,6 +31,8 @@ class Dispatcher(Router):
             event: Event[Any],
             events_stack: tuple[Event[Any], ...] | None = None
     ) -> None:
+        dispatcher_logger.debug(f'New event {id(event)}: {type(event)}')
+
         workflow_data = {
             **self._workflow_data,
             'event': event,
@@ -41,13 +43,20 @@ class Dispatcher(Router):
         executed_handlers: dict[str, bool] = {}
         awaiting_handlers: list[HandlerInfo] = []
 
-        dispatcher_logger.debug(f'New event {id(event)}: {type(event)}')
+        async for handler, e in self.get_matching_handlers(event, workflow_data=workflow_data):
+            if e is not None:
+                error_event = ExceptionEvent(object=e, event=event)  # todo: error
+                dispatcher_logger.debug(
+                    f"({id(event)}) An error occurred while executing "
+                    f"handler '{handler.name}' filters.",
+                    exc_info=e,
+                )
+                continue
 
-        async for handler in self.get_matching_handlers(event, workflow_data=workflow_data):
             if not handler.can_be_executed(executed_handlers):
                 dispatcher_logger.debug(
                     f"{id(event)} Execution of handler '{handler.name}'"
-                    f' delayed because of ensure_after.',
+                    f' delayed because of `ensure_after`.',
                 )
                 awaiting_handlers.append(handler)
                 continue
@@ -65,11 +74,7 @@ class Dispatcher(Router):
                         continue
 
                     awaiting_handlers.remove(awaiting_handler)
-                    r = await self.execute_handler(
-                        event,
-                        awaiting_handler,
-                        workflow_data=workflow_data,
-                    )
+                    r = await self.execute_handler(event, awaiting_handler, workflow_data)
                     executed_handlers[awaiting_handler.name] = r
                     break
                 else:

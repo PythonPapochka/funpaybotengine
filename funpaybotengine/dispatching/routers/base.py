@@ -65,14 +65,15 @@ class Router:
         self,
         event: Event[Any],
         workflow_data: dict[str, Any],
-    ) -> AsyncGenerator[HandlerInfo, None]:
+    ) -> AsyncGenerator[tuple[HandlerInfo, Exception | None], None]:
         manager = self.get_manager_by_event(event)
-        async for handler in manager.get_matching_handlers(event, workflow_data):
-            yield handler
+
+        async for handler, e in manager.get_matching_handlers(event, workflow_data):
+            yield handler, e
 
         for router in self._inner_routers.values():
-            async for handler in router.get_matching_handlers(event, workflow_data):
-                yield handler
+            async for handler, e in router.get_matching_handlers(event, workflow_data):
+                yield handler, e
 
     def get_manager_by_event(self, event: Event[Any] | Type[Event[Any]]) -> HandlerManager[Any]:
         filter = event if isinstance(event, type) else type(event)
