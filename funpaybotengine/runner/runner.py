@@ -80,7 +80,7 @@ class Runner:
             return []
 
         result = []
-        for chat_preview in runner_response.chat_bookmarks.data.chat_previews:
+        for chat_preview in reversed(runner_response.chat_bookmarks.data.chat_previews):
             cached_chat = await self.bot.storage.get_chat(chat_preview.id)
             if cached_chat == chat_preview:
                 continue
@@ -132,9 +132,9 @@ class Runner:
         while True:
             start = time.time()
             counters = OrdersCountersRequestObject(
-                id=self.bot._userid, runner_tag=self.counters_tag
+                id=self.bot.userid, runner_tag=self.counters_tag
             )
-            chats = ChatBookmarksRequestObject(id=self.bot._userid, runner_tag=random_runner_tag())
+            chats = ChatBookmarksRequestObject(id=self.bot.userid, runner_tag=random_runner_tag())
             try:
                 result = await self.bot.runner_request(
                     requested_objects=[counters,chats]

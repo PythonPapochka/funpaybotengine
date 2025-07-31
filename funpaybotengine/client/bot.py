@@ -116,6 +116,14 @@ class Bot:
         return bool(self._csrf_token) and bool(self._phpsessid)
 
     @property
+    def userid(self) -> int | None:
+        return self._userid
+
+    @property
+    def username(self) -> str | None:
+        return self.username
+
+    @property
     def golden_key(self) -> str:
         """
         Golden key (token).
