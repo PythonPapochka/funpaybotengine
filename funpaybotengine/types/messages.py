@@ -13,6 +13,7 @@ from pydantic import BaseModel, PrivateAttr, ValidationInfo, field_validator
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.enums import MessageType
 from funpaybotengine.types.common import UserBadge
+from funpayparsers.message_type_re import ORDER_ID
 
 
 if TYPE_CHECKING:
@@ -148,12 +149,15 @@ class Message(FunPayObject, BaseModel):
         if not isinstance(self._related_order_id, _UNSET):
             return self._related_order_id
 
+        if not self.text:
+            self._related_order_id = None
+            return None
+
         if self.type not in _ORDER_RELATED_TYPES:
             self._related_order_id = None
             return None
 
-        match = re.search(r'#[A-Z0-9]{8}', self.text)  # type: ignore[arg-type]  # checked in @type
-        # todo: ORDER_ID_RE from funpayparsers
+        match = ORDER_ID.search(self.text)
 
         if not match:
             self._related_order_id = None
