@@ -6,7 +6,7 @@ __all__ = ('Runner',)
 
 import time
 import asyncio
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Sequence
 from collections.abc import AsyncGenerator
 
 from funpaybotengine.utils import random_runner_tag
@@ -18,7 +18,8 @@ from funpaybotengine.types.requests.runner import (
     OrdersCountersRequestObject,
 )
 from funpaybotengine.dispatching.events.base import RunnerEvent
-from funpaybotengine.dispatching.events.builtin_events import NewMessageEvent, ChatChangedEvent
+from funpaybotengine.dispatching.events.builtin_events import NewMessageEvent, ChatChangedEvent, NewSaleEvent, SaleStatusChangedEvent, NewPurchaseEvent, PurchaseStatusChangedEvent
+from funpaybotengine.types.enums import OrderStatus
 
 
 if TYPE_CHECKING:
@@ -120,7 +121,37 @@ class Runner:
             )
         return result
 
-    async def make_events(self, runner_response: RunnerResponse) -> list[RunnerEvent[Any]]:
+    async def _make_orders(
+            self,
+            message_events: Sequence[ChatChangedEvent | NewMessageEvent],
+            sales: bool = True,
+    ) -> list[NewSaleEvent | SaleStatusChangedEvent | NewPurchaseEvent | PurchaseStatusChangedEvent]:
+        new_event = NewSaleEvent if sales else NewPurchaseEvent
+        changed_event = SaleStatusChangedEvent if sales else PurchaseStatusChangedEvent
+        orders = await self.bot.get_sales() if sales else await self.bot.get_purchases()
+        result: list[
+            NewSaleEvent | NewPurchaseEvent | SaleStatusChangedEvent | PurchaseStatusChangedEvent
+        ] = []
+
+        for i in reversed(orders.orders):
+            saved_order = await self.bot.storage.get_order(order_id=i.id)
+            if not saved_order:
+                result.append(new_event(object=i, tag=random_runner_tag()))  # todo: tag
+
+                if i.status != OrderStatus.PAID:
+                    result.append(changed_event(object=i, tag=random_runner_tag()))
+
+                await self.bot.storage.update_order(i)
+                continue
+
+            result.append(
+                changed_event(object=i, tag=random_runner_tag(), previous=saved_order)
+            )
+            await self.bot.storage.update_order(saved_order)
+        return result
+
+
+    async def _make_events(self, runner_response: RunnerResponse) -> list[RunnerEvent[Any]]:
         total_events: list[RunnerEvent[Any]] = []
         chat_changed_events = await self._get_chats_changed(runner_response)
 
@@ -131,7 +162,7 @@ class Runner:
 
         return total_events
 
-    async def get_runner_updates(self) -> RunnerResponse:
+    async def _get_runner_updates(self) -> RunnerResponse:
         counters = OrdersCountersRequestObject(
             id=self.bot.userid,
             runner_tag=self.counters_tag,
@@ -153,12 +184,12 @@ class Runner:
         while True:
             start = time.time()
             try:
-                result = await self.get_runner_updates()
+                result = await self._get_runner_updates()
             except Exception:
                 print('err')  # todo
                 continue
 
-            events_stack = tuple(await self.make_events(result))
+            events_stack = tuple(await self._make_events(result))
             for i in events_stack:
                 yield i, events_stack
 
