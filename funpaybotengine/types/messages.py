@@ -4,12 +4,39 @@ from __future__ import annotations
 __all__ = ('Message',)
 
 
-from typing import Any
-
-from pydantic import BaseModel, ValidationInfo, field_validator
+from typing import Any, TYPE_CHECKING
+import re
+from pydantic import BaseModel, ValidationInfo, field_validator, PrivateAttr
 
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.common import UserBadge
+from funpaybotengine.types.enums import MessageType
+from io import BytesIO
+
+if TYPE_CHECKING:
+    from funpaybotengine.types.pages.chat_page import ChatPage
+    from funpaybotengine.types.pages.profile_page import ProfilePage
+
+
+class _UNSET:
+    pass
+
+_unset = _UNSET()
+
+_ORDER_RELATED_TYPES: tuple[MessageType, ...] = (
+    MessageType.NEW_ORDER,
+    MessageType.ORDER_CLOSED,
+    MessageType.ORDER_CLOSED_BY_ADMIN,
+    MessageType.ORDER_REOPENED,
+    MessageType.ORDER_REFUNDED,
+    MessageType.ORDER_PARTIALLY_REFUNDED,
+    MessageType.NEW_FEEDBACK,
+    MessageType.FEEDBACK_CHANGED,
+    MessageType.FEEDBACK_DELETED,
+    MessageType.NEW_FEEDBACK_REPLY,
+    MessageType.FEEDBACK_REPLY_CHANGED,
+    MessageType.FEEDBACK_REPLY_DELETED,
+)
 
 
 class Message(FunPayObject, BaseModel):
@@ -78,6 +105,12 @@ class Message(FunPayObject, BaseModel):
     Context key: ``chat_name``.
     """
 
+    _type: MessageType | _UNSET = PrivateAttr(default=_unset)
+    _related_order_id: str | None | _UNSET = PrivateAttr(default=_unset)
+
+    _chat_page: ChatPage | None = PrivateAttr(default=None)
+    _sender_profile: ProfilePage | None = PrivateAttr(default=None)
+
     @field_validator('chat_id', mode='before')
     @classmethod
     def get_chat_id_from_context(cls, value: Any, info: ValidationInfo) -> Any:
@@ -92,14 +125,76 @@ class Message(FunPayObject, BaseModel):
             return info.context.get('chat_name') if value is None else value
         return None
 
-    async def reply(self) -> None:
-        raise NotImplementedError
+    @property
+    def type(self) -> MessageType:
+        if not isinstance(self._type, _UNSET):
+            return self._type
+
+        if not self.sender_id == 0:
+            self._type = MessageType.NON_SYSTEM
+            return MessageType.NON_SYSTEM
+
+        if not self.text:
+            self._type = MessageType.UNKNOWN_SYSTEM
+            return MessageType.UNKNOWN_SYSTEM
+
+        self._type = MessageType.get_by_message_text(self.text)
+        return self._type
+
+    @property
+    def related_order_id(self) -> str | None:
+        if not isinstance(self._related_order_id, _UNSET):
+            return self._related_order_id
+
+        if self.type not in _ORDER_RELATED_TYPES:
+            self._related_order_id = None
+            return None
+
+        match = re.search(r'#[A-Z0-9]{8}', self.text)  # type: ignore[arg-type]  # checked in @type
+        # todo: ORDER_ID_RE from funpayparsers
+
+        if not match:
+            self._related_order_id = None
+            return None
+
+        self._related_order_id = match.group()[1:]
+        return self._related_order_id
+
+    async def reply(
+        self,
+        text: str | None = None,
+        image: str | BytesIO | int | None = None,
+        enforce_whitespaces: bool = True
+    ) -> Message:
+        assert self.bot is not None
+        assert (self.chat_id is not None or self.chat_name is not None)
+
+        return await self.bot.send_message(
+            chat_id=self.chat_id or self.chat_name,  # type: ignore[arg-type]  # todo
+            text=text,  # type: ignore[arg-type]  # todo
+            image=image,  # type: ignore[arg-type]  # todo
+            enforce_whitespaces=enforce_whitespaces
+        )
 
     async def chat(self, update: bool = False) -> None:
         raise NotImplementedError
 
-    async def chat_page(self, update: bool = False) -> None:
-        raise NotImplementedError
+    async def chat_page(self, update: bool = False) -> ChatPage:
+        assert self.bot is not None
+        assert self.chat_id is not None or self.chat_name is not None
 
-    async def sender_profile_page(self, update: bool = False) -> None:
-        raise NotImplementedError
+        if self._chat_page is not None and not update:
+            return self._chat_page
+
+        return await self.bot.get_chat_page(
+            chat_id=self.chat_id or self.chat_name  # type: ignore[arg-type]  # todo
+        )
+
+    async def sender_profile_page(self, update: bool = False) -> ProfilePage:
+        assert self.bot is not None
+        assert self.sender_id is not None
+
+        if self._sender_profile is not None and not update:
+            return self._sender_profile
+
+        return await self.bot.get_profile_page(id=self.sender_id)
