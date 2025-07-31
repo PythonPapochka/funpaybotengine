@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 
-__all__ = ('RunnerConfig', )
+__all__ = ('RunnerConfig',)
 
 
-from pydantic.dataclasses import dataclass
-from pydantic import conint, Field
 from typing import Literal, Annotated
+
+from pydantic import Field
+from pydantic.dataclasses import dataclass
 
 
 @dataclass

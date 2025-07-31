@@ -95,11 +95,11 @@ class HandlerMeta:
     def from_callable(
         cls,
         callable: Callable[..., Any],
-        registration_frame: inspect.FrameInfo
+        registration_frame: inspect.FrameInfo,
     ) -> HandlerMeta:
-        is_class_based = not(inspect.isfunction(callable) or
-                             inspect.ismethod(callable) or
-                             inspect.isclass(callable))
+        is_class_based = not (
+            inspect.isfunction(callable) or inspect.ismethod(callable) or inspect.isclass(callable)
+        )
 
         h = callable.__class__ if is_class_based else callable
 

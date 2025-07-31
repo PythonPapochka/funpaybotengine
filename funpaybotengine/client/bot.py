@@ -3,10 +3,9 @@ from __future__ import annotations
 
 __all__ = ('Bot',)
 
-from typing import TYPE_CHECKING, Any, TypeVar, ParamSpec, overload, Literal
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, ParamSpec, overload
 from io import BytesIO
 from collections.abc import Callable, Sequence
-from funpaybotengine.runner.config import RunnerConfig
 
 from typing_extensions import Self
 
@@ -23,6 +22,7 @@ from funpaybotengine.utils import (
     check_message_text,
     enforce_message_text_whitespaces,
 )
+from funpaybotengine.runner import Runner
 from funpaybotengine.methods import (
     GetSales,
     GetChatPage,
@@ -46,10 +46,11 @@ from funpaybotengine.types.pages import (
     SubcategoryPage,
 )
 from funpaybotengine.storage.base import Storage
+from funpaybotengine.runner.config import RunnerConfig
 from funpaybotengine.types.requests import (
     Action,
-    RequestableObject,
     NodeRequestObject,
+    RequestableObject,
     RunnerRequestData,
     SendMessageAction,
     SendingMessageData,
@@ -58,7 +59,6 @@ from funpaybotengine.client.session.base import Response
 from funpaybotengine.client.categories_cache import CategoriesCache
 from funpaybotengine.storage.inmemory_storage import InMemoryStorage
 from funpaybotengine.client.session.aiohttp_session import AioHttpSession
-from funpaybotengine.runner import Runner
 
 
 if TYPE_CHECKING:
@@ -86,7 +86,10 @@ def need_preinitialization(func: F) -> F:
 
 class Bot:
     def __init__(
-        self, golden_key: str, session: BaseSession | None = None, storage: Storage | None = None
+        self,
+        golden_key: str,
+        session: BaseSession | None = None,
+        storage: Storage | None = None,
     ) -> None:
         self._golden_key = golden_key
         self._csrf_token: str | None = None
@@ -180,9 +183,9 @@ class Bot:
 
     @need_preinitialization
     async def runner_request(
-            self,
-            requested_objects: Sequence[RequestableObject] | Literal[False] = False,
-            action: Action | Literal[False] = False,
+        self,
+        requested_objects: Sequence[RequestableObject] | Literal[False] = False,
+        action: Action | Literal[False] = False,
     ) -> RunnerResponse:
         """
         Makes request to the runner.
@@ -504,10 +507,8 @@ class Bot:
 
     @need_preinitialization
     async def start_polling(
-            self,
-            dp: Dispatcher,
-            /, *,
-            config: RunnerConfig | None = None) -> None:
+        self, dp: Dispatcher, /, *, config: RunnerConfig | None = None
+    ) -> None:
         if config:
             self._runner.config = config
         try:
@@ -515,6 +516,6 @@ class Bot:
                 async for event, stack in self._runner.listen():
                     await dp.propagate_event(event, stack)
 
-                return None
+                return
         except KeyboardInterrupt:
             await self.session.close()

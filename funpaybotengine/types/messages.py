@@ -4,14 +4,16 @@ from __future__ import annotations
 __all__ = ('Message',)
 
 
-from typing import Any, TYPE_CHECKING
 import re
-from pydantic import BaseModel, ValidationInfo, field_validator, PrivateAttr
+from typing import TYPE_CHECKING, Any
+from io import BytesIO
+
+from pydantic import BaseModel, PrivateAttr, ValidationInfo, field_validator
 
 from funpaybotengine.types.base import FunPayObject
-from funpaybotengine.types.common import UserBadge
 from funpaybotengine.types.enums import MessageType
-from io import BytesIO
+from funpaybotengine.types.common import UserBadge
+
 
 if TYPE_CHECKING:
     from funpaybotengine.types.pages.chat_page import ChatPage
@@ -20,6 +22,7 @@ if TYPE_CHECKING:
 
 class _UNSET:
     pass
+
 
 _unset = _UNSET()
 
@@ -163,16 +166,16 @@ class Message(FunPayObject, BaseModel):
         self,
         text: str | None = None,
         image: str | BytesIO | int | None = None,
-        enforce_whitespaces: bool = True
+        enforce_whitespaces: bool = True,
     ) -> Message:
         assert self.bot is not None
-        assert (self.chat_id is not None or self.chat_name is not None)
+        assert self.chat_id is not None or self.chat_name is not None
 
         return await self.bot.send_message(
             chat_id=self.chat_id or self.chat_name,  # type: ignore[arg-type]  # todo
             text=text,  # type: ignore[arg-type]  # todo
             image=image,  # type: ignore[arg-type]  # todo
-            enforce_whitespaces=enforce_whitespaces
+            enforce_whitespaces=enforce_whitespaces,
         )
 
     @property
@@ -192,7 +195,7 @@ class Message(FunPayObject, BaseModel):
             return self._chat_page
 
         return await self.bot.get_chat_page(
-            chat_id=self.chat_id or self.chat_name  # type: ignore[arg-type]  # todo
+            chat_id=self.chat_id or self.chat_name,  # type: ignore[arg-type]  # todo
         )
 
     async def sender_profile_page(self, update: bool = False) -> ProfilePage:

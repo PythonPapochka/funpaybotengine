@@ -34,9 +34,13 @@ class Router:
             NewMessageEvent: HandlerManager(self, 'new_message', NewMessageEvent),
             CountersChangedEvent: HandlerManager(self, 'counters_changed', CountersChangedEvent),
             NewSaleEvent: HandlerManager(self, 'new_sale', NewSaleEvent),
-            SaleStatusChangedEvent: HandlerManager(self, 'sale_status_changed', SaleStatusChangedEvent),
+            SaleStatusChangedEvent: HandlerManager(
+                self, 'sale_status_changed', SaleStatusChangedEvent
+            ),
             NewPurchaseEvent: HandlerManager(self, 'new_purchase', NewPurchaseEvent),
-            PurchaseStatusChangedEvent: HandlerManager(self, 'purchase_status_changed', PurchaseStatusChangedEvent),
+            PurchaseStatusChangedEvent: HandlerManager(
+                self, 'purchase_status_changed', PurchaseStatusChangedEvent
+            ),
             ExceptionEvent: HandlerManager(self, 'on_exception', ExceptionEvent),
             Event: HandlerManager(self, 'on_event'),
         }

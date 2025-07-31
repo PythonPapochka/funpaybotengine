@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from funpaybotengine.types.orders import OrderPreview
 from funpaybotengine.types.chat import PrivateChatPreview
 from funpaybotengine.storage.base import Storage
+from funpaybotengine.types.orders import OrderPreview
 
 
 __all__ = ('InMemoryStorage',)

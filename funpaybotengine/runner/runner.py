@@ -4,21 +4,21 @@ from __future__ import annotations
 __all__ = ('Runner',)
 
 
+import time
+import asyncio
 from typing import TYPE_CHECKING, Any
 from collections.abc import AsyncGenerator
 
 from funpaybotengine.utils import random_runner_tag
+from funpaybotengine.runner.config import RunnerConfig
 from funpaybotengine.types.updates import RunnerResponse
 from funpaybotengine.types.requests.runner import (
+    NodeRequestObject,
     ChatBookmarksRequestObject,
     OrdersCountersRequestObject,
-    NodeRequestObject,
 )
 from funpaybotengine.dispatching.events.base import RunnerEvent
-from funpaybotengine.dispatching.events.builtin_events import ChatChangedEvent, NewMessageEvent
-from funpaybotengine.runner.config import RunnerConfig
-import time
-import asyncio
+from funpaybotengine.dispatching.events.builtin_events import NewMessageEvent, ChatChangedEvent
 
 
 if TYPE_CHECKING:
@@ -61,7 +61,8 @@ class Runner:
         while True:
             try:
                 obj = ChatBookmarksRequestObject(
-                    id=self.bot._userid, runner_tag=random_runner_tag()
+                    id=self.bot._userid,
+                    runner_tag=random_runner_tag(),
                 )
                 result = await self.bot.runner_request(requested_objects=[obj])
                 break
@@ -73,8 +74,8 @@ class Runner:
                 await self.bot.storage.update_chat(i)
 
     async def extract_chat_changed_updates(
-            self,
-            runner_response: RunnerResponse
+        self,
+        runner_response: RunnerResponse,
     ) -> list[ChatChangedEvent]:
         if runner_response.chat_bookmarks is None:
             return []
@@ -88,7 +89,7 @@ class Runner:
             event = ChatChangedEvent(
                 previous=cached_chat,
                 object=chat_preview,
-                tag=runner_response.chat_bookmarks.tag
+                tag=runner_response.chat_bookmarks.tag,
             ).as_(self.bot)
 
             result.append(event)
@@ -97,12 +98,10 @@ class Runner:
         return result
 
     async def _extract_chat_histories(
-            self,
-            events: list[ChatChangedEvent],
+        self,
+        events: list[ChatChangedEvent],
     ) -> list[ChatChangedEvent | NewMessageEvent]:
-        events_dict = {
-            event.object.id: event for event in events
-        }
+        events_dict = {event.object.id: event for event in events}
         result: list[ChatChangedEvent | NewMessageEvent] = []
 
         objs = [
@@ -115,16 +114,21 @@ class Runner:
 
         for node in histories.nodes:
             chat_changed_event = events_dict[node.data.node.id]
-            from_id = chat_changed_event.previous.last_message_id if chat_changed_event.previous else 0
+            from_id = (
+                chat_changed_event.previous.last_message_id if chat_changed_event.previous else 0
+            )
             to_id = chat_changed_event.object.last_message_id
             result.append(chat_changed_event)
             result.extend(
                 NewMessageEvent(object=message, tag=node.tag)
-                for message in node.data.messages if from_id < message.id <= to_id
+                for message in node.data.messages
+                if from_id < message.id <= to_id
             )
         return result
 
-    async def listen(self) -> AsyncGenerator[tuple[RunnerEvent[Any], tuple[RunnerEvent[Any], ...]]]:
+    async def listen(
+        self,
+    ) -> AsyncGenerator[tuple[RunnerEvent[Any], tuple[RunnerEvent[Any], ...]]]:
         await self.discover_sales()
         await self.discover_purchases()
         await self.discover_chats()
@@ -132,12 +136,13 @@ class Runner:
         while True:
             start = time.time()
             counters = OrdersCountersRequestObject(
-                id=self.bot.userid, runner_tag=self.counters_tag
+                id=self.bot.userid,
+                runner_tag=self.counters_tag,
             )
             chats = ChatBookmarksRequestObject(id=self.bot.userid, runner_tag=random_runner_tag())
             try:
                 result = await self.bot.runner_request(
-                    requested_objects=[counters,chats]
+                    requested_objects=[counters, chats],
                 )
             except Exception:
                 print('err')  # todo

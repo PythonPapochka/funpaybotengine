@@ -17,9 +17,10 @@ __all__ = (
 import json
 from typing import Literal
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 
 from pydantic import Field, BaseModel, AliasChoices, computed_field
-from collections.abc import Sequence
+
 from funpaybotengine.base import BindableObject
 
 

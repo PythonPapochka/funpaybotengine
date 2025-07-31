@@ -11,7 +11,10 @@ from typing import TYPE_CHECKING, Any
 from funpaybotengine.loggers import dispatcher_logger
 from funpaybotengine.dispatching.bases import MiddlewareCallableType
 from funpaybotengine.dispatching.events.base import ExceptionEvent
-from funpaybotengine.dispatching.middlewares import MiddlewareManager, WrappedWithMiddlewaresCallable
+from funpaybotengine.dispatching.middlewares import (
+    MiddlewareManager,
+    WrappedWithMiddlewaresCallable,
+)
 from funpaybotengine.dispatching.routers.base import Router
 
 
@@ -27,9 +30,9 @@ class Dispatcher(Router):
         self._workflow_data = workflow_data or {}
 
     async def propagate_event(
-            self,
-            event: Event[Any],
-            events_stack: tuple[Event[Any], ...] | None = None
+        self,
+        event: Event[Any],
+        events_stack: tuple[Event[Any], ...] | None = None,
     ) -> None:
         dispatcher_logger.debug(f'New event {id(event)}: {type(event)}')
 
@@ -37,7 +40,7 @@ class Dispatcher(Router):
             **self._workflow_data,
             'event': event,
             'dispatcher': self,
-            'events_stack': events_stack or (event, ),
+            'events_stack': events_stack or (event,),
         }
 
         executed_handlers: dict[str, bool] = {}
@@ -47,7 +50,7 @@ class Dispatcher(Router):
             if e is not None:
                 error_event = ExceptionEvent(object=e, event=event)  # todo: error
                 dispatcher_logger.debug(
-                    f"({id(event)}) An error occurred while executing "
+                    f'({id(event)}) An error occurred while executing '
                     f"handler '{handler.name}' filters.",
                     exc_info=e,
                 )
@@ -91,7 +94,7 @@ class Dispatcher(Router):
             'handler_info': handler,
             'router': handler.manager.router,
             'manager': handler.manager,
-            'bot': event.bot
+            'bot': event.bot,
         }
 
         wrapped_handler = self._wrap_handler_with_middlewares(

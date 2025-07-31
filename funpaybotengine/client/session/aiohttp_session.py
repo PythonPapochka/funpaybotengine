@@ -8,9 +8,9 @@ import time
 import asyncio
 from typing import TYPE_CHECKING, Any
 
+from yarl import URL
 from aiohttp import ClientSession, ClientTimeout
 from aiohttp.hdrs import USER_AGENT
-from yarl import URL
 
 from funpaybotengine.loggers import session_logger
 from funpaybotengine.client.session.base import Response, BaseSession

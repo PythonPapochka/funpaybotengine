@@ -96,10 +96,11 @@ class HandlerManager(Generic[EventType]):
             manager=self,
             middlewares=middlewares or [],
             ensure_after=ensure_after or {},
-            meta=meta or HandlerMeta.from_callable(
+            meta=meta
+            or HandlerMeta.from_callable(
                 callable=handler,
-                registration_frame=inspect.stack()[1]
-            )
+                registration_frame=inspect.stack()[1],
+            ),
         )
         self._register_handler(handler_obj)
 
@@ -259,7 +260,7 @@ class HandlerManager(Generic[EventType]):
                 ensure_after=ensure_after,
                 meta=HandlerMeta.from_callable(
                     callable=handler,
-                    registration_frame=inspect.stack()[2 if func is not None else 1]
+                    registration_frame=inspect.stack()[2 if func is not None else 1],
                 ),
             )
             return handler
@@ -305,9 +306,9 @@ def gen_default_handler_id(
     handler: HandlerCallableType,
     manager: HandlerManager[Any],
 ) -> str:
-    is_class_based = not (inspect.isfunction(handler) or
-                          inspect.ismethod(handler) or
-                          inspect.isclass(handler))
+    is_class_based = not (
+        inspect.isfunction(handler) or inspect.ismethod(handler) or inspect.isclass(handler)
+    )
 
     handler = handler if not is_class_based else handler.__class__
     func_file = pathlib.Path(inspect.getfile(handler)).resolve()

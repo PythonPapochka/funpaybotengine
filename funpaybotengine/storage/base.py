@@ -5,8 +5,8 @@ __all__ = ('Storage',)
 
 from abc import ABC, abstractmethod
 
-from funpaybotengine.types.orders import OrderPreview
 from funpaybotengine.types.chat import PrivateChatPreview
+from funpaybotengine.types.orders import OrderPreview
 
 
 class Storage(ABC):
