@@ -35,8 +35,7 @@ class CountersChangedEvent(RunnerEvent[tuple[int, int]]): ...
 
 class NewSaleEvent(RunnerEvent[OrderPreview]):
     related_system_message: NewMessageEvent | None = None
-    related_goods_message: NewMessageEvent | None = None
-    related_auto_message: NewMessageEvent | None = None
+    related_auto_messages: list[NewMessageEvent] = []
 
 
 class SaleStatusChangedEvent(RunnerEvent[OrderPreview]):
@@ -46,9 +45,7 @@ class SaleStatusChangedEvent(RunnerEvent[OrderPreview]):
 
 class NewPurchaseEvent(RunnerEvent[OrderPreview]):
     related_system_message: NewMessageEvent | None = None
-    related_goods_message: NewMessageEvent | None = None
-    related_auto_message: NewMessageEvent | None = None
-
+    related_auto_messages: list[NewMessageEvent] = []
 
 class PurchaseStatusChangedEvent(RunnerEvent[OrderPreview]):
     previous: OrderPreview | None = None

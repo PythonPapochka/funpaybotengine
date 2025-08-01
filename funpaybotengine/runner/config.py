@@ -26,3 +26,19 @@ class RunnerConfig:
     discover_purchases: bool = True
     link_purchases_with_system_messages: bool = True
     delay_purchase_event_if_no_message: bool = True
+
+    @property
+    def link_sales_enabled(self) -> bool:
+        return self.discover_new_messages and self.link_sales_with_system_messages
+
+    @property
+    def link_purchases_enabled(self) -> bool:
+        return self.discover_new_messages and self.link_purchases_with_system_messages
+
+    @property
+    def delay_sales_enabled(self) -> bool:
+        return self.link_sales_enabled and self.delay_sale_event_if_no_message
+
+    @property
+    def delay_purchases_enabled(self) -> bool:
+        return self.link_purchases_enabled and self.delay_purchase_event_if_no_message
