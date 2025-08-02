@@ -21,27 +21,37 @@ if TYPE_CHECKING:
     from funpaybotengine.types.pages.profile_page import ProfilePage
 
 
-class _UNSET:
-    pass
+class MessageMeta(FunPayObject, BaseModel):
+    """
+    Represents a message meta info.
+    """
 
+    type: MessageType = MessageType.NON_SYSTEM
+    """Message type."""
 
-_unset = _UNSET()
+    order_id: str | None = None
+    """Mentioned order ID."""
 
-_ORDER_RELATED_TYPES: tuple[MessageType, ...] = (
-    MessageType.NEW_ORDER,
-    MessageType.ORDER_CLOSED,
-    MessageType.ORDER_CLOSED_BY_ADMIN,
-    MessageType.ORDER_REOPENED,
-    MessageType.ORDER_REFUNDED,
-    MessageType.ORDER_PARTIALLY_REFUNDED,
-    MessageType.NEW_FEEDBACK,
-    MessageType.FEEDBACK_CHANGED,
-    MessageType.FEEDBACK_DELETED,
-    MessageType.NEW_FEEDBACK_REPLY,
-    MessageType.FEEDBACK_REPLY_CHANGED,
-    MessageType.FEEDBACK_REPLY_DELETED,
-)
+    order_desc: str | None = None
+    """Mentioned order description."""
 
+    seller_id: int | None = None
+    """Mentioned seller ID."""
+
+    seller_username: str | None = None
+    """Mentioned seller username."""
+
+    buyer_id: int | None = None
+    """Mentioned buyer ID."""
+
+    buyer_username: str | None = None
+    """Mentioned buyer username."""
+
+    admin_id: int | None = None
+    """Mentioned admin ID."""
+
+    admin_username: str | None = None
+    """Mentioned admin username."""
 
 class Message(FunPayObject, BaseModel):
     """Represents a message from any FunPay chat (private or public)."""
@@ -109,8 +119,11 @@ class Message(FunPayObject, BaseModel):
     Context key: ``chat_name``.
     """
 
-    _type: MessageType | _UNSET = PrivateAttr(default=_unset)
-    _related_order_id: str | None | _UNSET = PrivateAttr(default=_unset)
+    meta: MessageMeta
+    """
+    Message meta info.
+    """
+
     _chat_page: ChatPage | None = PrivateAttr(default=None)
     _sender_profile: ProfilePage | None = PrivateAttr(default=None)
 
@@ -127,44 +140,6 @@ class Message(FunPayObject, BaseModel):
         if info.context:
             return info.context.get('chat_name') if value is None else value
         return None
-
-    @property
-    def type(self) -> MessageType:
-        if not isinstance(self._type, _UNSET):
-            return self._type
-
-        if not self.sender_id == 0:
-            self._type = MessageType.NON_SYSTEM
-            return MessageType.NON_SYSTEM
-
-        if not self.text:
-            self._type = MessageType.UNKNOWN_SYSTEM
-            return MessageType.UNKNOWN_SYSTEM
-
-        self._type = MessageType.get_by_message_text(self.text)
-        return self._type
-
-    @property
-    def related_order_id(self) -> str | None:
-        if not isinstance(self._related_order_id, _UNSET):
-            return self._related_order_id
-
-        if not self.text:
-            self._related_order_id = None
-            return None
-
-        if self.type not in _ORDER_RELATED_TYPES:
-            self._related_order_id = None
-            return None
-
-        match = ORDER_ID.search(self.text)
-
-        if not match:
-            self._related_order_id = None
-            return None
-
-        self._related_order_id = match.group()[1:]
-        return self._related_order_id
 
     async def reply(
         self,
