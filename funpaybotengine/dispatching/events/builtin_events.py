@@ -8,8 +8,19 @@ __all__ = (
     'CountersChangedEvent',
     'NewSaleEvent',
     'SaleStatusChangedEvent',
+    'SaleClosedEvent',
+    'SaleClosedByAdminEvent',
+    'SaleRefundedEvent',
+    'SalePartiallyRefundedEvent',
+    'SaleReopenedEvent',
+    'SaleStatusChangedEvent',
     'NewPurchaseEvent',
     'PurchaseStatusChangedEvent',
+    'PurchaseClosedEvent',
+    'PurchaseClosedByAdminEvent',
+    'PurchaseRefundedEvent',
+    'PurchasePartiallyRefundedEvent',
+    'PurchaseReopenedEvent',
 )
 
 
@@ -53,7 +64,8 @@ class OrderEvent(RunnerEvent[Message]):
 class NewSaleEvent(OrderEvent): ...
 
 
-class SaleStatusChangedEvent(OrderEvent): ...
+class SaleStatusChangedEvent(OrderEvent):
+    previous: OrderPreview | None = None
 
 
 class SaleClosedEvent(SaleStatusChangedEvent): ...
@@ -74,7 +86,8 @@ class SaleReopenedEvent(SaleStatusChangedEvent): ...
 class NewPurchaseEvent(OrderEvent): ...
 
 
-class PurchaseStatusChangedEvent(OrderEvent): ...
+class PurchaseStatusChangedEvent(OrderEvent):
+    previous: OrderPreview | None = None
 
 
 class PurchaseClosedEvent(PurchaseStatusChangedEvent): ...

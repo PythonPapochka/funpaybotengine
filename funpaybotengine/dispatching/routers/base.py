@@ -14,7 +14,17 @@ from funpaybotengine.dispatching.events.builtin_events import (
     NewPurchaseEvent,
     CountersChangedEvent,
     SaleStatusChangedEvent,
+    SaleClosedEvent,
+    SaleClosedByAdminEvent,
+    SaleRefundedEvent,
+    SalePartiallyRefundedEvent,
+    SaleReopenedEvent,
     PurchaseStatusChangedEvent,
+    PurchaseClosedEvent,
+    PurchaseClosedByAdminEvent,
+    PurchaseRefundedEvent,
+    PurchasePartiallyRefundedEvent,
+    PurchaseReopenedEvent,
 )
 from funpaybotengine.dispatching.handlers.handler_manager import HandlerManager
 
@@ -34,12 +44,26 @@ class Router:
             NewMessageEvent: HandlerManager(self, 'new_message', NewMessageEvent),
             CountersChangedEvent: HandlerManager(self, 'counters_changed', CountersChangedEvent),
             NewSaleEvent: HandlerManager(self, 'new_sale', NewSaleEvent),
+            SaleClosedByAdminEvent: HandlerManager(
+                self,
+                'sale_closed_by_admin',
+                SaleClosedByAdminEvent
+            ),
+            SaleClosedEvent: HandlerManager(self, 'sale_closed', SaleClosedEvent),
+            SalePartiallyRefundedEvent: HandlerManager(self, 'sale_partially_refunded', SalePartiallyRefundedEvent),
+            SaleRefundedEvent: HandlerManager(self, 'sale_refunded', SaleRefundedEvent),
+            SaleReopenedEvent: HandlerManager(self, 'sale_reopened', SaleReopenedEvent),
             SaleStatusChangedEvent: HandlerManager(
                 self,
                 'sale_status_changed',
                 SaleStatusChangedEvent,
             ),
             NewPurchaseEvent: HandlerManager(self, 'new_purchase', NewPurchaseEvent),
+            PurchaseClosedByAdminEvent: HandlerManager(self, 'sale_closed_by_admin', PurchaseClosedByAdminEvent),
+            PurchaseClosedEvent: HandlerManager(self, 'sale_closed', PurchaseClosedEvent),
+            PurchasePartiallyRefundedEvent: HandlerManager(self, 'sale_partially_refunded', PurchasePartiallyRefundedEvent),
+            PurchaseRefundedEvent: HandlerManager(self, 'sale_refunded', PurchaseRefundedEvent),
+            PurchaseReopenedEvent: HandlerManager(self, 'sale_reopened', PurchaseReopenedEvent),
             PurchaseStatusChangedEvent: HandlerManager(
                 self,
                 'purchase_status_changed',
@@ -83,9 +107,11 @@ class Router:
             async for handler, e in router.get_matching_handlers(event, workflow_data):
                 yield handler, e
 
-    def get_manager_by_event(self, event: Event[Any] | Type[Event[Any]]) -> HandlerManager[Any]:
-        filter = event if isinstance(event, type) else type(event)
-        return self._managers.get(filter) or self.on_event
+    def get_manager_by_event(self, event: Event[Any]) -> HandlerManager[Any]:
+        for t, m in self._managers.items():
+            if isinstance(event, t):
+                return m
+        return self.on_event
 
     @property
     def on_chat_changed(self) -> HandlerManager[ChatChangedEvent]:
@@ -108,12 +134,52 @@ class Router:
         return self._managers[SaleStatusChangedEvent]
 
     @property
+    def on_sale_closed(self) -> HandlerManager[SaleClosedEvent]:
+        return self._managers[SaleClosedEvent]
+
+    @property
+    def on_sale_closed_by_admin(self) -> HandlerManager[SaleClosedByAdminEvent]:
+        return self._managers[SaleClosedByAdminEvent]
+
+    @property
+    def on_sale_refunded(self) -> HandlerManager[SaleRefundedEvent]:
+        return self._managers[SaleRefundedEvent]
+
+    @property
+    def on_sale_partially_refunded(self) -> HandlerManager[SalePartiallyRefundedEvent]:
+        return self._managers[SalePartiallyRefundedEvent]
+
+    @property
+    def on_sale_reopened(self) -> HandlerManager[SaleReopenedEvent]:
+        return self._managers[SaleReopenedEvent]
+
+    @property
     def on_new_purchase(self) -> HandlerManager[NewPurchaseEvent]:
         return self._managers[NewPurchaseEvent]
 
     @property
     def on_purchase_status_changed(self) -> HandlerManager[PurchaseStatusChangedEvent]:
         return self._managers[PurchaseStatusChangedEvent]
+
+    @property
+    def on_purchase_closed(self) -> HandlerManager[PurchaseClosedEvent]:
+        return self._managers[PurchaseClosedEvent]
+
+    @property
+    def on_purchase_closed_by_admin(self) -> HandlerManager[PurchaseClosedByAdminEvent]:
+        return self._managers[PurchaseClosedByAdminEvent]
+
+    @property
+    def on_purchase_refunded(self) -> HandlerManager[PurchaseRefundedEvent]:
+        return self._managers[PurchaseRefundedEvent]
+
+    @property
+    def on_purchase_partially_refunded(self) -> HandlerManager[PurchasePartiallyRefundedEvent]:
+        return self._managers[PurchasePartiallyRefundedEvent]
+
+    @property
+    def on_purchase_reopened(self) -> HandlerManager[PurchaseReopenedEvent]:
+        return self._managers[SaleReopenedEvent]
 
     @property
     def on_event(self) -> HandlerManager[Event[Any]]:
