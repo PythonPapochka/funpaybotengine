@@ -507,7 +507,11 @@ class Bot:
 
     @need_preinitialization
     async def start_polling(
-        self, dp: Dispatcher, /, *, config: RunnerConfig | None = None
+        self,
+        dp: Dispatcher,
+        /,
+        *,
+        config: RunnerConfig | None = None,
     ) -> None:
         if config:
             self._runner.config = config

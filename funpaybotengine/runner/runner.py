@@ -6,10 +6,12 @@ __all__ = ('Runner',)
 
 import time
 import asyncio
-from typing import TYPE_CHECKING, Any, Sequence, Literal
-from collections.abc import AsyncGenerator
+from typing import TYPE_CHECKING, Any, Sequence
+from collections import defaultdict
+from collections.abc import Callable, AsyncGenerator
 
 from funpaybotengine.utils import random_runner_tag
+from funpaybotengine.types.enums import BadgeType, MessageType, OrderStatus
 from funpaybotengine.runner.config import RunnerConfig
 from funpaybotengine.types.updates import RunnerResponse
 from funpaybotengine.types.requests.runner import (
@@ -18,10 +20,14 @@ from funpaybotengine.types.requests.runner import (
     OrdersCountersRequestObject,
 )
 from funpaybotengine.dispatching.events.base import RunnerEvent
-from funpaybotengine.dispatching.events.builtin_events import NewMessageEvent, ChatChangedEvent, NewSaleEvent, SaleStatusChangedEvent, NewPurchaseEvent, PurchaseStatusChangedEvent
-from funpaybotengine.types.enums import OrderStatus, MessageType, BadgeType
-from collections import defaultdict
-from collections.abc import Callable
+from funpaybotengine.dispatching.events.builtin_events import (
+    NewSaleEvent,
+    NewMessageEvent,
+    ChatChangedEvent,
+    NewPurchaseEvent,
+    SaleStatusChangedEvent,
+    PurchaseStatusChangedEvent,
+)
 
 
 if TYPE_CHECKING:
@@ -29,18 +35,21 @@ if TYPE_CHECKING:
 
 
 MESSAGE_EVENTS = ChatChangedEvent | NewMessageEvent
-ORDER_EVENTS = NewSaleEvent | SaleStatusChangedEvent | NewPurchaseEvent | PurchaseStatusChangedEvent
+ORDER_EVENTS = (
+    NewSaleEvent | SaleStatusChangedEvent | NewPurchaseEvent | PurchaseStatusChangedEvent
+)
 FINDER_RESULT = tuple[NewMessageEvent, list[NewMessageEvent]] | None
 
 
 def _related_messages_dict() -> dict[Any, Any]:
     return {
         'new': None,
-        'changed': None
+        'changed': None,
     }
 
+
 def order_related_message_finder(
-        message_events: Sequence[MESSAGE_EVENTS]
+    message_events: Sequence[MESSAGE_EVENTS],
 ) -> Callable[[ORDER_EVENTS], FINDER_RESULT]:
     mapping: dict[str, dict[str, FINDER_RESULT]] = defaultdict(_related_messages_dict)
 
@@ -57,7 +66,7 @@ def order_related_message_finder(
             MessageType.ORDER_CLOSED_BY_ADMIN,
             MessageType.ORDER_REFUNDED,
             MessageType.ORDER_PARTIALLY_REFUNDED,
-            MessageType.ORDER_REOPENED
+            MessageType.ORDER_REOPENED,
         ]:
             continue
 
@@ -66,7 +75,7 @@ def order_related_message_finder(
             continue
 
         auto_messages: list[NewMessageEvent] = []
-        for j in message_events[index+1:]:
+        for j in message_events[index + 1 :]:
             if not isinstance(j, NewMessageEvent):
                 break
             if not j.object.badge or j.object.badge.type != BadgeType.AUTO_DELIVERY:
@@ -153,16 +162,18 @@ class Runner:
         return result
 
     async def _get_new_messages(
-            self,
-            events: list[ChatChangedEvent]
+        self,
+        events: list[ChatChangedEvent],
     ) -> list[ChatChangedEvent | NewMessageEvent]:
         chat_changed_events = {e.object.id: e for e in events}
         nodes = {}
 
-        objs = [NodeRequestObject(chat_id=i.object.id, runner_tag=random_runner_tag()) for i in events]
+        objs = [
+            NodeRequestObject(chat_id=i.object.id, runner_tag=random_runner_tag()) for i in events
+        ]
 
         for i in range(0, len(objs), 10):
-            histories = await self.bot.runner_request(requested_objects=objs[i:i + 10])
+            histories = await self.bot.runner_request(requested_objects=objs[i : i + 10])
             if histories.nodes is None:
                 raise Exception  # todo
             nodes.update({i.data.node.id: i for i in histories.nodes})
@@ -196,16 +207,15 @@ class Runner:
                     result.append(changed_event(object=i, tag=random_runner_tag()))
             elif i.status != saved_order.status:
                 result.append(
-                    changed_event(object=i, tag=random_runner_tag(), previous=saved_order)
+                    changed_event(object=i, tag=random_runner_tag(), previous=saved_order),
                 )
         return result
 
     async def _filter_orders(
-            self,
-            order_events: list[ORDER_EVENTS],
-            message_events: list[MESSAGE_EVENTS],
-    ) -> list[ORDER_EVENTS]:
-        ...
+        self,
+        order_events: list[ORDER_EVENTS],
+        message_events: list[MESSAGE_EVENTS],
+    ) -> list[ORDER_EVENTS]: ...
 
     async def _make_events(self, runner_response: RunnerResponse) -> list[RunnerEvent[Any]]:
         total_events: list[RunnerEvent[Any]] = []

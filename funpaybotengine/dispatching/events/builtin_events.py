@@ -47,6 +47,7 @@ class NewPurchaseEvent(RunnerEvent[OrderPreview]):
     related_system_message: NewMessageEvent | None = None
     related_auto_messages: list[NewMessageEvent] = []
 
+
 class PurchaseStatusChangedEvent(RunnerEvent[OrderPreview]):
     previous: OrderPreview | None = None
     related_system_message: NewMessageEvent | None = None

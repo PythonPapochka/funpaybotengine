@@ -4,7 +4,6 @@ from __future__ import annotations
 __all__ = ('Message',)
 
 
-import re
 from typing import TYPE_CHECKING, Any
 from io import BytesIO
 
@@ -13,7 +12,6 @@ from pydantic import BaseModel, PrivateAttr, ValidationInfo, field_validator
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.enums import MessageType
 from funpaybotengine.types.common import UserBadge
-from funpayparsers.message_type_re import ORDER_ID
 
 
 if TYPE_CHECKING:
@@ -52,6 +50,7 @@ class MessageMeta(FunPayObject, BaseModel):
 
     admin_username: str | None = None
     """Mentioned admin username."""
+
 
 class Message(FunPayObject, BaseModel):
     """Represents a message from any FunPay chat (private or public)."""

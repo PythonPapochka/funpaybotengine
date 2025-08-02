@@ -41,7 +41,7 @@ class Dispatcher(Router):
             'event': event,
             'dispatcher': self,
             'events_stack': events_stack or (event,),
-            'bot': event.bot
+            'bot': event.bot,
         }
 
         executed_handlers: dict[str, bool] = {}
