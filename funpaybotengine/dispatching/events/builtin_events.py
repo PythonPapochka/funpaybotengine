@@ -6,6 +6,7 @@ __all__ = (
     'ChatChangedEvent',
     'NewMessageEvent',
     'CountersChangedEvent',
+    'OrderEvent',
     'NewSaleEvent',
     'SaleStatusChangedEvent',
     'SaleClosedEvent',
@@ -24,11 +25,11 @@ __all__ = (
 )
 
 
+from pydantic import Field, PrivateAttr
+
 from funpaybotengine.types.chat import PrivateChatPreview
 from funpaybotengine.types.orders import OrderPreview
-from pydantic import PrivateAttr, Field
 from funpaybotengine.types.messages import Message
-from typing import Any
 
 from .base import RunnerEvent
 
@@ -49,9 +50,6 @@ class CountersChangedEvent(RunnerEvent[tuple[int, int]]): ...
 class OrderEvent(RunnerEvent[Message]):
     related_new_message_event: NewMessageEvent
     _order_preview: OrderPreview | None = PrivateAttr(default=None)
-
-    def __post_init__(self, context: dict[Any, Any]) -> None:
-        self._order_preview = context.get("order_preview")
 
     async def get_order_preview(self, update: bool = False) -> OrderPreview:
         if self._order_preview is not None and not update:

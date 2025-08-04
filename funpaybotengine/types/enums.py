@@ -1,3 +1,11 @@
 from __future__ import annotations
 
+from enum import Enum, auto
+
 from funpayparsers.types.enums import *  # noqa: F403
+
+
+class OrderPreviewType(Enum):
+    SALE = auto()
+    PURCHASE = auto()
+    UNKNOWN = auto()

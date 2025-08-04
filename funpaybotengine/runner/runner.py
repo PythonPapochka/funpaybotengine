@@ -11,17 +11,9 @@ from collections.abc import AsyncGenerator
 
 from funpaybotengine.utils import random_runner_tag
 from funpaybotengine.runner.config import RunnerConfig
-from funpaybotengine.types.updates import RunnerResponse
-from funpaybotengine.types.requests.runner import (
-    NodeRequestObject,
-    ChatBookmarksRequestObject,
-    OrdersCountersRequestObject,
-)
+from funpaybotengine.types.requests.runner import ChatBookmarksRequestObject
+from funpaybotengine.runner.event_collector import EventCollector
 from funpaybotengine.dispatching.events.base import RunnerEvent
-from funpaybotengine.dispatching.events.builtin_events import (
-    NewMessageEvent,
-    ChatChangedEvent,
-)
 
 
 if TYPE_CHECKING:
@@ -33,6 +25,7 @@ class Runner:
         self._bot = bot
         self._counters_tag = random_runner_tag()
         self._config = RunnerConfig()
+        self._collector = EventCollector(bot=self.bot, config=self._config)
 
     @property
     def bot(self) -> Bot:
@@ -73,81 +66,6 @@ class Runner:
             for i in result.chat_bookmarks.data.chat_previews:
                 await self.bot.storage.update_chat(i)
 
-    async def _get_chats_changed(self, runner_response: RunnerResponse) -> list[ChatChangedEvent]:
-        if runner_response.chat_bookmarks is None:
-            return []
-
-        result = []
-        for chat_preview in reversed(runner_response.chat_bookmarks.data.chat_previews):
-            cached_chat = await self.bot.storage.get_chat(chat_preview.id)
-            if cached_chat == chat_preview:
-                continue
-
-            event = ChatChangedEvent(
-                previous=cached_chat,
-                object=chat_preview,
-                tag=runner_response.chat_bookmarks.tag,
-            ).as_(self.bot)
-
-            result.append(event)
-            await self.bot.storage.update_chat(chat_preview)
-
-        return result
-
-    async def _get_new_messages(
-        self,
-        events: list[ChatChangedEvent],
-    ) -> list[ChatChangedEvent | NewMessageEvent]:
-        chat_changed_events = {e.object.id: e for e in events}
-        nodes = {}
-
-        objs = [
-            NodeRequestObject(chat_id=i.object.id, runner_tag=random_runner_tag()) for i in events
-        ]
-
-        for i in range(0, len(objs), 10):
-            histories = await self.bot.runner_request(requested_objects=objs[i : i + 10])
-            if histories.nodes is None:
-                raise Exception  # todo
-            nodes.update({i.data.node.id: i for i in histories.nodes})
-
-        result: list[ChatChangedEvent | NewMessageEvent] = []
-        for chat_id, event in chat_changed_events.items():
-            node = nodes[chat_id]
-            from_id = event.previous.last_message_id if event.previous else 0
-            to_id = event.object.last_message_id
-
-            result.append(event)
-            result.extend(
-                NewMessageEvent(object=message, tag=node.tag)
-                for message in node.data.messages
-                if from_id < message.id <= to_id
-            )
-        return result
-
-    async def _make_events(self, runner_response: RunnerResponse) -> list[RunnerEvent[Any]]:
-        total_events: list[RunnerEvent[Any]] = []
-        chat_changed_events = await self._get_chats_changed(runner_response)
-
-        if self.config.discover_new_messages and chat_changed_events:
-            total_events.extend(await self._get_new_messages(chat_changed_events))
-        else:
-            total_events.extend(i[0] for i in chat_changed_events)
-
-        return total_events
-
-    async def _get_runner_updates(self) -> RunnerResponse:
-        counters = OrdersCountersRequestObject(
-            id=self.bot.userid,
-            runner_tag=self.counters_tag,
-        )
-        chats = ChatBookmarksRequestObject(id=self.bot.userid, runner_tag=random_runner_tag())
-        result = await self.bot.runner_request(requested_objects=[counters, chats])
-
-        if result.orders_counters:
-            self._counters_tag = result.orders_counters.tag
-        return result
-
     async def listen(
         self,
     ) -> AsyncGenerator[tuple[RunnerEvent[Any], tuple[RunnerEvent[Any], ...]]]:
@@ -158,12 +76,15 @@ class Runner:
         while True:
             start = time.time()
             try:
-                result = await self._get_runner_updates()
+                result = await self._collector.get_events()
             except Exception:
                 print('err')  # todo
+                import traceback
+
+                print(traceback.format_exc())
                 continue
 
-            events_stack = tuple(await self._make_events(result))
+            events_stack = tuple(result)
             for i in events_stack:
                 yield i, events_stack
 

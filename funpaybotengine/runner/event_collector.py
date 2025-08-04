@@ -1,53 +1,59 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+
+__all__ = ('EventCollector',)
+
+
+from typing import TYPE_CHECKING, Type, Literal
+from dataclasses import field, dataclass
 from collections import defaultdict
 from collections.abc import Callable
 
 from funpaybotengine.utils import random_runner_tag
-from funpaybotengine.loggers import runner_logger
-from funpaybotengine.types.enums import OrderStatus
-from funpaybotengine.types.enums import MessageType
-from dataclasses import dataclass, field
+from funpaybotengine.types.enums import MessageType, OrderPreviewType
 from funpaybotengine.runner.config import RunnerConfig
 from funpaybotengine.dispatching.events import (
+    OrderEvent,
     NewSaleEvent,
     NewMessageEvent,
+    SaleClosedEvent,
     ChatChangedEvent,
     NewPurchaseEvent,
-    SaleStatusChangedEvent,
-    PurchaseStatusChangedEvent,
+    SaleRefundedEvent,
+    SaleReopenedEvent,
+    PurchaseClosedEvent,
+    PurchaseRefundedEvent,
+    PurchaseReopenedEvent,
+    SaleClosedByAdminEvent,
+    PurchaseClosedByAdminEvent,
+    SalePartiallyRefundedEvent,
+    PurchasePartiallyRefundedEvent,
 )
-from funpaybotengine.types.requests.runner import (
-    NodeRequestObject,
-    ChatBookmarksRequestObject,
-    OrdersCountersRequestObject,
-)
+from funpaybotengine.types.requests.runner import NodeRequestObject, ChatBookmarksRequestObject
 
 
 if TYPE_CHECKING:
     from funpaybotengine.client.bot import Bot
+    from funpaybotengine.types.orders import OrderPreview
     from funpaybotengine.types.updates import ChatNode, RunnerResponse, RunnerResponseObject
 
 
 CHAT_EVENTS = ChatChangedEvent | NewMessageEvent
-
-ORDER_EVENTS = (
-    NewSaleEvent | SaleStatusChangedEvent | NewPurchaseEvent | PurchaseStatusChangedEvent
-)
-
 FINDER_RESULT = tuple[NewMessageEvent, list[NewMessageEvent]] | None
+FINDER = Callable[[OrderEvent], FINDER_RESULT]
 
-FINDER = Callable[[ORDER_EVENTS], FINDER_RESULT]
+_ORDER_RELATED_MESSAGE_TYPES: dict[MessageType, tuple[Type[OrderEvent], Type[OrderEvent]]] = {
+    MessageType.NEW_ORDER: (NewSaleEvent, NewPurchaseEvent),
+    MessageType.ORDER_CLOSED: (SaleClosedEvent, PurchaseClosedEvent),
+    MessageType.ORDER_CLOSED_BY_ADMIN: (SaleClosedByAdminEvent, PurchaseClosedByAdminEvent),
+    MessageType.ORDER_REFUNDED: (SaleRefundedEvent, PurchaseRefundedEvent),
+    MessageType.ORDER_PARTIALLY_REFUNDED: (
+        SalePartiallyRefundedEvent,
+        PurchasePartiallyRefundedEvent,
+    ),
+    MessageType.ORDER_REOPENED: (SaleReopenedEvent, PurchaseReopenedEvent),
+}
 
-_ORDER_RELATED_MESSAGE_TYPES = [
-    MessageType.NEW_ORDER,
-    MessageType.ORDER_CLOSED,
-    MessageType.ORDER_CLOSED_BY_ADMIN,
-    MessageType.ORDER_REFUNDED,
-    MessageType.ORDER_PARTIALLY_REFUNDED,
-    MessageType.ORDER_REOPENED,
-]
 
 @dataclass
 class OrderRelatedMessages:
@@ -55,28 +61,44 @@ class OrderRelatedMessages:
     purchases: list[NewMessageEvent] = field(default_factory=list)
     unknown: list[NewMessageEvent] = field(default_factory=list)
 
+    def add_event(
+        self,
+        event: NewMessageEvent,
+        to: Literal['sales', 'purchases', 'unknown'],
+    ) -> None:
+        getattr(self, to).append(event)
+
 
 class EventCollector:
     def __init__(self, bot: Bot, config: RunnerConfig) -> None:
         self.bot = bot
-        self.counters_tag = random_runner_tag()
         self.config = config
 
-    async def _get_runner_updates(self) -> RunnerResponse:
-        counters = OrdersCountersRequestObject(
-            id=self.bot.userid,
-            runner_tag=self.counters_tag,
-        )
+    async def get_runner_updates(self) -> RunnerResponse:
         chats = ChatBookmarksRequestObject(id=self.bot.userid, runner_tag=random_runner_tag())
-        result = await self.bot.runner_request(requested_objects=[counters, chats])
-
-        if result.orders_counters:
-            self.counters_tag = result.orders_counters.tag
+        result = await self.bot.runner_request(requested_objects=[chats])
         return result
 
-    async def _extract_chat_changed_events(
-        self, runner_response: RunnerResponse
-    ) -> list[ChatChangedEvent]:
+    async def get_sales(self, order_id: str | None = None) -> tuple[OrderPreview, ...]:
+        return (await self.bot.get_sales(order_id_filter=order_id)).orders
+
+    async def get_purchases(self, order_id: str | None = None) -> tuple[OrderPreview, ...]:
+        return (await self.bot.get_purchases(order_id_filter=order_id)).orders
+
+    async def get_nodes(self, chat_ids: list[int]) -> dict[int, RunnerResponseObject[ChatNode]]:
+        nodes = {}
+        objs = [NodeRequestObject(chat_id=i, runner_tag=random_runner_tag()) for i in chat_ids]
+
+        for i in range(0, len(objs), 10):
+            result = await self.bot.runner_request(requested_objects=objs[i : i + 10])
+
+            if result.nodes is None:
+                raise Exception  # todo
+            nodes.update({i.data.node.id: i for i in result.nodes})
+
+        return nodes
+
+    async def get_chat_changed(self, runner_response: RunnerResponse) -> list[ChatChangedEvent]:
         if not runner_response.chat_bookmarks:
             return []
 
@@ -98,28 +120,9 @@ class EventCollector:
 
         return result
 
-    async def _get_nodes(self, chat_ids: list[int]) -> dict[int, RunnerResponseObject[ChatNode]]:
-        nodes = {}
-
-        objs = [NodeRequestObject(chat_id=i, runner_tag=random_runner_tag()) for i in chat_ids]
-
-        for i in range(0, len(objs), 10):
-            result = await self.bot.runner_request(requested_objects=objs[i : i + 10])
-
-            if result.nodes is None:
-                raise Exception  # todo
-
-            nodes.update({i.data.node.id: i for i in result.nodes})
-
-        return nodes
-
-    async def _get_new_message_events(
-        self,
-        events: list[ChatChangedEvent],
-    ) -> list[NewMessageEvent]:
+    async def get_new_message(self, events: list[ChatChangedEvent]) -> list[NewMessageEvent]:
         chat_changed_events = {e.object.id: e for e in events}
-
-        nodes = await self._get_nodes([e.object.id for e in events])
+        nodes = await self.get_nodes([e.object.id for e in events])
 
         result: list[NewMessageEvent] = []
         for chat_id, event in chat_changed_events.items():
@@ -135,7 +138,7 @@ class EventCollector:
 
         return result
 
-    async def _merge_chat_events(
+    def merge_chat_events(
         self,
         chat_changed_events: list[ChatChangedEvent],
         new_message_events: list[NewMessageEvent],
@@ -153,9 +156,9 @@ class EventCollector:
 
         return result
 
-    async def _extract_order_related_message_events(
-            self,
-            message_events: list[NewMessageEvent],
+    async def extract_order_related_message_events(
+        self,
+        message_events: list[NewMessageEvent],
     ) -> OrderRelatedMessages:
         result = OrderRelatedMessages()
         for e in message_events:
@@ -163,25 +166,121 @@ class EventCollector:
                 continue
 
             if e.object.meta.buyer_id:
-                if e.object.meta.buyer_id == self.bot.userid:
-                    result.purchases.append(e)
-                else:
-                    result.sales.append(e)
+                e_type = 'purchases' if e.object.meta.buyer_id == self.bot.userid else 'sales'
             elif e.object.meta.seller_id:
-                if e.object.meta.seller_id == self.bot.userid:
-                    result.sales.append(e)
-                else:
-                    result.purchases.append(e)
+                e_type = 'sales' if e.object.meta.seller_id == self.bot.userid else 'purchases'
             else:
+                e_type = 'unknown'
+
+            if e_type == 'purchases' and self.config.discover_purchases:
+                result.purchases.append(e)
+            elif e_type == 'sales' and self.config.discover_sales:
+                result.sales.append(e)
+            elif e_type == 'unknown':
                 result.unknown.append(e)
 
         return result
 
-    async def get_events(self) -> list[CHAT_EVENTS | ORDER_EVENTS]:
-        runner_response = await self._get_runner_updates()
+    async def make_order_events(self, messages: OrderRelatedMessages) -> list[OrderEvent]:
+        p, s = {}, {}
+        total_events: list[OrderEvent] = []
 
-        chat_changed_events = await self._extract_chat_changed_events(runner_response)
-        new_message_events = await self._get_new_message_events(chat_changed_events)
-        chat_events = await self._merge_chat_events(chat_changed_events, new_message_events)
+        if messages.purchases or (messages.unknown and self.config.discover_purchases):
+            p = {i.id: i for i in await self.get_purchases()}
 
-        return [*chat_events]
+        if messages.sales or (messages.unknown and self.config.discover_sales):
+            s = {i.id: i for i in await self.get_sales()}
+
+        for e in messages.unknown:
+            saved_order = await self.bot.storage.get_order(e.object.meta.order_id)
+            if saved_order and saved_order.type is not OrderPreviewType.UNKNOWN:
+                if (
+                    saved_order.type is OrderPreviewType.PURCHASE
+                    and self.config.discover_purchases
+                ):
+                    messages.purchases.append(e)
+                    continue
+                if saved_order.type is OrderPreviewType.SALE and self.config.discover_sales:
+                    messages.sales.append(e)
+                    continue
+
+            if self.config.discover_purchases:
+                order_preview = await self.get_purchases(order_id=e.object.meta.order_id)
+                if order_preview:
+                    messages.purchases.append(e)
+                    p[order_preview[0].id] = order_preview[0]
+                    await self.bot.storage.update_order(order_preview[0])
+                    continue
+
+            if self.config.discover_sales:
+                order_preview = await self.get_sales(order_id=e.object.meta.order_id)
+                if order_preview:
+                    messages.sales.append(e)
+                    s[order_preview[0].id] = order_preview[0]
+                    await self.bot.storage.update_order(order_preview[0])
+                    continue
+
+        total_events.extend(await self._make_order_events(messages.sales, s, 'sales'))
+        total_events.extend(await self._make_order_events(messages.purchases, p, 'purchases'))
+
+        return total_events
+
+    async def _make_order_events(
+        self,
+        messages: list[NewMessageEvent],
+        orders: dict[str, OrderPreview],
+        type: Literal['purchases', 'sales'],
+    ) -> list[OrderEvent]:
+        if not messages:
+            return []
+
+        result: list[OrderEvent] = []
+
+        for e in messages:
+            cls = _ORDER_RELATED_MESSAGE_TYPES[e.object.meta.type][0 if type == 'sales' else 1]
+            event: OrderEvent = cls(object=e.object, related_new_message_event=e, tag=e.tag)
+            event._order_preview = orders.get(e.object.meta.order_id)  # type: ignore[arg-type]
+            result.append(event)
+
+        return result
+
+    async def get_order_events(self, events: list[NewMessageEvent]) -> list[OrderEvent]:
+        order_messages = await self.extract_order_related_message_events(message_events=events)
+        return await self.make_order_events(order_messages)
+
+    def merge_message_order_events(
+        self,
+        chat_events: list[CHAT_EVENTS | OrderEvent],
+        order_events: list[OrderEvent],
+    ) -> list[CHAT_EVENTS | OrderEvent]:
+        chat_to_order_mapping = {i.related_new_message_event: i for i in order_events}
+        result: list[CHAT_EVENTS | OrderEvent] = []
+
+        for chat_event in chat_events:
+            result.append(chat_event)
+            if chat_event in chat_to_order_mapping:
+                result.append(chat_to_order_mapping[chat_event])
+        return result
+
+    async def get_events(self) -> list[CHAT_EVENTS | OrderEvent]:
+        runner_response = await self.get_runner_updates()
+
+        chat_changed_events = await self.get_chat_changed(runner_response)
+        new_message_events = await self.get_new_message(chat_changed_events)
+        chat_events = self.merge_chat_events(chat_changed_events, new_message_events)
+        order_events = await self.get_order_events(new_message_events)
+        total = self.merge_message_order_events(chat_events=chat_events, order_events=order_events)
+
+        for i in chat_changed_events:
+            await self.bot.storage.update_chat(i.object)
+
+        order_events_mapping = {}
+        for j in order_events:
+            if j._order_preview is None:
+                continue
+            order_events_mapping[j._order_preview.id] = j._order_preview
+
+        for i in order_events_mapping.values():
+            await self.bot.storage.update_order(i)
+
+        return total

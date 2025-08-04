@@ -11,7 +11,7 @@ from funpayparsers.types import Language
 from funpayparsers.parsers import OrderPreviewsParser
 
 from funpaybotengine.types import OrderPreviewsBatch
-from funpaybotengine.types.enums import OrderStatus
+from funpaybotengine.types.enums import OrderStatus, OrderPreviewType
 from funpaybotengine.methods.base import FunPayMethod
 from funpaybotengine.client.session.http_methods import HTTPMethod
 
@@ -65,6 +65,7 @@ class GetSales(FunPayMethod[OrderPreviewsBatch], BaseModel):
             parser_cls=OrderPreviewsParser,
             data={'continue': from_order_id} if from_order_id is not None else {},
             locale=locale,
+            context={'order_preview_type': OrderPreviewType.SALE},
             from_order_id=from_order_id,
             order_id_filter=order_id_filter,
             buyer_username_filter=buyer_username_filter,
@@ -107,4 +108,4 @@ class GetSales(FunPayMethod[OrderPreviewsBatch], BaseModel):
         return url + '?' + query
 
     def transform_result(self, result: ParserSubcategoryPage) -> OrderPreviewsBatch:
-        return OrderPreviewsBatch.model_validate(result)
+        return OrderPreviewsBatch.model_validate(result, context=self.context)

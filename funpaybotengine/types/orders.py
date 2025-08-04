@@ -4,15 +4,21 @@ from __future__ import annotations
 __all__ = ('OrderPreview', 'OrderPreviewsBatch')
 
 
-from pydantic import BaseModel
+from typing import Any
+
+from pydantic import BaseModel, PrivateAttr, computed_field
 
 from funpaybotengine.types.base import FunPayObject
-from funpaybotengine.types.enums import OrderStatus
+from funpaybotengine.types.enums import OrderStatus, OrderPreviewType
 from funpaybotengine.types.common import MoneyValue, UserPreview
 
 
 class OrderPreview(FunPayObject, BaseModel):
     """Represents an order preview."""
+
+    def model_post_init(self, context: dict[Any, Any]) -> None:
+        if context and context.get('order_preview_type') is not None:
+            self._type = context.get('order_preview_type')
 
     id: str
     """Order ID."""
@@ -34,6 +40,13 @@ class OrderPreview(FunPayObject, BaseModel):
 
     counterparty: UserPreview
     """Associated counterparty info."""
+
+    _type: OrderPreviewType = PrivateAttr(OrderPreviewType.UNKNOWN)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def type(self) -> OrderPreviewType:
+        return self._type
 
 
 class OrderPreviewsBatch(FunPayObject, BaseModel):

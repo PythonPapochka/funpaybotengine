@@ -5,7 +5,6 @@ __all__ = ('RunnerConfig',)
 
 
 from typing import Literal
-
 from dataclasses import dataclass
 
 

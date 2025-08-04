@@ -10,21 +10,21 @@ from funpaybotengine.dispatching.events.base import Event, ExceptionEvent
 from funpaybotengine.dispatching.events.builtin_events import (
     NewSaleEvent,
     NewMessageEvent,
+    SaleClosedEvent,
     ChatChangedEvent,
     NewPurchaseEvent,
-    CountersChangedEvent,
-    SaleStatusChangedEvent,
-    SaleClosedEvent,
-    SaleClosedByAdminEvent,
     SaleRefundedEvent,
-    SalePartiallyRefundedEvent,
     SaleReopenedEvent,
-    PurchaseStatusChangedEvent,
     PurchaseClosedEvent,
-    PurchaseClosedByAdminEvent,
+    CountersChangedEvent,
     PurchaseRefundedEvent,
-    PurchasePartiallyRefundedEvent,
     PurchaseReopenedEvent,
+    SaleClosedByAdminEvent,
+    SaleStatusChangedEvent,
+    PurchaseClosedByAdminEvent,
+    PurchaseStatusChangedEvent,
+    SalePartiallyRefundedEvent,
+    PurchasePartiallyRefundedEvent,
 )
 from funpaybotengine.dispatching.handlers.handler_manager import HandlerManager
 
@@ -47,10 +47,12 @@ class Router:
             SaleClosedByAdminEvent: HandlerManager(
                 self,
                 'sale_closed_by_admin',
-                SaleClosedByAdminEvent
+                SaleClosedByAdminEvent,
             ),
             SaleClosedEvent: HandlerManager(self, 'sale_closed', SaleClosedEvent),
-            SalePartiallyRefundedEvent: HandlerManager(self, 'sale_partially_refunded', SalePartiallyRefundedEvent),
+            SalePartiallyRefundedEvent: HandlerManager(
+                self, 'sale_partially_refunded', SalePartiallyRefundedEvent
+            ),
             SaleRefundedEvent: HandlerManager(self, 'sale_refunded', SaleRefundedEvent),
             SaleReopenedEvent: HandlerManager(self, 'sale_reopened', SaleReopenedEvent),
             SaleStatusChangedEvent: HandlerManager(
@@ -59,9 +61,13 @@ class Router:
                 SaleStatusChangedEvent,
             ),
             NewPurchaseEvent: HandlerManager(self, 'new_purchase', NewPurchaseEvent),
-            PurchaseClosedByAdminEvent: HandlerManager(self, 'sale_closed_by_admin', PurchaseClosedByAdminEvent),
+            PurchaseClosedByAdminEvent: HandlerManager(
+                self, 'sale_closed_by_admin', PurchaseClosedByAdminEvent
+            ),
             PurchaseClosedEvent: HandlerManager(self, 'sale_closed', PurchaseClosedEvent),
-            PurchasePartiallyRefundedEvent: HandlerManager(self, 'sale_partially_refunded', PurchasePartiallyRefundedEvent),
+            PurchasePartiallyRefundedEvent: HandlerManager(
+                self, 'sale_partially_refunded', PurchasePartiallyRefundedEvent
+            ),
             PurchaseRefundedEvent: HandlerManager(self, 'sale_refunded', PurchaseRefundedEvent),
             PurchaseReopenedEvent: HandlerManager(self, 'sale_reopened', PurchaseReopenedEvent),
             PurchaseStatusChangedEvent: HandlerManager(

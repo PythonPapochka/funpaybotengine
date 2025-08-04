@@ -63,6 +63,9 @@ class Event(BindableObject, BaseModel, Generic[EventObject]):
     def propagation_stopped(self) -> bool:
         return self._propagation_stopped
 
+    def __hash__(self):
+        return id(self)
+
 
 class RunnerEvent(Event[EventObject], BaseModel, Generic[EventObject]):
     tag: str = Field(frozen=True)
