@@ -26,7 +26,7 @@ __all__ = (
 
 from funpaybotengine.types.chat import PrivateChatPreview
 from funpaybotengine.types.orders import OrderPreview
-from pydantic import PrivateAttr
+from pydantic import PrivateAttr, Field
 from funpaybotengine.types.messages import Message
 from typing import Any
 
@@ -47,6 +47,7 @@ class CountersChangedEvent(RunnerEvent[tuple[int, int]]): ...
 
 
 class OrderEvent(RunnerEvent[Message]):
+    related_new_message_event: NewMessageEvent
     _order_preview: OrderPreview | None = PrivateAttr(default=None)
 
     def __post_init__(self, context: dict[Any, Any]) -> None:
@@ -61,7 +62,8 @@ class OrderEvent(RunnerEvent[Message]):
         return (await self.bot.get_sales(order_id_filter=self.object.meta.order_id)).orders[0]
 
 
-class NewSaleEvent(OrderEvent): ...
+class NewSaleEvent(OrderEvent):
+    related_auto_message_events: list[NewMessageEvent] = Field(default_factory=list)
 
 
 class SaleStatusChangedEvent(OrderEvent):
@@ -83,7 +85,8 @@ class SalePartiallyRefundedEvent(SaleRefundedEvent): ...
 class SaleReopenedEvent(SaleStatusChangedEvent): ...
 
 
-class NewPurchaseEvent(OrderEvent): ...
+class NewPurchaseEvent(OrderEvent):
+    related_auto_message_events: list[NewMessageEvent] = Field(default_factory=list)
 
 
 class PurchaseStatusChangedEvent(OrderEvent):
