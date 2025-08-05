@@ -90,12 +90,14 @@ class Bot:
         golden_key: str,
         session: BaseSession | None = None,
         storage: Storage | None = None,
+        session_storage: Storage | None = None,
     ) -> None:
         self._golden_key = golden_key
         self._csrf_token: str | None = None
         self._phpsessid: str | None = None
         self._session = session or AioHttpSession(proxy=None)
         self._storage = storage or InMemoryStorage()
+        self._session_storage = session_storage or InMemoryStorage()
         self._runner = Runner(self)
 
         self._locale: Language = Language.RU
@@ -165,6 +167,10 @@ class Bot:
     @property
     def storage(self) -> Storage:
         return self._storage
+
+    @property
+    def session_storage(self) -> Storage:
+        return self._session_storage
 
     @property
     def locale(self) -> Language:

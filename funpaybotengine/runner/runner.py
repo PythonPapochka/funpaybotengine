@@ -23,7 +23,6 @@ if TYPE_CHECKING:
 class Runner:
     def __init__(self, bot: Bot):
         self._bot = bot
-        self._counters_tag = random_runner_tag()
         self._config = RunnerConfig()
         self._collector = EventCollector(bot=self.bot, config=self._config)
 
@@ -32,16 +31,8 @@ class Runner:
         return self._bot
 
     @property
-    def counters_tag(self) -> str:
-        return self._counters_tag
-
-    @property
     def config(self) -> RunnerConfig:
         return self._config
-
-    @config.setter
-    def config(self, config: RunnerConfig) -> None:
-        self._config = config
 
     async def discover_sales(self) -> None:
         result = await self.bot.get_sales()
@@ -64,7 +55,7 @@ class Runner:
 
         if result.chat_bookmarks is not None:
             for i in result.chat_bookmarks.data.chat_previews:
-                await self.bot.storage.update_chat(i)
+                await self.bot.session_storage.update_chat(i)
 
     async def listen(
         self,
@@ -78,10 +69,8 @@ class Runner:
             try:
                 result = await self._collector.get_events()
             except Exception:
-                print('err')  # todo
                 import traceback
-
-                print(traceback.format_exc())
+                print(traceback.format_exc())  # todo: yield exception event
                 continue
 
             events_stack = tuple(result)
