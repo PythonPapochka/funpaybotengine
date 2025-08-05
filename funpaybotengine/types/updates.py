@@ -152,6 +152,7 @@ class RunnerResponse(FunPayObject, BaseModel):
     """Action response."""
 
     timestamp: int | None = None
+    """Runner response timestamp (UTC)."""
 
     @field_validator('unknown_objects', mode='before')
     @classmethod
