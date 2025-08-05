@@ -519,11 +519,9 @@ class Bot:
         *,
         config: RunnerConfig | None = None,
     ) -> None:
-        if config:
-            self._runner.config = config
         try:
             async with self.session:
-                async for event, stack in self._runner.listen():
+                async for event, stack in self._runner.listen(config=config):
                     await dp.propagate_event(event, stack)
 
                 return

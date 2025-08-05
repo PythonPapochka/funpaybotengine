@@ -114,55 +114,6 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
     Defaults to empty dict.
     """
 
-    if TYPE_CHECKING:
-
-        def __init__(
-            self,
-            url: str,
-            method: HTTPMethod = ...,
-            locale: Language | None = ...,
-            ignore_locale: bool = ...,
-            headers: dict[str, str] = ...,
-            data: dict[str, Any] = ...,
-            expected_status_codes: list[int | HTTPStatus] = ...,
-            allow_anonymous: bool = ...,
-            parser_cls: Type[FunPayObjectParser[Any, Any]] | None = ...,
-            parser_options: ParsingOptions | None = ...,
-            timeout: float = ...,
-            context: dict[str, Any] = ...,
-            **kwargs: Any,
-        ):
-            """
-            :param url: Method URL.
-            :param method: HTTP Method.
-                Defaults to ``HTTPMethod.GET``.
-            :param locale: FunPay locale.
-                If specified and ``ignore_locale`` is ``False``,
-                it will override bots locale when making a request.
-                Defaults to ``None``.
-            :param ignore_locale: Whether to ignore locale or not.
-                If ``True``, ``FunPayMethod.locale`` will be ignored.
-            :param headers: Headers.
-                Defaults to empty dict.
-            :param data: Additional data.
-                Defaults to empty dict.
-            :param expected_status_codes: List of expected status codes.
-                Defaults to ``[HTTPStatus.OK]``.
-            :param allow_anonymous: Whether this method can be executed anonymous
-                or not.
-                Defaults to ``False``.
-            :param parser_cls: Parser class (not an instance!) for parsing raw source.
-                Defaults to ``None``.
-            :param parser_options: Instance of parser options for
-                ``FunPayMethod.parser_cls``.
-                Defaults to ``None``.
-            :param timeout: Request timeout.
-                Defaults to ``10.0``.
-            :param context: Context for final object.
-                Defaults to empty dict.
-            """
-            ...
-
     def model_post_init(self, context: Any, /) -> None:
         super(BindableObject, self).model_post_init(context)
         if self.parser_cls and self.parser_options is None:
