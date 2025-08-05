@@ -212,7 +212,7 @@ class EventCollector:
             messages.sales.append(message)
             return
 
-        saved_order = await self.bot.storage.get_order(message.object.meta.order_id)
+        saved_order = await self.bot.storage.get_order(message.object.meta.order_id) # type: ignore[arg-type]
         if saved_order and saved_order.type is not OrderPreviewType.UNKNOWN:
             if saved_order.type is OrderPreviewType.PURCHASE and self.config.discover_purchases:
                 messages.purchases.append(message)
@@ -290,7 +290,7 @@ class EventCollector:
         result: list[CHAT_EVENTS | OrderEvent] = []
 
         for i in new_message_events:
-            chat_id_to_messages[i.object.chat_id].append(i)
+            chat_id_to_messages[i.object.chat_id].append(i)  # type: ignore[index]
 
         for j in order_events:
             message_to_order[j.related_new_message_event] = j
@@ -322,7 +322,7 @@ class EventCollector:
                 continue
             order_events_mapping[j._order_preview.id] = j._order_preview
 
-        for i in order_events_mapping.values():
-            await self.bot.storage.update_order(i)
+        for k in order_events_mapping.values():
+            await self.bot.storage.update_order(k)
 
         return total

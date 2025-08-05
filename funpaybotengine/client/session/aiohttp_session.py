@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any
 from yarl import URL
 from aiohttp import ClientSession, ClientTimeout
 from aiohttp.hdrs import USER_AGENT
+from aiohttp import TCPConnector
 
 from funpaybotengine.loggers import session_logger
 from funpaybotengine.client.session.base import Response, BaseSession
@@ -40,19 +41,35 @@ class AioHttpSession(BaseSession):
             }
         )
 
-        self._session: ClientSession | None = None
+        self._connector = TCPConnector()
 
     async def session(self) -> ClientSession:
-        if self._session is None or self._session.closed:
-            self._session = ClientSession(proxy=self.proxy, base_url='https://funpay.com')
-        return self._session
+        if self._connector.closed:
+            self._connector = TCPConnector()
+        return ClientSession(connector=self._connector)
 
     async def close(self) -> None:
-        if self._session is not None and not self._session.closed:
-            await self._session.close()
+        if not self._connector.closed:
+            await self._connector.close()
 
             # https://docs.aiohttp.org/en/stable/client_advanced.html#graceful-shutdown
             await asyncio.sleep(0.25)
+
+    def _prepare_method(
+            self,
+            method: FunPayMethod[MethodReturnType],
+            bot: Bot | None,
+    ) -> None:
+        if bot is not None:
+            method.bind_to(bot)
+
+        if method.bot is None:
+            raise Exception('Method is unbound')  # todo
+
+        if not method.allow_anonymous and method.bot.anonymous:
+            raise Exception(
+                f"Method '{method.__class__.__name__}' cannot be executed as an anonymous user. ",
+            )  # todo
 
     async def make_request(
         self,
@@ -89,22 +106,24 @@ class AioHttpSession(BaseSession):
 
         session_logger.info(f'Making {method.method.name} request to {url_to_log}')
         start_time = time.time()
-        if method.method == HTTPMethod.GET:
-            response = await session.get(
-                self.resolve_url(method),
-                params=method.data,
-                timeout=timeout_obj,
-                headers=self._default_headers | method.headers,
-            )
-        elif method.method == HTTPMethod.POST:
-            response = await session.post(
-                self.resolve_url(method),
-                data=method.data,
-                timeout=timeout_obj,
-                headers=self._default_headers | method.headers,
-            )
-        else:
-            raise Exception('Unsupported HTTP method')  # todo: Custom exception
+
+        async with session:
+            if method.method == HTTPMethod.GET:
+                response = await session.get(
+                    self.resolve_url(method),
+                    params=method.data,
+                    timeout=timeout_obj,
+                    headers=self._default_headers | method.headers,
+                )
+            elif method.method == HTTPMethod.POST:
+                response = await session.post(
+                    self.resolve_url(method),
+                    data=method.data,
+                    timeout=timeout_obj,
+                    headers=self._default_headers | method.headers,
+                )
+            else:
+                raise Exception('Unsupported HTTP method')  # todo: Custom exception
 
         session_logger.debug(
             f'Requesting {url_to_log} took {time.time() - start_time}s. Status: {response.status}.',
@@ -130,7 +149,7 @@ class AioHttpSession(BaseSession):
         )
 
         start_time = time.time()
-        result = method.to_obj(response)
+        result = method.to_obj(output)
         output.response_obj = result
         session_logger.debug(f'Parsing response of {url_to_log} took {time.time() - start_time}s.')
         return output

@@ -18,7 +18,7 @@ class OrderPreview(FunPayObject, BaseModel):
 
     def model_post_init(self, context: dict[Any, Any]) -> None:
         if context and context.get('order_preview_type') is not None:
-            self._type = context.get('order_preview_type')
+            self._type = context['order_preview_type']
 
     id: str
     """Order ID."""
