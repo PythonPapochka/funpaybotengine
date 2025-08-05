@@ -6,12 +6,14 @@ __all__ = (
     'MessageSenderUsernameFilter',
     'MessageSenderIDFilter',
     'MessageHasImageFilter',
+    'MessageTypeFilter'
 )
 
 
 from typing import TYPE_CHECKING, Any
 
 from .base import Filter
+from funpaybotengine.types.enums import MessageType
 
 
 if TYPE_CHECKING:
@@ -51,11 +53,9 @@ class MessageHasImageFilter(Filter):
         return bool(event.object.image_url)
 
 
-"""
 class MessageTypeFilter(Filter):
-    def __init__(self, message_type: ..., /):
+    def __init__(self, message_type: MessageType, /):
         self.message_type = message_type
 
     async def __call__(self, event: Event[Message], *args: Any, **kwargs: Any) -> bool:
-        raise NotImplementedError()  # todo
-"""
+        return event.object.meta.type is self.message_type
