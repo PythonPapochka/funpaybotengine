@@ -3,7 +3,6 @@ from __future__ import annotations
 
 __all__ = ('GetMainPage',)
 
-from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 from funpayparsers.parsers.page_parsers import MainPageParser
@@ -11,10 +10,6 @@ from funpayparsers.parsers.page_parsers import MainPageParser
 from funpaybotengine.types.enums import Language
 from funpaybotengine.types.pages import MainPage
 from funpaybotengine.methods.base import FunPayMethod
-
-
-if TYPE_CHECKING:
-    from funpayparsers.types.pages import MainPage as ParserMainPage
 
 
 class GetMainPage(FunPayMethod[MainPage], BaseModel):
@@ -31,6 +26,8 @@ class GetMainPage(FunPayMethod[MainPage], BaseModel):
     Defaults to ``None``.
     """
 
+    __model_to_build__ = MainPage
+
     def __init__(self, locale: Language | None = None, change_locale: Language | None = None):
         super().__init__(
             url='',
@@ -42,6 +39,3 @@ class GetMainPage(FunPayMethod[MainPage], BaseModel):
             else {},
             change_locale=change_locale,
         )
-
-    def transform_result(self, result: ParserMainPage) -> MainPage:
-        return MainPage.model_validate(result, context={'bot': self._bot})

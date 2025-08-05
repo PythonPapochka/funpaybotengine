@@ -79,7 +79,6 @@ class GetChatHistory(FunPayMethod[list[Message]], BaseModel):
             # not None
         )
 
-    def transform_result(self, messages: list[ParserMessage]) -> list[Message]:
-        return [
-            Message.model_validate(i, context={'bot': self._bot} | self.context) for i in messages
-        ]
+    def transform_result(self, parsing_result: list[ParserMessage], response: Response[Any]) -> list[Message]:
+        context = self.get_context(response)
+        return [Message.model_validate(i, context=context) for i in parsing_result]

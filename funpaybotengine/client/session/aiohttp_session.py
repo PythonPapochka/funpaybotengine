@@ -41,15 +41,20 @@ class AioHttpSession(BaseSession):
             }
         )
 
-        self._connector = TCPConnector()
+        self._connector: TCPConnector | None = None
 
     async def session(self) -> ClientSession:
-        if self._connector.closed:
+        if self._connector is None or self._connector.closed:
             self._connector = TCPConnector()
-        return ClientSession(connector=self._connector)
+        return ClientSession(
+            proxy=self.proxy,
+            base_url='https://funpay.com',
+            connector=self._connector,
+            connector_owner=False
+        )
 
     async def close(self) -> None:
-        if not self._connector.closed:
+        if self._connector is not None and not self._connector.closed:
             await self._connector.close()
 
             # https://docs.aiohttp.org/en/stable/client_advanced.html#graceful-shutdown

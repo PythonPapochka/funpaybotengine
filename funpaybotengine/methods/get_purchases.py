@@ -3,9 +3,6 @@ from __future__ import annotations
 
 __all__ = ('GetPurchases',)
 
-
-from typing import TYPE_CHECKING
-
 from pydantic import BaseModel
 from funpayparsers.types import Language
 from funpayparsers.parsers import OrderPreviewsParser
@@ -14,10 +11,6 @@ from funpaybotengine.types import OrderPreviewsBatch
 from funpaybotengine.types.enums import OrderStatus, OrderPreviewType
 from funpaybotengine.methods.base import FunPayMethod
 from funpaybotengine.client.session.http_methods import HTTPMethod
-
-
-if TYPE_CHECKING:
-    from funpayparsers.types.pages import SubcategoryPage as ParserSubcategoryPage
 
 
 STATE_FILTERS = {
@@ -40,6 +33,7 @@ class GetPurchases(FunPayMethod[OrderPreviewsBatch], BaseModel):
     status_filter: OrderStatus | str | None = None
     game_id_filter: int | None = None
     other_filters: dict[str, str] | None = None
+    __model_to_build__ = OrderPreviewsBatch
 
     def __init__(
         self,
@@ -106,6 +100,3 @@ class GetPurchases(FunPayMethod[OrderPreviewsBatch], BaseModel):
 
         query = '&'.join(queries)
         return url + '?' + query
-
-    def transform_result(self, result: ParserSubcategoryPage) -> OrderPreviewsBatch:
-        return OrderPreviewsBatch.model_validate(result, context=self.context)

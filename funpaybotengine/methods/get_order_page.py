@@ -4,18 +4,12 @@ from __future__ import annotations
 __all__ = ('GetOrderPage',)
 
 
-from typing import TYPE_CHECKING
-
 from pydantic import BaseModel
 from funpayparsers.types import Language
 from funpayparsers.parsers.page_parsers import OrderPageParser
 
 from funpaybotengine.types.pages import OrderPage
 from funpaybotengine.methods.base import FunPayMethod
-
-
-if TYPE_CHECKING:
-    from funpayparsers.types.pages import SubcategoryPage as ParserSubcategoryPage
 
 
 class GetOrderPage(FunPayMethod[OrderPage], BaseModel):
@@ -28,6 +22,8 @@ class GetOrderPage(FunPayMethod[OrderPage], BaseModel):
     id: str
     """Order ID."""
 
+    __model_to_build__ = OrderPage
+
     def __init__(self, id: str, locale: Language | None = None):
         super().__init__(
             url=f'orders/{id}/',
@@ -35,6 +31,3 @@ class GetOrderPage(FunPayMethod[OrderPage], BaseModel):
             locale=locale,
             id=id,
         )
-
-    def transform_result(self, result: ParserSubcategoryPage) -> OrderPage:
-        return OrderPage.model_validate(result)

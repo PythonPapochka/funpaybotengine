@@ -3,7 +3,6 @@ from __future__ import annotations
 
 __all__ = ('GetChatPage',)
 
-from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 from funpayparsers.parsers.page_parsers import ChatPageParser
@@ -11,10 +10,6 @@ from funpayparsers.parsers.page_parsers import ChatPageParser
 from funpaybotengine.types.enums import Language
 from funpaybotengine.methods.base import FunPayMethod
 from funpaybotengine.types.pages.chat_page import ChatPage
-
-
-if TYPE_CHECKING:
-    from funpayparsers.types.pages import ChatPage as ParserChatPage
 
 
 class GetChatPage(FunPayMethod[ChatPage], BaseModel):
@@ -26,6 +21,8 @@ class GetChatPage(FunPayMethod[ChatPage], BaseModel):
 
     chat_id: int | str
     """Chat ID."""
+
+    __model_to_build__ = ChatPage
 
     def __init__(self, chat_id: int | str, locale: Language | None = None):
         """
@@ -43,6 +40,3 @@ class GetChatPage(FunPayMethod[ChatPage], BaseModel):
             allow_anonymous=True,
             chat_id=chat_id,
         )
-
-    def transform_result(self, chat_page: ParserChatPage) -> ChatPage:
-        return ChatPage.model_validate(chat_page, context={'bot': self._bot})

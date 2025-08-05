@@ -4,6 +4,7 @@ from __future__ import annotations
 __all__ = ('UploadImage',)
 
 
+from typing import TYPE_CHECKING, Any
 import json
 from typing import cast
 from io import BytesIO
@@ -13,6 +14,9 @@ from pydantic import BaseModel
 from funpaybotengine.types.enums import Language
 from funpaybotengine.methods.base import FunPayMethod
 from funpaybotengine.client.session.http_methods import HTTPMethod
+
+if TYPE_CHECKING:
+    from funpaybotengine.client.session.base import Response
 
 
 class UploadImage(FunPayMethod[int], BaseModel):
@@ -35,5 +39,5 @@ class UploadImage(FunPayMethod[int], BaseModel):
             file=file,
         )
 
-    def transform_result(self, result: str) -> int:
-        return cast(int, json.loads(result)['fileId'])
+    def transform_result(self, parsing_result: str, response: Response[Any]) -> int:
+        return cast(int, json.loads(parsing_result)['fileId'])
