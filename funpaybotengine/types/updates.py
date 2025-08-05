@@ -16,13 +16,14 @@ from typing import Any, Generic, TypeVar
 from types import MappingProxyType
 from collections.abc import Mapping
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, ValidationInfo
 
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.chat import PrivateChatPreview
 from funpaybotengine.types.enums import RunnerDataType
 from funpaybotengine.types.common import CurrentlyViewingOfferInfo
 from funpaybotengine.types.messages import Message
+import time
 
 
 UpdateData = TypeVar('UpdateData')
@@ -150,6 +151,8 @@ class RunnerResponse(FunPayObject, BaseModel):
     response: ActionResponse | None
     """Action response."""
 
+    timestamp: int | None = None
+
     @field_validator('unknown_objects', mode='before')
     @classmethod
     def convert_to_immutable(cls, value: Any) -> tuple[MappingProxyType[str, Any], ...] | None:
@@ -157,3 +160,10 @@ class RunnerResponse(FunPayObject, BaseModel):
             return value
 
         return tuple(MappingProxyType(i) for i in value)
+
+    @field_validator('timestamp', mode='before')
+    @classmethod
+    def get_timestamp(cls, value: Any, info: ValidationInfo) -> int:
+        if not isinstance(info.context, dict) or 'response_timestamp' not in info.context:
+            return int(time.time())
+        return int(info.context['response_timestamp'])

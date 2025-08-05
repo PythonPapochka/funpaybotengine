@@ -305,7 +305,6 @@ class EventCollector:
 
         return result
 
-
     async def get_events(self) -> list[CHAT_EVENTS | OrderEvent]:
         runner_response = await self.get_runner_updates()
         chat_changed_events = await self.get_chat_changed_events(runner_response)

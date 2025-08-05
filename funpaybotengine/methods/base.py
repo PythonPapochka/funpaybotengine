@@ -176,6 +176,6 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
         if 'date' in response.response_headers:
             context_from_response['response_timestamp'] = parsedate_to_datetime(
                 response.response_headers['date']
-            )
+            ).timestamp()
 
         return self.context | context_from_response | context | {'bot': self._bot}
