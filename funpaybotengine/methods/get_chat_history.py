@@ -4,7 +4,7 @@ from __future__ import annotations
 __all__ = ('GetChatHistory',)
 
 import json
-from typing import cast
+from typing import cast, Any
 
 from pydantic import BaseModel
 from funpayparsers.types import Message as ParserMessage
@@ -13,6 +13,11 @@ from funpayparsers.parsers import MessagesParser
 from funpaybotengine.types.enums import Language
 from funpaybotengine.methods.base import FunPayMethod
 from funpaybotengine.types.messages import Message
+from typing import TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from funpaybotengine.client.session.base import Response
 
 
 class GetChatHistory(FunPayMethod[list[Message]], BaseModel):
@@ -64,8 +69,8 @@ class GetChatHistory(FunPayMethod[list[Message]], BaseModel):
             before_message_id=before_message_id,
         )
 
-    def parse_result(self, response: str) -> list[ParserMessage]:
-        result = json.loads(response)
+    def parse_result(self, response: Response[Any]) -> list[ParserMessage]:
+        result = json.loads(response.raw_response)
         messages = result['chat']['messages']
         html = '\n'.join(i['html'] for i in messages)
         return cast(

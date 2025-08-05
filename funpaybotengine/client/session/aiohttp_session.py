@@ -72,7 +72,6 @@ class AioHttpSession(BaseSession):
             )  # todo
 
         session = await self.session()
-
         session.cookie_jar.clear()
         session.cookie_jar.update_cookies({'cookie_prefs': '1'})  # no 3rd-party cookies
         if method.bot.golden_key:
@@ -113,26 +112,28 @@ class AioHttpSession(BaseSession):
 
         self.check_status_code(method, response.status)
 
-        start_time = time.time()
-        result = method.to_obj(await response.text())
-        session_logger.debug(f'Parsing response of {url_to_log} took {time.time() - start_time}s.')
-
         cookies: dict[str, str] = {}
-
         if response.history:
             for i in response.history:
                 cookies = cookies | {k: v.value for k, v in i.cookies.items()}
         else:
             cookies = {k: v.value for k, v in response.cookies.items()}
 
-        return Response(
+        output = Response(
             url=str(response.real_url),
             status_code=response.status,
             raw_response=await response.text(),
-            response_obj=result,
+            response_obj=None,
+            response_headers={k.lower(): v for k, v in response.headers.items()},
             response_cookies=cookies,
             method_obj=method,
         )
+
+        start_time = time.time()
+        result = method.to_obj(response)
+        output.response_obj = result
+        session_logger.debug(f'Parsing response of {url_to_log} took {time.time() - start_time}s.')
+        return output
 
     def resolve_url(self, method: FunPayMethod[Any]) -> str:
         if method.ignore_locale:

@@ -42,6 +42,7 @@ class Response(Generic[ResponseObject]):
     status_code: HTTPStatus | int
     raw_response: str
     response_obj: ResponseObject
+    response_headers: dict[str, str]
     response_cookies: dict[str, str]
     method_obj: FunPayMethod[ResponseObject]
 

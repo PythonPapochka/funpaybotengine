@@ -16,6 +16,7 @@ from funpaybotengine.client.session.http_methods import HTTPMethod
 
 if TYPE_CHECKING:
     from funpaybotengine.types.enums import Language
+    from funpaybotengine.client.session.base import Response
 
 
 MethodReturnType = TypeVar('MethodReturnType', bound=Any)
@@ -167,7 +168,7 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
         if self.parser_cls and self.parser_options is None:
             self.parser_options = self.parser_cls.get_options_cls()()
 
-    def parse_result(self, response: str) -> Any:
+    def parse_result(self, response: Response[Any]) -> Any:
         """
         Method that parses raw response.
 
@@ -185,7 +186,7 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
         if self.parser_cls is None:
             return response
 
-        return self.parser_cls(response, options=self.parser_options).parse()
+        return self.parser_cls(response.raw_response, options=self.parser_options).parse()
 
     @abstractmethod
     def transform_result(self, result: Any) -> MethodReturnType:
@@ -197,6 +198,6 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
         """
         ...
 
-    def to_obj(self, response: str) -> MethodReturnType:
+    def to_obj(self, response: Response[Any]) -> MethodReturnType:
         parsing_result = self.parse_result(response)
         return self.transform_result(parsing_result)
