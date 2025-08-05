@@ -23,28 +23,10 @@ if TYPE_CHECKING:
 class Runner:
     def __init__(self, bot: Bot):
         self._bot = bot
-        self._config = RunnerConfig()
-        self._collector = EventCollector(bot=self.bot, config=self._config)
 
     @property
     def bot(self) -> Bot:
         return self._bot
-
-    @property
-    def config(self) -> RunnerConfig:
-        return self._config
-
-    async def discover_sales(self) -> None:
-        result = await self.bot.get_sales()
-
-        for i in result.orders:
-            await self.bot.storage.update_order(i)
-
-    async def discover_purchases(self) -> None:
-        result = await self.bot.get_purchases()
-
-        for i in result.orders:
-            await self.bot.storage.update_order(i)
 
     async def discover_chats(self) -> None:
         obj = ChatBookmarksRequestObject(
@@ -59,15 +41,17 @@ class Runner:
 
     async def listen(
         self,
+        config: RunnerConfig | None = None
     ) -> AsyncGenerator[tuple[RunnerEvent[Any], tuple[RunnerEvent[Any], ...]]]:
-        await self.discover_sales()
-        await self.discover_purchases()
         await self.discover_chats()
+
+        config = config or RunnerConfig()
+        collector = EventCollector(self.bot, config)
 
         while True:
             start = time.time()
             try:
-                result = await self._collector.get_events()
+                result = await collector.get_events()
             except Exception:
                 import traceback
                 print(traceback.format_exc())  # todo: yield exception event
@@ -77,5 +61,6 @@ class Runner:
             for i in events_stack:
                 yield i, events_stack
 
-            time_to_sleep = self.config.interval - (time.time() - start)
-            await asyncio.sleep(time_to_sleep if time_to_sleep > 0 else 0)
+            time_to_sleep = config.interval - (time.time() - start)
+            if time_to_sleep > 0:
+                await asyncio.sleep(time_to_sleep)

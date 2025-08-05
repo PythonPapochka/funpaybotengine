@@ -18,9 +18,5 @@ class RunnerConfig:
     Defaults to ``4.0``.
     """
 
-    initial_messages_discover_mode: Literal['heading', 'number', 'time'] = 'heading'
-    max_initial_messages_amount: int = 10
-    max_initial_message_time: int = 3600
-
     discover_sales: bool = True
     discover_purchases: bool = True
