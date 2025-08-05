@@ -7,7 +7,7 @@ requires-python = ">=3.13"
 dependencies = [
     "aiohttp>=3.12.14",
     "colorama>=0.4.6",
-    "funpayparsers>=0.4.0",
+    "funpayparsers>=0.4.2",
     "pydantic>=2.11.7",
 ]
 

@@ -12,6 +12,7 @@ from pydantic import BaseModel, PrivateAttr, ValidationInfo, field_validator
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.enums import MessageType
 from funpaybotengine.types.common import UserBadge
+from funpayparsers.parsers.utils import parse_date_string
 
 
 if TYPE_CHECKING:
@@ -161,6 +162,12 @@ class Message(FunPayObject, BaseModel):
         if not self.bot:
             return False
         return self.bot.userid == self.sender_id
+
+    @property
+    def timestamp(self) -> int:
+        if not self.send_date_text:
+            return 0
+        return parse_date_string(self.send_date_text)
 
     async def chat(self, update: bool = False) -> None:
         raise NotImplementedError

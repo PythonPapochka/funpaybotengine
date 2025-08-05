@@ -28,7 +28,7 @@ class Runner:
     def bot(self) -> Bot:
         return self._bot
 
-    async def discover_chats(self) -> None:
+    async def discover_chats(self) -> int:
         obj = ChatBookmarksRequestObject(
             id=self.bot.userid,
             runner_tag=random_runner_tag(),
@@ -39,14 +39,20 @@ class Runner:
             for i in result.chat_bookmarks.data.chat_previews:
                 await self.bot.session_storage.update_chat(i)
 
+        return result.timestamp or int(time.time())
+
     async def listen(
         self,
         config: RunnerConfig | None = None
     ) -> AsyncGenerator[tuple[RunnerEvent[Any], tuple[RunnerEvent[Any], ...]]]:
-        await self.discover_chats()
+        start_timestamp = await self.discover_chats()
 
         config = config or RunnerConfig()
-        collector = EventCollector(self.bot, config)
+        collector = EventCollector(
+            self.bot,
+            config,
+            start_timestamp=start_timestamp
+        )
 
         while True:
             start = time.time()

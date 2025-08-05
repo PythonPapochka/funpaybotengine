@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Type, Literal, TypeVar, Any
 from dataclasses import field, dataclass
 from collections import defaultdict
 from collections.abc import Callable
+import time
 
 from funpaybotengine.utils import random_runner_tag
 from funpaybotengine.types.enums import MessageType, OrderPreviewType
@@ -74,7 +75,6 @@ def attempts(amount: int = 0) -> Callable[[F], F]:
     return decorator
 
 
-
 @dataclass
 class OrderRelatedMessages:
     sales: list[NewMessageEvent] = field(default_factory=list)
@@ -95,9 +95,16 @@ class EventCollector:
     compatible with funpaybotengine.
     """
 
-    def __init__(self, bot: Bot, config: RunnerConfig) -> None:
+    def __init__(
+            self,
+            bot: Bot,
+            config: RunnerConfig,
+            *,
+            start_timestamp: int | float | None = None
+    ) -> None:
         self.bot = bot
         self.config = config
+        self.last_runner_timestamp: int | float = start_timestamp or time.time()
 
     @attempts()
     async def get_runner_updates(self) -> RunnerResponse:
@@ -175,11 +182,18 @@ class EventCollector:
             from_id = event.previous.last_message_id if event.previous else 0
             to_id = event.object.last_message_id
 
-            result.extend(
-                NewMessageEvent(object=message, tag=node.tag)
-                for message in node.data.messages
-                if from_id < message.id <= to_id
-            )
+            if from_id > 0:
+                result.extend(
+                    NewMessageEvent(object=message, tag=node.tag)
+                    for message in node.data.messages
+                    if from_id < message.id <= to_id
+                )
+            else:
+                result.extend(
+                    NewMessageEvent(object=message, tag=node.tag)
+                    for message in node.data.messages
+                    if message.timestamp >= self.last_runner_timestamp
+                )
 
         return result
 
@@ -323,5 +337,7 @@ class EventCollector:
 
         for k in order_events_mapping.values():
             await self.bot.storage.update_order(k)
+
+        self.last_runner_timestamp = runner_response.timestamp or time.time()
 
         return total
