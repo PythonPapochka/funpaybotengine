@@ -4,7 +4,7 @@ from __future__ import annotations
 __all__ = ('EventCollector',)
 
 
-from typing import TYPE_CHECKING, Type, Literal, TypeVar, Any
+from typing import TYPE_CHECKING, Type, TypeVar, Any
 from dataclasses import field, dataclass
 from collections import defaultdict
 from collections.abc import Callable
@@ -32,12 +32,15 @@ from funpaybotengine.dispatching.events import (
 )
 from funpaybotengine.types.requests.runner import NodeRequestObject, ChatBookmarksRequestObject
 from funpaybotengine.exceptions.session_exceptions import UnexpectedHTTPStatusError
+from funpaybotengine.storage.inmemory_storage import InMemoryStorage
+import time
 
 
 if TYPE_CHECKING:
     from funpaybotengine.client.bot import Bot
     from funpaybotengine.types.orders import OrderPreview
     from funpaybotengine.types.updates import ChatNode, RunnerResponse, RunnerResponseObject
+    from funpaybotengine.storage.base import Storage
 
 
 CHAT_EVENTS = ChatChangedEvent | NewMessageEvent
@@ -113,12 +116,25 @@ class EventCollector:
             self,
             bot: Bot,
             config: RunnerConfig,
+            storage: Storage,
             *,
-            start_timestamp: int | float | None = None
+            session_storage: Storage | None = None,
     ) -> None:
         self.bot = bot
         self.config = config
-        self.last_chats_request_timestamp: int | float = start_timestamp or time.time()
+        self.last_chats_request_timestamp: int | float = time.time()
+        self.storage = storage
+        self.session_storage = session_storage or InMemoryStorage()
+
+    async def init_chats(self) -> None:
+        result = await self.get_chat_bookmarks()
+        self.last_chats_request_timestamp = result.timestamp
+
+        if not result.chat_bookmarks:
+            return
+
+        for i in result.chat_bookmarks.data.chat_previews:
+            await self.session_storage.update_chat(i)
 
     @attempts()
     async def get_chat_bookmarks(self) -> RunnerResponse:
@@ -186,7 +202,7 @@ class EventCollector:
         result = []
 
         for chat_preview in reversed(runner_response.chat_bookmarks.data.chat_previews):
-            cached_chat = await self.bot.session_storage.get_chat(chat_preview.id)
+            cached_chat = await self.session_storage.get_chat(chat_preview.id)
 
             if cached_chat == chat_preview:
                 continue
@@ -311,7 +327,7 @@ class EventCollector:
             messages.sales.append(message)
             return
 
-        saved_order = await self.bot.storage.get_order(message.object.meta.order_id) # type: ignore[arg-type]
+        saved_order = await self.storage.get_order(message.object.meta.order_id) # type: ignore[arg-type]
         if saved_order and saved_order.type is not OrderPreviewType.UNKNOWN:
             if saved_order.type is OrderPreviewType.PURCHASE:
                 messages.purchases.append(message)
@@ -326,7 +342,7 @@ class EventCollector:
             if order_preview:
                 messages.sales.append(message)
                 sales[order_preview[0].id] = order_preview[0]
-                await self.bot.storage.update_order(order_preview[0])
+                await self.storage.update_order(order_preview[0])
                 return
 
         if self.config.discover_purchases:
@@ -334,7 +350,7 @@ class EventCollector:
             if order_preview:
                 messages.purchases.append(message)
                 purchases[order_preview[0].id] = order_preview[0]
-                await self.bot.storage.update_order(order_preview[0])
+                await self.storage.update_order(order_preview[0])
                 return
 
     async def make_order_events(self, messages: OrderRelatedMessages) -> list[OrderEvent]:
@@ -450,7 +466,7 @@ class EventCollector:
             event.bind_to(self.bot)
 
         for i in chat_changed_events:
-            await self.bot.session_storage.update_chat(i.object)
+            await self.session_storage.update_chat(i.object)
 
         order_events_mapping = {}
         for j in order_events:
@@ -459,7 +475,7 @@ class EventCollector:
             order_events_mapping[j._order_preview.id] = j._order_preview
 
         for k in order_events_mapping.values():
-            await self.bot.storage.update_order(k)
+            await self.storage.update_order(k)
 
         self.last_chats_request_timestamp = runner_response.timestamp or time.time()
 

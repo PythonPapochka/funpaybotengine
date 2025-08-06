@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar, ParamSpec, overload
 from io import BytesIO
 from collections.abc import Callable, Sequence
 
+from django.contrib.messages.storage.session import SessionStorage
 from typing_extensions import Self
 
 from funpaybotengine.types import (
@@ -91,14 +92,12 @@ class Bot:
         golden_key: str,
         session: BaseSession | None = None,
         storage: Storage | None = None,
-        session_storage: Storage | None = None,
     ) -> None:
         self._golden_key = golden_key
         self._csrf_token: str | None = None
         self._phpsessid: str | None = None
         self._session = session or AioHttpSession(proxy=None)
         self._storage = storage or InMemoryStorage()
-        self._session_storage = session_storage or InMemoryStorage()
         self._runner = Runner(self)
 
         self._locale: Language = Language.RU
@@ -168,10 +167,6 @@ class Bot:
     @property
     def storage(self) -> Storage:
         return self._storage
-
-    @property
-    def session_storage(self) -> Storage:
-        return self._session_storage
 
     @property
     def locale(self) -> Language:
@@ -524,12 +519,12 @@ class Bot:
         /,
         *,
         config: RunnerConfig | None = None,
+        session_storage: SessionStorage | None = None,
     ) -> None:
         try:
             async with self.session:
-                async for event, stack in self._runner.listen(config=config):
+                listener = self._runner.listen(config=config, session_storage=session_storage)
+                async for event, stack in listener:
                     await dp.propagate_event(event, stack)
-
-                return
         except KeyboardInterrupt:
-            await self.session.close()
+            return
