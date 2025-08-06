@@ -12,11 +12,11 @@ from collections.abc import AsyncGenerator
 from funpaybotengine.runner.config import RunnerConfig
 from funpaybotengine.dispatching.events.base import RunnerEvent
 from funpaybotengine.storage.base import Storage
+from funpaybotengine.runner.event_collector import EventCollector
 
 
 if TYPE_CHECKING:
     from funpaybotengine.client.bot import Bot
-    from funpaybotengine.runner.event_collector import EventCollector
 
 
 class Runner:

@@ -151,7 +151,7 @@ class RunnerResponse(FunPayObject, BaseModel):
     response: ActionResponse | None
     """Action response."""
 
-    timestamp: int = ...  # type: ignore  # before validator self.get_timestamp returns value
+    timestamp: int = None  # type: ignore  # before validator self.get_timestamp returns value
     """Runner response timestamp (UTC)."""
 
     @field_validator('unknown_objects', mode='before')
