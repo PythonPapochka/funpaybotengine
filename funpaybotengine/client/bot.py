@@ -36,6 +36,7 @@ from funpaybotengine.methods import (
     GetProfilePage,
     MethodReturnType,
     GetSubcategoryPage,
+    Refund,
 )
 from funpaybotengine.types.enums import OrderStatus, SubcategoryType
 from funpaybotengine.types.pages import (
@@ -296,6 +297,11 @@ class Bot:
             raise Exception(result.response.error)  # todo
 
         return result.nodes[0].data.messages[-1]  # type: ignore[index] # will have nodes
+
+    @need_preinitialization
+    async def refund(self, order_id: str) -> bool:
+        result = await self.make_request(Refund(order_id=order_id, csrf_token=self.csrf_token))
+        return result.response_obj
 
     # ----- Getters -----
     async def get_chat_history(

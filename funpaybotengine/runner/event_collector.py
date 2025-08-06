@@ -205,7 +205,7 @@ class EventCollector:
                 continue
 
             if meta.buyer_id:
-                r.sales.append(e) if meta.buyer_id == self.bot.userid else r.purchases.append(e)
+                r.purchases.append(e) if meta.buyer_id == self.bot.userid else r.sales.append(e)
             elif meta.seller_id:
                 r.sales.append(e) if meta.seller_id == self.bot.userid else r.purchases.append(e)
             else:
@@ -325,6 +325,9 @@ class EventCollector:
         new_message_events = await self.get_new_message_events(chat_changed_events)
         order_events = await self.get_order_events(new_message_events)
         total = self.merge_events(chat_changed_events, new_message_events, order_events)
+
+        for event in total:
+            event.bind_to(self.bot)
 
         for i in chat_changed_events:
             await self.bot.session_storage.update_chat(i.object)

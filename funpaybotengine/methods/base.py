@@ -149,7 +149,7 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
         into a type expected by or compatible with funpaybotengine
         (``MethodReturnType``).
         """
-        if issubclass(self.__model_to_build__, BaseModel):
+        if self.__model_to_build__ is not None and issubclass(self.__model_to_build__, BaseModel):
             return self.__model_to_build__.model_validate(
                 parsing_result,
                 context=self.get_context(response)
