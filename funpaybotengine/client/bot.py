@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar, ParamSpec, overload
 from io import BytesIO
 from collections.abc import Callable, Sequence
 
-from django.contrib.messages.storage.session import SessionStorage
 from typing_extensions import Self
 
 from funpaybotengine.types import (
@@ -519,7 +518,7 @@ class Bot:
         /,
         *,
         config: RunnerConfig | None = None,
-        session_storage: SessionStorage | None = None,
+        session_storage: Storage | None = None,
     ) -> None:
         try:
             async with self.session:
