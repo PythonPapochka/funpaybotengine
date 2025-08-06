@@ -4,9 +4,8 @@ from __future__ import annotations
 __all__ = ('UploadImage',)
 
 
-from typing import TYPE_CHECKING, Any
 import json
-from typing import cast
+from typing import TYPE_CHECKING, Any, cast
 from io import BytesIO
 
 from pydantic import BaseModel
@@ -14,6 +13,7 @@ from pydantic import BaseModel
 from funpaybotengine.types.enums import Language
 from funpaybotengine.methods.base import FunPayMethod
 from funpaybotengine.client.session.http_methods import HTTPMethod
+
 
 if TYPE_CHECKING:
     from funpaybotengine.client.session.base import Response

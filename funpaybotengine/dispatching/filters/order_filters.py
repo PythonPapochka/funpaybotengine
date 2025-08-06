@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 
-__all__ = (
-    'FinalOrderStatusFilter',
-)
+__all__ = ('FinalOrderStatusFilter',)
 
 
 from typing import TYPE_CHECKING, Any
 
-from funpaybotengine.types.enums import OrderStatus, MessageType
+from funpaybotengine.types.enums import MessageType, OrderStatus
+
 from .base import Filter
+
 
 if TYPE_CHECKING:
     from funpaybotengine.dispatching.events.base import Event

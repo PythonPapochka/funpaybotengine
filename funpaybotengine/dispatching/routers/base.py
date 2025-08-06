@@ -51,7 +51,7 @@ class Router:
             ),
             SaleClosedEvent: HandlerManager(self, 'sale_closed', SaleClosedEvent),
             SalePartiallyRefundedEvent: HandlerManager(
-                self, 'sale_partially_refunded', SalePartiallyRefundedEvent
+                self, 'sale_partially_refunded', SalePartiallyRefundedEvent,
             ),
             SaleRefundedEvent: HandlerManager(self, 'sale_refunded', SaleRefundedEvent),
             SaleReopenedEvent: HandlerManager(self, 'sale_reopened', SaleReopenedEvent),
@@ -62,11 +62,11 @@ class Router:
             ),
             NewPurchaseEvent: HandlerManager(self, 'new_purchase', NewPurchaseEvent),
             PurchaseClosedByAdminEvent: HandlerManager(
-                self, 'sale_closed_by_admin', PurchaseClosedByAdminEvent
+                self, 'sale_closed_by_admin', PurchaseClosedByAdminEvent,
             ),
             PurchaseClosedEvent: HandlerManager(self, 'sale_closed', PurchaseClosedEvent),
             PurchasePartiallyRefundedEvent: HandlerManager(
-                self, 'sale_partially_refunded', PurchasePartiallyRefundedEvent
+                self, 'sale_partially_refunded', PurchasePartiallyRefundedEvent,
             ),
             PurchaseRefundedEvent: HandlerManager(self, 'sale_refunded', PurchaseRefundedEvent),
             PurchaseReopenedEvent: HandlerManager(self, 'sale_reopened', PurchaseReopenedEvent),

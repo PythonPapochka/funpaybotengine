@@ -24,6 +24,7 @@ from funpaybotengine.utils import (
 )
 from funpaybotengine.runner import Runner
 from funpaybotengine.methods import (
+    Refund,
     GetSales,
     GetChatPage,
     GetMainPage,
@@ -36,7 +37,6 @@ from funpaybotengine.methods import (
     GetProfilePage,
     MethodReturnType,
     GetSubcategoryPage,
-    Refund,
 )
 from funpaybotengine.types.enums import OrderStatus, SubcategoryType
 from funpaybotengine.types.pages import (

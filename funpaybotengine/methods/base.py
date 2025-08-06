@@ -4,15 +4,15 @@ from __future__ import annotations
 __all__ = ('FunPayMethod', 'MethodReturnType')
 
 from typing import TYPE_CHECKING, Any, Type, Generic, TypeVar
-from abc import ABC, abstractmethod
+from abc import ABC
 from http import HTTPStatus
+from email.utils import parsedate_to_datetime
 
-from pydantic import Field, BaseModel, ConfigDict, PrivateAttr
+from pydantic import Field, BaseModel, ConfigDict
 from funpayparsers.parsers.base import ParsingOptions, FunPayObjectParser
 
 from funpaybotengine.base import BindableObject
 from funpaybotengine.client.session.http_methods import HTTPMethod
-from email.utils import parsedate_to_datetime
 
 
 if TYPE_CHECKING:
@@ -151,14 +151,13 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
         """
         if self.__model_to_build__ is not None and issubclass(self.__model_to_build__, BaseModel):
             return self.__model_to_build__.model_validate(
-                parsing_result,
-                context=self.get_context(response)
+                parsing_result, context=self.get_context(response),
             )
         raise NotImplementedError(
             f"{self.__class__.__name__} must either define a BaseModel in '__model_to_build__' "
             f"or override 'transform_result'. "
             f"Currently, '__model_to_build__' is {self.__model_to_build__}, and "
-            f"'transform_result' has not been overridden."
+            f"'transform_result' has not been overridden.",
         )
 
     def to_obj(self, response: Response[Any]) -> MethodReturnType:
@@ -166,16 +165,14 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
         return self.transform_result(parsing_result, response)
 
     def get_context(
-            self,
-            response: Response[Any],
-            context: dict[str, Any] | None = None
+        self, response: Response[Any], context: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         context = context or {}
         context_from_response: dict[str, Any] = {}
 
         if 'date' in response.response_headers:
             context_from_response['response_timestamp'] = parsedate_to_datetime(
-                response.response_headers['date']
+                response.response_headers['date'],
             ).timestamp()
 
         return self.context | context_from_response | context | {'bot': self._bot}

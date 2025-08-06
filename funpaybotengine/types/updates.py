@@ -12,18 +12,18 @@ __all__ = (
     'RunnerResponse',
 )
 
+import time
 from typing import Any, Generic, TypeVar
 from types import MappingProxyType
 from collections.abc import Mapping
 
-from pydantic import BaseModel, field_validator, ValidationInfo
+from pydantic import BaseModel, ValidationInfo, field_validator
 
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.chat import PrivateChatPreview
 from funpaybotengine.types.enums import RunnerDataType
 from funpaybotengine.types.common import CurrentlyViewingOfferInfo
 from funpaybotengine.types.messages import Message
-import time
 
 
 UpdateData = TypeVar('UpdateData')

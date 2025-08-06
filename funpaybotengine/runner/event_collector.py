@@ -4,11 +4,11 @@ from __future__ import annotations
 __all__ = ('EventCollector',)
 
 
-from typing import TYPE_CHECKING, Type, TypeVar, Any
+import time
+from typing import TYPE_CHECKING, Any, Type, TypeVar
 from dataclasses import field, dataclass
 from collections import defaultdict
 from collections.abc import Callable
-import time
 
 from funpaybotengine.utils import random_runner_tag
 from funpaybotengine.types.enums import MessageType, OrderPreviewType
@@ -31,16 +31,15 @@ from funpaybotengine.dispatching.events import (
     PurchasePartiallyRefundedEvent,
 )
 from funpaybotengine.types.requests.runner import NodeRequestObject, ChatBookmarksRequestObject
-from funpaybotengine.exceptions.session_exceptions import UnexpectedHTTPStatusError
 from funpaybotengine.storage.inmemory_storage import InMemoryStorage
-import time
+from funpaybotengine.exceptions.session_exceptions import UnexpectedHTTPStatusError
 
 
 if TYPE_CHECKING:
     from funpaybotengine.client.bot import Bot
+    from funpaybotengine.storage.base import Storage
     from funpaybotengine.types.orders import OrderPreview
     from funpaybotengine.types.updates import ChatNode, RunnerResponse, RunnerResponseObject
-    from funpaybotengine.storage.base import Storage
 
 
 CHAT_EVENTS = ChatChangedEvent | NewMessageEvent
@@ -74,7 +73,9 @@ def attempts(amount: int = 0) -> Callable[[F], F]:
                     error = e
             else:
                 raise error
+
         return inner  # type: ignore
+
     return decorator
 
 
@@ -113,12 +114,12 @@ class EventCollector:
     """
 
     def __init__(
-            self,
-            bot: Bot,
-            config: RunnerConfig,
-            storage: Storage,
-            *,
-            session_storage: Storage | None = None,
+        self,
+        bot: Bot,
+        config: RunnerConfig,
+        storage: Storage,
+        *,
+        session_storage: Storage | None = None,
     ) -> None:
         self.bot = bot
         self.config = config
@@ -165,7 +166,9 @@ class EventCollector:
         """
         return (await self.bot.get_purchases(order_id_filter=order_id)).orders
 
-    async def get_chat_histories(self, chat_ids: list[int]) -> dict[int, RunnerResponseObject[ChatNode]]:
+    async def get_chat_histories(
+        self, chat_ids: list[int],
+    ) -> dict[int, RunnerResponseObject[ChatNode]]:
         """
         Fetches specified in ``chat_ids`` chat histories.
         """
@@ -173,7 +176,7 @@ class EventCollector:
         objs = [NodeRequestObject(chat_id=i, runner_tag=random_runner_tag()) for i in chat_ids]
 
         for i in range(0, len(objs), 10):
-            result = await self._get_node(objs[i: i + 10])
+            result = await self._get_node(objs[i : i + 10])
 
             if not result.nodes:
                 return {}
@@ -185,7 +188,9 @@ class EventCollector:
     async def _get_node(self, objs: list[NodeRequestObject]) -> RunnerResponse:
         return await self.bot.runner_request(requested_objects=objs)
 
-    async def get_chat_changed_events(self, runner_response: RunnerResponse) -> list[ChatChangedEvent]:
+    async def get_chat_changed_events(
+        self, runner_response: RunnerResponse,
+    ) -> list[ChatChangedEvent]:
         """
         Iterates over chat bookmarks in the runner response, compares each chat
         with the cached version in session storage, and generates ``ChatChangedEvent`` objects.
@@ -212,12 +217,14 @@ class EventCollector:
                     previous=cached_chat,
                     object=chat_preview,
                     tag=runner_response.chat_bookmarks.tag,
-                ).as_(self.bot)
+                ).as_(self.bot),
             )
 
         return result
 
-    async def get_new_message_events(self, events: list[ChatChangedEvent]) -> list[NewMessageEvent]:
+    async def get_new_message_events(
+        self, events: list[ChatChangedEvent],
+    ) -> list[NewMessageEvent]:
         """
         Fetches chat histories for each ``ChatChangedEvent`` in the ``events`` list, identifies
         new messages and generates ``NewMessageEvent`` objects.
@@ -246,12 +253,16 @@ class EventCollector:
             for message in node.data.messages:
                 if from_id != 0 and from_id < message.id <= to_id:
                     result.append(NewMessageEvent(object=message, tag=node.tag))
-                elif message.timestamp >= self.last_chats_request_timestamp and message.id <= to_id:
+                elif (
+                    message.timestamp >= self.last_chats_request_timestamp and message.id <= to_id
+                ):
                     result.append(NewMessageEvent(object=message, tag=node.tag))
 
         return result
 
-    async def get_order_related_messages(self, events: list[NewMessageEvent]) -> OrderRelatedMessages:
+    async def get_order_related_messages(
+        self, events: list[NewMessageEvent],
+    ) -> OrderRelatedMessages:
         """
         Searches for order related message in the ``events`` list, determines whether it is the
         sale or the purchase and stores them into ``OrderRelatedMessages`` object.
@@ -281,11 +292,11 @@ class EventCollector:
         return r
 
     async def resolve_unknown_message(
-            self,
-            message: NewMessageEvent,
-            messages: OrderRelatedMessages,
-            sales: dict[str, OrderPreview],
-            purchases: dict[str, OrderPreview],
+        self,
+        message: NewMessageEvent,
+        messages: OrderRelatedMessages,
+        sales: dict[str, OrderPreview],
+        purchases: dict[str, OrderPreview],
     ) -> None:
         """
         Determines whether an unknown order-related message refers to a sale or a purchase.
@@ -323,11 +334,11 @@ class EventCollector:
         if message.object.meta.order_id in purchases:
             messages.purchases.append(message)
             return
-        elif message.object.meta.order_id in sales:
+        if message.object.meta.order_id in sales:
             messages.sales.append(message)
             return
 
-        saved_order = await self.storage.get_order(message.object.meta.order_id) # type: ignore[arg-type]
+        saved_order = await self.storage.get_order(message.object.meta.order_id)  # type: ignore[arg-type]
         if saved_order and saved_order.type is not OrderPreviewType.UNKNOWN:
             if saved_order.type is OrderPreviewType.PURCHASE:
                 messages.purchases.append(message)
@@ -375,10 +386,7 @@ class EventCollector:
         return total_events
 
     async def _make_order_events(
-        self,
-        messages: list[NewMessageEvent],
-        orders: dict[str, OrderPreview],
-        sales: bool = True
+        self, messages: list[NewMessageEvent], orders: dict[str, OrderPreview], sales: bool = True,
     ) -> list[OrderEvent]:
         if not messages:
             return []
@@ -398,10 +406,10 @@ class EventCollector:
         return await self.make_order_events(order_messages)
 
     def merge_events(
-            self,
-            chat_changed_events: list[ChatChangedEvent],
-            new_message_events: list[NewMessageEvent],
-            order_events: list[OrderEvent],
+        self,
+        chat_changed_events: list[ChatChangedEvent],
+        new_message_events: list[NewMessageEvent],
+        order_events: list[OrderEvent],
     ) -> list[CHAT_EVENTS | OrderEvent]:
         """
         Merges chat-related and order-related events into a single, ordered sequence.

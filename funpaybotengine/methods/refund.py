@@ -12,6 +12,7 @@ from funpaybotengine.types.enums import Language
 from funpaybotengine.methods.base import FunPayMethod
 from funpaybotengine.client.session.http_methods import HTTPMethod
 
+
 if TYPE_CHECKING:
     from funpaybotengine.client.session.base import Response
 
@@ -37,11 +38,10 @@ class Refund(FunPayMethod[bool], BaseModel):
             data={'id': order_id, 'csrf_token': csrf_token},
             headers={'X-Requested-With': 'XMLHttpRequest'},
             order_id=order_id,
-            csrf_token=csrf_token
+            csrf_token=csrf_token,
         )
 
     def parse_result(self, response: Response[Any]) -> bool:
-        print(response.raw_response)
         return True
 
     def transform_result(self, parsing_result: Any, response: Response[Any]) -> bool:

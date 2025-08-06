@@ -9,10 +9,10 @@ import asyncio
 from typing import TYPE_CHECKING, Any
 from collections.abc import AsyncGenerator
 
-from funpaybotengine.runner.config import RunnerConfig
-from funpaybotengine.dispatching.events.base import RunnerEvent
 from funpaybotengine.storage.base import Storage
+from funpaybotengine.runner.config import RunnerConfig
 from funpaybotengine.runner.event_collector import EventCollector
+from funpaybotengine.dispatching.events.base import RunnerEvent
 
 
 if TYPE_CHECKING:
@@ -32,7 +32,6 @@ class Runner:
         config: RunnerConfig | None = None,
         session_storage: Storage | None = None,
     ) -> AsyncGenerator[tuple[RunnerEvent[Any], tuple[RunnerEvent[Any], ...]]]:
-
         config = config or RunnerConfig()
         collector = EventCollector(
             self.bot,
@@ -49,6 +48,7 @@ class Runner:
                 result = await collector.get_events()
             except Exception:
                 import traceback
+
                 print(traceback.format_exc())  # todo: yield exception event
                 continue
 

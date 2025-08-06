@@ -8,11 +8,11 @@ from typing import TYPE_CHECKING, Any
 from io import BytesIO
 
 from pydantic import BaseModel, PrivateAttr, ValidationInfo, field_validator
+from funpayparsers.parsers.utils import parse_date_string
 
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.enums import MessageType
 from funpaybotengine.types.common import UserBadge
-from funpayparsers.parsers.utils import parse_date_string
 
 
 if TYPE_CHECKING:

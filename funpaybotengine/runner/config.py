@@ -4,7 +4,6 @@ from __future__ import annotations
 __all__ = ('RunnerConfig',)
 
 
-from typing import Literal
 from dataclasses import dataclass
 
 

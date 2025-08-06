@@ -9,9 +9,8 @@ import asyncio
 from typing import TYPE_CHECKING, Any
 
 from yarl import URL
-from aiohttp import ClientSession, ClientTimeout
+from aiohttp import TCPConnector, ClientSession, ClientTimeout
 from aiohttp.hdrs import USER_AGENT
-from aiohttp import TCPConnector
 
 from funpaybotengine.loggers import session_logger
 from funpaybotengine.client.session.base import Response, BaseSession
@@ -50,7 +49,7 @@ class AioHttpSession(BaseSession):
             proxy=self.proxy,
             base_url='https://funpay.com',
             connector=self._connector,
-            connector_owner=False
+            connector_owner=False,
         )
 
     async def close(self) -> None:
@@ -61,9 +60,9 @@ class AioHttpSession(BaseSession):
             await asyncio.sleep(0.25)
 
     def _prepare_method(
-            self,
-            method: FunPayMethod[MethodReturnType],
-            bot: Bot | None,
+        self,
+        method: FunPayMethod[MethodReturnType],
+        bot: Bot | None,
     ) -> None:
         if bot is not None:
             method.bind_to(bot)

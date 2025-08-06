@@ -6,14 +6,15 @@ __all__ = (
     'MessageSenderUsernameFilter',
     'MessageSenderIDFilter',
     'MessageHasImageFilter',
-    'MessageTypeFilter'
+    'MessageTypeFilter',
 )
 
 
 from typing import TYPE_CHECKING, Any
 
-from .base import Filter
 from funpaybotengine.types.enums import MessageType
+
+from .base import Filter
 
 
 if TYPE_CHECKING:
