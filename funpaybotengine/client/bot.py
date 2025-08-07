@@ -85,6 +85,20 @@ def need_preinitialization(func: F) -> F:
     return wrapper  # type: ignore
 
 
+def not_anonymous(func: F) -> F:
+    async def wrapper(*args: Any, **kwargs: Any) -> Any:
+        if not args or not isinstance(args[0], Bot):
+            raise RuntimeError('Can be used only with Bot methods.')  # todo
+
+        self: Bot = args[0]
+        if self.anonymous:
+            raise Exception(f"This method cannod be executed as anonymous user.")  # todo
+
+        return await func(*args, **kwargs)
+
+    return wrapper  # type: ignore
+
+
 class Bot:
     def __init__(
         self,
@@ -182,6 +196,7 @@ class Bot:
     def categories_cache(self) -> CategoriesCache | None:
         return self._categories_cache
 
+    @not_anonymous
     @need_preinitialization
     async def runner_request(
         self,
@@ -233,6 +248,7 @@ class Bot:
         enforce_whitespaces: bool = ...,
     ) -> Message: ...
 
+    @not_anonymous
     async def send_message(
         self,
         chat_id: int | str,
@@ -292,12 +308,14 @@ class Bot:
 
         return result.nodes[0].data.messages[-1]  # type: ignore[index] # will have nodes
 
+    @not_anonymous
     @need_preinitialization
     async def refund(self, order_id: str) -> bool:
         result = await self.make_request(Refund(order_id=order_id, csrf_token=self.csrf_token))
         return result.response_obj
 
     # ----- Getters -----
+    @not_anonymous
     async def get_chat_history(
         self,
         chat_id: int | str,
@@ -323,6 +341,7 @@ class Bot:
         )
         return result.response_obj
 
+    @not_anonymous
     async def get_sales(
         self,
         from_order_id: str | None = None,
@@ -361,6 +380,7 @@ class Bot:
         result = await self.make_request(m)
         return result.response_obj
 
+    @not_anonymous
     async def get_purchases(
         self,
         from_order_id: str | None = None,
@@ -469,6 +489,7 @@ class Bot:
         order: OrderPreview | OrderPage = ...,
     ) -> OrderPage: ...
 
+    @not_anonymous
     async def get_order_page(
         self,
         order_id: str | None = None,
