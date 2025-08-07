@@ -33,7 +33,7 @@ def check_message_text(message_text: str, /) -> None:
         - Max word length: 160 characters.
         - Max lines amount: 20.
 
-    If it doesn't, raises an exception.  # todo: Custom exceptions
+    If it doesn't, raises an exception.
 
     :param message_text: message text to check.
     """

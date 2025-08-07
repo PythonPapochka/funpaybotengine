@@ -11,6 +11,7 @@ from pydantic import BaseModel, PrivateAttr, ValidationInfo, field_validator
 from funpayparsers.parsers.utils import parse_date_string
 
 from funpaybotengine.types.base import FunPayObject
+from funpaybotengine.base import check_bound
 from funpaybotengine.types.enums import MessageType
 from funpaybotengine.types.common import UserBadge
 
@@ -141,19 +142,19 @@ class Message(FunPayObject, BaseModel):
             return info.context.get('chat_name') if value is None else value
         return None
 
+    @check_bound
     async def reply(
         self,
         text: str | None = None,
         image: str | BytesIO | int | None = None,
         enforce_whitespaces: bool = True,
     ) -> Message:
-        assert self.bot is not None
         assert self.chat_id is not None or self.chat_name is not None
 
-        return await self.bot.send_message(
-            chat_id=self.chat_id or self.chat_name,  # type: ignore[arg-type]  # todo
-            text=text,  # type: ignore[arg-type]  # todo
-            image=image,  # type: ignore[arg-type]  # todo
+        return await self.bot.send_message(  # type: ignore[union-attr] # @check_bound
+            chat_id=self.chat_id or self.chat_name,  # type: ignore[arg-type]
+            text=text,  # type: ignore[arg-type]
+            image=image,  # type: ignore[arg-type]
             enforce_whitespaces=enforce_whitespaces,
         )
 
@@ -172,22 +173,22 @@ class Message(FunPayObject, BaseModel):
     async def chat(self, update: bool = False) -> None:
         raise NotImplementedError
 
+    @check_bound
     async def chat_page(self, update: bool = False) -> ChatPage:
-        assert self.bot is not None
         assert self.chat_id is not None or self.chat_name is not None
 
         if self._chat_page is not None and not update:
             return self._chat_page
 
-        return await self.bot.get_chat_page(
-            chat_id=self.chat_id or self.chat_name,  # type: ignore[arg-type]  # todo
+        return await self.bot.get_chat_page( # type: ignore[union-attr] # @check_bound
+            chat_id=self.chat_id or self.chat_name,  # type: ignore[arg-type]
         )
 
+    @check_bound
     async def sender_profile_page(self, update: bool = False) -> ProfilePage:
-        assert self.bot is not None
         assert self.sender_id is not None
 
         if self._sender_profile is not None and not update:
             return self._sender_profile
 
-        return await self.bot.get_profile_page(id=self.sender_id)
+        return await self.bot.get_profile_page(id=self.sender_id) # type: ignore[union-attr]

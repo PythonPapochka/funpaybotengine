@@ -127,7 +127,7 @@ class AioHttpSession(BaseSession):
                     headers=self._default_headers | method.headers,
                 )
             else:
-                raise Exception('Unsupported HTTP method')  # todo: Custom exception
+                raise ValueError(f'Unsupported HTTP method {method.method.name}.')
 
         session_logger.debug(
             f'Requesting {url_to_log} took {time.time() - start_time}s. Status: {response.status}.',

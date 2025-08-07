@@ -67,15 +67,13 @@ if TYPE_CHECKING:
     from funpaybotengine.dispatching.routers.dispatcher import Dispatcher
 
 
-P = ParamSpec('P')
-R = TypeVar('R')
 F = TypeVar('F', bound=Callable[..., Any])
 
 
 def need_preinitialization(func: F) -> F:
     async def wrapper(*args: Any, **kwargs: Any) -> Any:
         if not args or not isinstance(args[0], Bot):
-            raise RuntimeError('Can be used only with Bot methods.')  # todo
+            raise RuntimeError('Can be used only with `Bot` instance methods.')
 
         self: Bot = args[0]
         if not self.initialized:
@@ -88,11 +86,11 @@ def need_preinitialization(func: F) -> F:
 def not_anonymous(func: F) -> F:
     async def wrapper(*args: Any, **kwargs: Any) -> Any:
         if not args or not isinstance(args[0], Bot):
-            raise RuntimeError('Can be used only with Bot methods.')  # todo
+            raise RuntimeError('Can be used only with `Bot` instance methods.')
 
         self: Bot = args[0]
         if self.anonymous:
-            raise Exception(f"This method cannod be executed as anonymous user.")  # todo
+            raise RuntimeError(f"This method cannot be executed as anonymous user.")
 
         return await func(*args, **kwargs)
 

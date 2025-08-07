@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+__all__ = ('BindableObject', 'check_bound')
+
+
 from typing import TYPE_CHECKING, Any, TypeVar, ParamSpec, Concatenate
 from collections.abc import Callable
 
@@ -11,9 +14,7 @@ if TYPE_CHECKING:
     from funpaybotengine.client.bot import Bot
 
 
-P = ParamSpec('P')
-T = TypeVar('T', bound='BindableObject')
-R = TypeVar('R')
+F = TypeVar('F', bound=Callable[..., Any])
 
 
 class BindableObject(BaseModel):
@@ -37,16 +38,19 @@ class BindableObject(BaseModel):
         return self._bot
 
 
-def check_bound(func: Callable[Concatenate[T, P], R]) -> Callable[Concatenate[T, P], R]:
+def check_bound(func: F) -> F:
     """
     Decorator for instance methods to ensure the object is bound to any Bot instance.
     """
 
-    def wrapper(obj: T, /, *args: P.args, **kwargs: P.kwargs) -> R:
-        if not isinstance(obj, BindableObject):
-            raise Exception('Not a bindable object.')  # todo: exceptions
-        if obj.bot is None:
-            raise Exception(f'{obj} is not bound to any bot.')
-        return func(obj, *args, **kwargs)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        if not args:
+            raise RuntimeError('Can be used only with instance methods.')
 
-    return wrapper
+        if not isinstance(args[0], BindableObject):
+            raise ValueError(f'{args[0].__class__.__name__} is not a bindable object.')
+        if args[0].bot is None:
+            raise RuntimeError(f'{args[0]} is not bound to any `Bot` instance.')
+        return func(*args, **kwargs)
+
+    return wrapper  # type: ignore
