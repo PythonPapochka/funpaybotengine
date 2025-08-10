@@ -309,7 +309,7 @@ class Bot:
     @not_anonymous
     @need_preinitialization
     async def refund(self, order_id: str) -> bool:
-        result = await self.make_request(Refund(order_id=order_id, csrf_token=self.csrf_token))
+        result = await self.make_request(Refund(order_id=order_id))
         return result.response_obj
 
     # ----- Getters -----
