@@ -34,11 +34,9 @@ class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
     url: str
     """Method URL."""
 
-    method: HTTPMethod = HTTPMethod.GET
+    method: HTTPMethod
     """
     HTTP Method.
-
-    Defaults to ``HTTPMethod.GET``.
     """
 
     locale: Language | None = None
@@ -81,7 +79,14 @@ class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
 
     allow_anonymous: bool = False
     """
-    Whether this method can be executed anonymous or not.
+    Whether this method can be executed as anonymous user or not.
+    
+    Defaults to ``False``.
+    """
+
+    allow_uninitialized: bool = False
+    """
+    Whether this method can be executed as uninitialized user or not.
     
     Defaults to ``False``.
     """
@@ -110,7 +115,7 @@ class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
 
     context: dict[str, Any] = Field(default_factory=dict)
     """
-    Context for final object.
+    Additional context for building a final `funpaybotengine` object.
     
     Defaults to empty dict.
     """
