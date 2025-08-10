@@ -60,33 +60,19 @@ class AioHttpSession(BaseSession):
             # https://docs.aiohttp.org/en/stable/client_advanced.html#graceful-shutdown
             await asyncio.sleep(0.25)
 
-    async def make_request(
-            self,
-            method: FunPayMethod[MethodReturnType],
-            bot: Bot | None = None,
-            timeout: float | None = None,
-    ) -> Response[MethodReturnType]:
-        return await self._make_request(
-            method=method,
-            bot=bot,
-            timeout=timeout
-        )
-
-    async def _make_request(
-        self,
+    async def make_request(self,
         method: FunPayMethod[MethodReturnType],
-        bot: Bot | None = None,
+        bot: Bot,
         timeout: float | None = None,
     ) -> Response[MethodReturnType]:
         session = await self.session()
         session.cookie_jar.clear()
         session.cookie_jar.update_cookies({'cookie_prefs': '1'})  # no 3rd-party cookies
-        if bot:
-            if bot.golden_key:
-                session.cookie_jar.update_cookies({'golden_key': bot.golden_key})
-            if bot.phpsessid:
-                session.cookie_jar.update_cookies({'PHPSESSID': bot.phpsessid})
-        csrf_token = bot.csrf_token if bot and bot.csrf_token else ''
+        if bot.golden_key:
+            session.cookie_jar.update_cookies({'golden_key': bot.golden_key})
+        if bot.phpsessid:
+            session.cookie_jar.update_cookies({'PHPSESSID': bot.phpsessid})
+        csrf_token = bot.csrf_token if bot.csrf_token else ''
 
         timeout_obj = ClientTimeout(total=timeout if timeout is not None else method.timeout)
 

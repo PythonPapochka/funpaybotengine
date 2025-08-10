@@ -68,7 +68,7 @@ class BaseSession(ABC):
     async def make_request(
         self,
         method: FunPayMethod[MethodReturnType],
-        bot: Bot | None = None,
+        bot: Bot,
         timeout: float | None = None,
     ) -> Response[MethodReturnType]: ...
 
