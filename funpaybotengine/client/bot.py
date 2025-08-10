@@ -213,7 +213,6 @@ class Bot:
         enforce_whitespaces: bool = ...,
     ) -> Message: ...
 
-    @not_anonymous
     async def send_message(
         self,
         chat_id: int | str,
