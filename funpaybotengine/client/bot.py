@@ -52,7 +52,6 @@ from funpaybotengine.types.requests import (
     Action,
     NodeRequestObject,
     RequestableObject,
-    RunnerRequestData,
     SendMessageAction,
     SendingMessageData,
 )
@@ -254,7 +253,7 @@ class Bot:
         image_id = None
         if image is not None:
             if isinstance(image, str | BytesIO):
-                image_id = await self.upload_chat_image(image)
+                image_id = await UploadImage(image).execute(self)
             else:
                 image_id = image
         elif text is not None:
@@ -263,13 +262,13 @@ class Bot:
             check_message_text(text)
 
         msg_data = SendingMessageData(chat_id=chat_id, message_text=text or '', image_id=image_id)
-        result: RunnerResponse = await self.runner_request(objects_to_request=[
-            NodeRequestObject(chat_id=chat_id, runner_tag=random_runner_tag())],
-                                                           action=SendMessageAction(
-                                                               message_data=msg_data))
+        result = await RunnerRequest(
+            objects_to_request=[NodeRequestObject(chat_id=chat_id, runner_tag=random_runner_tag())],
+            action=SendMessageAction(message_data=msg_data)
+        ).execute(self)
+
         if result.response and result.response.error:
             raise Exception(result.response.error)  # todo
-
         return result.nodes[0].data.messages[-1]  # type: ignore[index] # will have nodes
 
     async def refund(self, order_id: str) -> bool:
@@ -414,22 +413,18 @@ class Bot:
         subcategory_id: int | None = None,
         subcategory: Subcategory | None = None,
     ) -> SubcategoryPage:
-        assert (
-            isinstance(subcategory_type, SubcategoryType) and isinstance(subcategory_id, int)
-        ) or isinstance(subcategory, Subcategory), (
-            f'Invalid subcategory input: '
-            f"either provide both 'subcategory_type' and 'subcategory_id' "
-            f"(got {subcategory_type=}, {subcategory_id=}), or provide 'subcategory' object "
-            f'(got {subcategory=}).'
-        )
-
-        if subcategory is not None:
+        if isinstance(subcategory_type, SubcategoryType) and isinstance(subcategory_id, int):
+            t, i = subcategory_type, subcategory_id
+        elif isinstance(subcategory, Subcategory):
             t, i = subcategory.type, subcategory.id
         else:
-            t, i = subcategory_type, subcategory_id  # type: ignore[assignment]  # asserted above
-
-        result = await self.make_request(GetSubcategoryPage(type=t, subcategory_id=i))
-        return result.response_obj
+            raise ValueError(
+                f'Invalid subcategory input: '
+                f"either provide both 'subcategory_type' and 'subcategory_id' "
+                f"(got {subcategory_type=}, {subcategory_id=}), or provide 'subcategory' object "
+                f'(got {subcategory=}).'
+            )
+        return await GetSubcategoryPage(type=t, subcategory_id=i).execute(self)
 
     @overload
     async def get_order_page(self, order_id: str = ..., order: None = ...) -> OrderPage: ...
@@ -446,20 +441,18 @@ class Bot:
         order_id: str | None = None,
         order: OrderPreview | OrderPage | None = None,
     ) -> OrderPage:
-        assert isinstance(order_id, str) or isinstance(order, OrderPreview | OrderPage), (
-            f'Invalid order_id input: '
-            f"either provide 'order_id' (got {order_id=}), "
-            f"or provide 'order' object (got {order=})."
-        )
-
-        if order_id:
-            i = order_id
+        if isinstance(order_id, str):
+            oid = order_id
+        elif isinstance(order, OrderPreview | OrderPage):
+            oid = order.id if isinstance(order, OrderPreview) else order.order_id
         else:
-            i = order.id if isinstance(order, OrderPreview) else order.order_id  # type: ignore[union-attr]
-            # asserted above
+            raise ValueError(
+                f'Invalid order_id input: '
+                f"either provide 'order_id' (got {order_id=}), "
+                f"or provide 'order' object (got {order=})."
+            )
 
-        result = await self.make_request(GetOrderPage(id=i))
-        return result.response_obj
+        return await GetOrderPage(order_id=oid).execute(self)
 
     async def make_request(
         self,
