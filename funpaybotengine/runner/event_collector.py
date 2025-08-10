@@ -145,7 +145,7 @@ class EventCollector:
         :return: ``RunnerResponse`` object with chat bookmarks.
         """
         chats = ChatBookmarksRequestObject(id=self.bot.userid, runner_tag=random_runner_tag())
-        result = await self.bot.runner_request(requested_objects=[chats])
+        result = await self.bot.runner_request(objects_to_request=[chats])
         return result
 
     @attempts()
@@ -186,7 +186,7 @@ class EventCollector:
 
     @attempts()
     async def _get_node(self, objs: list[NodeRequestObject]) -> RunnerResponse:
-        return await self.bot.runner_request(requested_objects=objs)
+        return await self.bot.runner_request(objects_to_request=objs)
 
     async def get_chat_changed_events(
         self, runner_response: RunnerResponse,

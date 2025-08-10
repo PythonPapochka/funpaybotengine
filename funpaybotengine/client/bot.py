@@ -198,18 +198,14 @@ class Bot:
     @need_preinitialization
     async def runner_request(
         self,
-        requested_objects: Sequence[RequestableObject] | Literal[False] = False,
+        objects_to_request: Sequence[RequestableObject] | Literal[False] = False,
         action: Action | Literal[False] = False,
     ) -> RunnerResponse:
         """
         Makes request to the runner.
         :return: Runner response.
         """
-        data = RunnerRequestData(
-            requested_objects=requested_objects,
-            action=action,
-            csrf_token=self.csrf_token,
-        )
+        data = RunnerRequestData(requested_objects=objects_to_request, action=action)
         result = await self.make_request(RunnerRequest(request=data))
         return result.response_obj
 
@@ -297,10 +293,10 @@ class Bot:
             check_message_text(text)
 
         msg_data = SendingMessageData(chat_id=chat_id, message_text=text or '', image_id=image_id)
-        result: RunnerResponse = await self.runner_request(
-            requested_objects=[NodeRequestObject(chat_id=chat_id, runner_tag=random_runner_tag())],
-            action=SendMessageAction(message_data=msg_data),
-        )
+        result: RunnerResponse = await self.runner_request(objects_to_request=[
+            NodeRequestObject(chat_id=chat_id, runner_tag=random_runner_tag())],
+                                                           action=SendMessageAction(
+                                                               message_data=msg_data))
         if result.response and result.response.error:
             raise Exception(result.response.error)  # todo
 
