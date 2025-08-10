@@ -33,6 +33,7 @@ class GetPurchases(FunPayMethod[OrderPreviewsBatch], BaseModel):
     status_filter: OrderStatus | str | None = None
     game_id_filter: int | None = None
     other_filters: dict[str, str] | None = None
+
     __model_to_build__ = OrderPreviewsBatch
 
     def __init__(
@@ -60,6 +61,7 @@ class GetPurchases(FunPayMethod[OrderPreviewsBatch], BaseModel):
             data={'continue': from_order_id} if from_order_id is not None else {},
             locale=locale,
             context={'order_preview_type': OrderPreviewType.PURCHASE},
+
             from_order_id=from_order_id,
             order_id_filter=order_id_filter,
             seller_username_filter=seller_username_filter,

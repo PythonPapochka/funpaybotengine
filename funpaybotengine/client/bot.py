@@ -435,7 +435,7 @@ class Bot:
         return result.response_obj
 
     async def get_profile_page(self, id: int) -> ProfilePage:
-        result = await self.make_request(GetProfilePage(id=id))
+        result = await self.make_request(GetProfilePage(user_id=id))
         return result.response_obj
 
     @overload
@@ -474,7 +474,7 @@ class Bot:
         else:
             t, i = subcategory_type, subcategory_id  # type: ignore[assignment]  # asserted above
 
-        result = await self.make_request(GetSubcategoryPage(type=t, id=i))
+        result = await self.make_request(GetSubcategoryPage(type=t, subcategory_id=i))
         return result.response_obj
 
     @overload

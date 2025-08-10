@@ -31,8 +31,8 @@ class UploadImage(FunPayMethod[int], BaseModel):
 
     def __init__(self, file: str | BytesIO, locale: Language | None = None):
         super().__init__(
-            method=HTTPMethod.POST,
             url='file/addChatImage',
+            method=HTTPMethod.POST,
             locale=locale,
             data={'file': open(file, 'rb') if isinstance(file, str) else file},
             headers={'X-Requested-With': 'XMLHttpRequest'},

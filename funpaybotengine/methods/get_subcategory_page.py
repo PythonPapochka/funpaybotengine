@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from funpayparsers.types import Language
 from funpayparsers.parsers.page_parsers import SubcategoryPageParser
 
+from funpaybotengine.client.session import HTTPMethod
 from funpaybotengine.types.enums import SubcategoryType
 from funpaybotengine.types.pages import SubcategoryPage
 from funpaybotengine.methods.base import FunPayMethod
@@ -23,17 +24,19 @@ class GetSubcategoryPage(FunPayMethod[SubcategoryPage], BaseModel):
     type: SubcategoryType
     """Subcategory type."""
 
-    id: int
+    subcategory_id: int
     """Subcategory ID."""
 
     __model__ = SubcategoryPage
 
-    def __init__(self, type: SubcategoryType, id: int, locale: Language | None = None):
+    def __init__(self, type: SubcategoryType, subcategory_id: int, locale: Language | None = None):
         super().__init__(
-            url=f'{type.value.url_alias}/{id}/',
+            url=f'{type.value.url_alias}/{subcategory_id}/',
+            method=HTTPMethod.GET,
             allow_anonymous=True,
+            allow_uninitialized=True,
             parser_cls=SubcategoryPageParser,
             locale=locale,
             type=type,
-            id=id,
+            id=subcategory_id,
         )

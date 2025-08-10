@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from funpayparsers.types import Message as ParserMessage
 from funpayparsers.parsers import MessagesParser
 
+from funpaybotengine.client.session import HTTPMethod
 from funpaybotengine.types.enums import Language
 from funpaybotengine.methods.base import FunPayMethod
 from funpaybotengine.types.messages import Message
@@ -58,12 +59,15 @@ class GetChatHistory(FunPayMethod[list[Message]], BaseModel):
         """
         super().__init__(
             url='chat/history',
+            method=HTTPMethod.GET,
             locale=locale,
             data={'node': str(chat_id), 'last_message': str(before_message_id)},
             headers={'X-Requested-With': 'XMLHttpRequest'},
             allow_anonymous=True,
+            allow_uninitialized=True,
             parser_cls=MessagesParser,
-            context={'chat_id': chat_id},
+            context={'chat_id': chat_id} if isinstance(chat_id, int) else {'chat_name': chat_id},
+
             chat_id=chat_id,
             before_message_id=before_message_id,
         )

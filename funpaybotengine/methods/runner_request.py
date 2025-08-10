@@ -25,13 +25,14 @@ class RunnerRequest(FunPayMethod[RunnerResponse], BaseModel):
 
     __model_to_build__ = RunnerResponse
 
-    def __init__(self, request: RunnerRequestData, locale: Language | None = None):
+    def __init__(self, request: RunnerRequestData):
         super().__init__(
             url='runner/',
             method=HTTPMethod.POST,
-            locale=locale,
+            ignore_locale=True,
             parser_cls=UpdatesParser,
             data=request.serialize_as_request_data(),
             headers={'X-Requested-With': 'XMLHttpRequest'},
+
             request=request,
         )

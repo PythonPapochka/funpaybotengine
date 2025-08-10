@@ -7,6 +7,7 @@ __all__ = ('GetChatPage',)
 from pydantic import BaseModel
 from funpayparsers.parsers.page_parsers import ChatPageParser
 
+from funpaybotengine.client.session import HTTPMethod
 from funpaybotengine.types.enums import Language
 from funpaybotengine.methods.base import FunPayMethod
 from funpaybotengine.types.pages.chat_page import ChatPage
@@ -34,9 +35,12 @@ class GetChatPage(FunPayMethod[ChatPage], BaseModel):
         """
         super().__init__(
             url='chat/',
+            method=HTTPMethod.GET,
             locale=locale,
             data={'node': str(chat_id)},
             parser_cls=ChatPageParser,
             allow_anonymous=True,
+            allow_uninitialized=True,
+
             chat_id=chat_id,
         )

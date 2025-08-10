@@ -29,18 +29,14 @@ class Refund(FunPayMethod[bool], BaseModel):
     order_id: str
     """Order ID to refund."""
 
-    csrf_token: str
-    """CSRF token."""
-
-    def __init__(self, order_id: str, csrf_token: str, locale: Language | None = None):
+    def __init__(self, order_id: str, locale: Language | None = None):
         super().__init__(
             method=HTTPMethod.POST,
             url='orders/refund',
             locale=locale,
-            data={'id': order_id, 'csrf_token': csrf_token},
+            data={'id': order_id},
             headers={'X-Requested-With': 'XMLHttpRequest'},
             order_id=order_id,
-            csrf_token=csrf_token,
         )
 
     def parse_result(self, response: Response[Any]) -> bool:

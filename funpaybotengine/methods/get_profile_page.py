@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from funpayparsers.types import Language
 from funpayparsers.parsers.page_parsers import ProfilePageParser
 
+from funpaybotengine.client.session import HTTPMethod
 from funpaybotengine.types.pages import ProfilePage
 from funpaybotengine.methods.base import FunPayMethod
 
@@ -19,16 +20,18 @@ class GetProfilePage(FunPayMethod[ProfilePage], BaseModel):
     Returns ``funpaybotengine.types.pages.ProfilePage`` obj.
     """
 
-    id: int
+    user_id: int
     """User ID."""
 
     __model_to_build__ = ProfilePage
 
-    def __init__(self, id: int, locale: Language | None = None):
+    def __init__(self, user_id: int, locale: Language | None = None):
         super().__init__(
-            url=f'users/{id}/',
+            url=f'users/{user_id}/',
+            method=HTTPMethod.GET,
             allow_anonymous=True,
+            allow_uninitialized=True,
             parser_cls=ProfilePageParser,
             locale=locale,
-            id=id,
+            id=user_id,
         )
