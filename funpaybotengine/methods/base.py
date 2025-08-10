@@ -16,7 +16,7 @@ from funpaybotengine.client.session.http_methods import HTTPMethod
 
 if TYPE_CHECKING:
     from funpaybotengine.types.enums import Language
-    from funpaybotengine.client.session.base import Response
+    from funpaybotengine.client.session.base import RawResponse
     from funpaybotengine.client.bot import Bot
 
 
@@ -126,7 +126,7 @@ class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
         if self.parser_cls and self.parser_options is None:
             self.parser_options = self.parser_cls.get_options_cls()()
 
-    def parse_result(self, response: Response[Any]) -> Any:
+    def parse_result(self, response: RawResponse[Any]) -> Any:
         """
         Method that parses raw response.
 
@@ -146,7 +146,7 @@ class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
 
         return self.parser_cls(response.raw_response, options=self.parser_options).parse()
 
-    def transform_result(self, parsing_result: Any, response: Response[Any]) -> MethodReturnType:
+    def transform_result(self, parsing_result: Any, response: RawResponse[Any]) -> MethodReturnType:
         """
         Transforms a raw response or parser output
         (i.e., the result of ``FunPayMethod.parse_result``)
@@ -164,12 +164,12 @@ class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
             f"'transform_result' has not been overridden.",
         )
 
-    def to_obj(self, response: Response[Any]) -> MethodReturnType:
+    def to_obj(self, response: RawResponse[Any]) -> MethodReturnType:
         parsing_result = self.parse_result(response)
         return self.transform_result(parsing_result, response)
 
     def get_context(
-        self, response: Response[Any], context: dict[str, Any] | None = None,
+        self, response: RawResponse[Any], context: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         context = context or {}
         context_from_response: dict[str, Any] = {}

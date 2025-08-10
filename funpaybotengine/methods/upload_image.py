@@ -16,7 +16,7 @@ from funpaybotengine.client.session.http_methods import HTTPMethod
 
 
 if TYPE_CHECKING:
-    from funpaybotengine.client.session.base import Response
+    from funpaybotengine.client.session.base import RawResponse
 
 
 class UploadImage(FunPayMethod[int], BaseModel):
@@ -39,5 +39,5 @@ class UploadImage(FunPayMethod[int], BaseModel):
             file=file,
         )
 
-    def transform_result(self, parsing_result: str, response: Response[Any]) -> int:
+    def transform_result(self, parsing_result: str, response: RawResponse[Any]) -> int:
         return cast(int, json.loads(parsing_result)['fileId'])

@@ -17,7 +17,7 @@ from funpaybotengine.types.messages import Message
 
 
 if TYPE_CHECKING:
-    from funpaybotengine.client.session.base import Response
+    from funpaybotengine.client.session.base import RawResponse
 
 
 class GetChatHistory(FunPayMethod[list[Message]], BaseModel):
@@ -72,7 +72,7 @@ class GetChatHistory(FunPayMethod[list[Message]], BaseModel):
             before_message_id=before_message_id,
         )
 
-    def parse_result(self, response: Response[Any]) -> list[ParserMessage]:
+    def parse_result(self, response: RawResponse[Any]) -> list[ParserMessage]:
         result = json.loads(response.raw_response)
         messages = result['chat']['messages']
         html = '\n'.join(i['html'] for i in messages)
@@ -83,7 +83,7 @@ class GetChatHistory(FunPayMethod[list[Message]], BaseModel):
         )
 
     def transform_result(
-        self, parsing_result: list[ParserMessage], response: Response[Any],
+        self, parsing_result: list[ParserMessage], response: RawResponse[Any],
     ) -> list[Message]:
         context = self.get_context(response)
         return [Message.model_validate(i, context=context) for i in parsing_result]

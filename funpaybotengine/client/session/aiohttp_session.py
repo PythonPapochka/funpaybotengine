@@ -13,7 +13,7 @@ from aiohttp import TCPConnector, ClientSession, ClientTimeout
 from aiohttp.hdrs import USER_AGENT
 
 from funpaybotengine.loggers import session_logger
-from funpaybotengine.client.session.base import Response, BaseSession
+from funpaybotengine.client.session.base import RawResponse, Response, BaseSession
 from funpaybotengine.client.session.http_methods import HTTPMethod
 from funpaybotengine.types.enums import Language
 
@@ -130,22 +130,21 @@ class AioHttpSession(BaseSession):
         else:
             cookies = {k: v.value for k, v in response.cookies.items()}
 
-        output = Response(
+        raw_response = RawResponse(
             url=str(response.real_url),
             status_code=response.status,
             raw_response=await response.text(),
             headers={k.lower(): v for k, v in response.headers.items()},
             cookies=cookies,
             method_obj=method,
-            response_obj=None,
             context={'session': self, 'bot': bot},
         )
 
         start_time = time.time()
-        result = method.to_obj(output)
-        output.response_obj = result
+        response_obj = method.to_obj(raw_response)
+        result = Response.from_raw_response(raw_response, response_obj)
         session_logger.debug(f'Parsing response of {url} took {time.time() - start_time}s.')
-        return output
+        return result
 
     @staticmethod
     def resolve_url(

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 
-__all__ = ('BaseSession', 'Response')
+__all__ = ('BaseSession', 'RawResponse', 'Response')
 
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from http import HTTPStatus
 
@@ -37,15 +37,27 @@ ResponseObject = TypeVar('ResponseObject', bound=Any)
 
 
 @dataclass
-class Response(Generic[ResponseObject]):
+class RawResponse(Generic[ResponseObject]):
     url: str
     status_code: HTTPStatus | int
     raw_response: str
     headers: dict[str, str]
     cookies: dict[str, str]
     method_obj: FunPayMethod[ResponseObject]
-    response_obj: ResponseObject | None
-    context: dict[str, Any] = field(default_factory=dict)
+    context: dict[str, Any]
+
+
+@dataclass
+class Response(RawResponse[ResponseObject], Generic[ResponseObject]):
+    response_obj: ResponseObject
+
+    @classmethod
+    def from_raw_response(
+            cls,
+            raw: RawResponse[ResponseObject],
+            response_obj: ResponseObject
+    ) -> Response[ResponseObject]:
+        return cls(**raw.__dict__, response_obj=response_obj)
 
 
 class BaseSession(ABC):
@@ -58,7 +70,7 @@ class BaseSession(ABC):
         method: FunPayMethod[MethodReturnType],
         bot: Bot | None = None,
         timeout: float | None = None,
-    ) -> Response[MethodReturnType]: ...
+    ) -> RawResponse[MethodReturnType]: ...
 
     def check_status_code(self, method: FunPayMethod[Any], status_code: int | HTTPStatus) -> None:
         if status_code in method.expected_status_codes:

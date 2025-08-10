@@ -3,7 +3,7 @@ from __future__ import annotations
 
 __all__ = ('Bot',)
 
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, ParamSpec, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 from io import BytesIO
 from collections.abc import Callable, Sequence
 

@@ -16,7 +16,7 @@ import json
 
 
 if TYPE_CHECKING:
-    from funpaybotengine.client.session.base import Response
+    from funpaybotengine.client.session.base import RawResponse
 
 
 class Refund(FunPayMethod[bool], BaseModel):
@@ -39,7 +39,7 @@ class Refund(FunPayMethod[bool], BaseModel):
             order_id=order_id,
         )
 
-    def parse_result(self, response: Response[Any]) -> bool:
+    def parse_result(self, response: RawResponse[Any]) -> bool:
         try:
             result = json.loads(response.raw_response)
         except:
@@ -55,5 +55,5 @@ class Refund(FunPayMethod[bool], BaseModel):
             )
         return True
 
-    def transform_result(self, parsing_result: Any, response: Response[Any]) -> bool:
+    def transform_result(self, parsing_result: Any, response: RawResponse[Any]) -> bool:
         return True
