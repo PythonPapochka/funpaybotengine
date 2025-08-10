@@ -14,6 +14,7 @@ from funpaybotengine.types.enums import Language
 from funpaybotengine.methods.base import FunPayMethod
 from funpaybotengine.types.requests import RunnerRequestData, RequestableObject, Action
 from funpaybotengine.client.session.http_methods import HTTPMethod
+import json
 
 
 class RunnerRequest(FunPayMethod[RunnerResponse], BaseModel):
@@ -28,13 +29,37 @@ class RunnerRequest(FunPayMethod[RunnerResponse], BaseModel):
 
     __model_to_build__ = RunnerResponse
 
-    def __init__(self, request: RunnerRequestData, locale: Language | None = None):
+    def __init__(
+            self,
+            objects_to_request: Sequence[RequestableObject] | Literal[False] = False,
+            action: Action | Literal[False] = False,
+            locale: Language | None = None
+    ):
         super().__init__(
             url='runner/',
             method=HTTPMethod.POST,
             locale=locale,
             parser_cls=UpdatesParser,
-            data=request.serialize_as_request_data(),
+            data=self.serialize_as_request_data(objects_to_request, action),
             headers={'X-Requested-With': 'XMLHttpRequest'},
-            request=request,
+
+            objects_to_request=objects_to_request,
+            action=action
         )
+
+    def serialize_as_request_data(
+            self,
+            objects_to_request: Sequence[RequestableObject] | Literal[False] = False,
+            action: Action | Literal[False] = False,
+    ) -> dict[str, str | None]:
+        """Returns a dictionary suitable for runner HTTP requests."""
+        return {
+            'objects': json.dumps(
+                [i.model_dump(exclude_none=True, by_alias=True) for i in objects_to_request],
+            )
+            if objects_to_request
+            else 'false',
+            'request': action.model_dump_json(exclude_none=True, by_alias=True)
+            if action
+            else 'false',
+        }

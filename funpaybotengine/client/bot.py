@@ -205,9 +205,10 @@ class Bot:
         Makes request to the runner.
         :return: Runner response.
         """
-        data = RunnerRequestData(requested_objects=objects_to_request, action=action)
-        result = await self.make_request(RunnerRequest(request=data))
-        return result.response_obj
+        return await RunnerRequest(
+            objects_to_request=objects_to_request,
+            action=action
+        ).execute(self)
 
     # ----- Actions -----
     async def upload_chat_image(self, file: str | BytesIO) -> int:
