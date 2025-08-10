@@ -70,7 +70,7 @@ class BaseSession(ABC):
         method: FunPayMethod[MethodReturnType],
         bot: Bot | None = None,
         timeout: float | None = None,
-    ) -> RawResponse[MethodReturnType]: ...
+    ) -> Response[MethodReturnType]: ...
 
     def check_status_code(self, method: FunPayMethod[Any], status_code: int | HTTPStatus) -> None:
         if status_code in method.expected_status_codes:

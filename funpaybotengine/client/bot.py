@@ -70,33 +70,6 @@ if TYPE_CHECKING:
 F = TypeVar('F', bound=Callable[..., Any])
 
 
-def need_preinitialization(func: F) -> F:
-    async def wrapper(*args: Any, **kwargs: Any) -> Any:
-        if not args or not isinstance(args[0], Bot):
-            raise RuntimeError('Can be used only with `Bot` instance methods.')
-
-        self: Bot = args[0]
-        if not self.initialized:
-            await self.update()
-        return await func(*args, **kwargs)
-
-    return wrapper  # type: ignore
-
-
-def not_anonymous(func: F) -> F:
-    async def wrapper(*args: Any, **kwargs: Any) -> Any:
-        if not args or not isinstance(args[0], Bot):
-            raise RuntimeError('Can be used only with `Bot` instance methods.')
-
-        self: Bot = args[0]
-        if self.anonymous:
-            raise RuntimeError(f"This method cannot be executed as anonymous user.")
-
-        return await func(*args, **kwargs)
-
-    return wrapper  # type: ignore
-
-
 class Bot:
     def __init__(
         self,
@@ -194,8 +167,6 @@ class Bot:
     def categories_cache(self) -> CategoriesCache | None:
         return self._categories_cache
 
-    @not_anonymous
-    @need_preinitialization
     async def runner_request(
         self,
         objects_to_request: Sequence[RequestableObject] | Literal[False] = False,
@@ -222,8 +193,7 @@ class Bot:
 
         :return: Unique FunPay image ID assigned to the uploaded image.
         """
-        result = await self.make_request(UploadImage(file=file))
-        return result.response_obj
+        return await UploadImage(file=file).execute(self)
 
     @overload
     async def send_message(
@@ -303,14 +273,10 @@ class Bot:
 
         return result.nodes[0].data.messages[-1]  # type: ignore[index] # will have nodes
 
-    @not_anonymous
-    @need_preinitialization
     async def refund(self, order_id: str) -> bool:
-        result = await self.make_request(Refund(order_id=order_id))
-        return result.response_obj
+        return await Refund(order_id=order_id).execute(self)
 
     # ----- Getters -----
-    @not_anonymous
     async def get_chat_history(
         self,
         chat_id: int | str,
@@ -331,12 +297,10 @@ class Bot:
 
         :return: A list of up to 50 ``Message`` objects, sorted from oldest to newest.
         """
-        result = await self.make_request(
-            GetChatHistory(chat_id=chat_id, before_message_id=before_message_id),
+        return await GetChatHistory(chat_id=chat_id, before_message_id=before_message_id).execute(
+            self
         )
-        return result.response_obj
 
-    @not_anonymous
     async def get_sales(
         self,
         from_order_id: str | None = None,
@@ -363,7 +327,7 @@ class Bot:
         :return: A batch of order previews (``OrderPreviewsBatch``)
             matching the specified criteria.
         """
-        m = GetSales(
+        method = GetSales(
             from_order_id=from_order_id,
             order_id_filter=order_id_filter,
             buyer_username_filter=buyer_username_filter,
@@ -372,10 +336,8 @@ class Bot:
             other_filters=other_filters,
         )
 
-        result = await self.make_request(m)
-        return result.response_obj
+        return await method.execute(self)
 
-    @not_anonymous
     async def get_purchases(
         self,
         from_order_id: str | None = None,
@@ -402,7 +364,7 @@ class Bot:
         :return: A batch of purchase previews (``OrderPreviewsBatch``)
             matching the specified criteria.
         """
-        m = GetPurchases(
+        method = GetPurchases(
             from_order_id=from_order_id,
             order_id_filter=order_id_filter,
             seller_username_filter=seller_username_filter,
@@ -411,16 +373,14 @@ class Bot:
             other_filters=other_filters,
         )
 
-        result = await self.make_request(m)
-        return result.response_obj
+        return await method.execute(self)
 
     # ----- Page getters -----
     async def get_main_page(self) -> MainPage:
         """
         Retrieves the FunPay main page.
         """
-        result = await self.make_request(GetMainPage())
-        return result.response_obj
+        return await GetMainPage().execute(self)
 
     async def get_chat_page(self, chat_id: int | str) -> ChatPage:
         """
@@ -428,12 +388,10 @@ class Bot:
 
         :param chat_id: Chat ID or name.
         """
-        result = await self.make_request(GetChatPage(chat_id=chat_id))
-        return result.response_obj
+        return await GetChatPage(chat_id=chat_id).execute(self)
 
     async def get_profile_page(self, id: int) -> ProfilePage:
-        result = await self.make_request(GetProfilePage(user_id=id))
-        return result.response_obj
+        return await GetProfilePage(user_id=id).execute(self)
 
     @overload
     async def get_subcategory_page(
@@ -484,7 +442,6 @@ class Bot:
         order: OrderPreview | OrderPage = ...,
     ) -> OrderPage: ...
 
-    @not_anonymous
     async def get_order_page(
         self,
         order_id: str | None = None,
@@ -508,15 +465,20 @@ class Bot:
     async def make_request(
         self,
         method: FunPayMethod[MethodReturnType],
+        skip_initialization: bool = False
     ) -> Response[MethodReturnType]:
-        if not self.initialized:
+        if not method.allow_anonymous and self.anonymous:
+            raise RuntimeError(
+                f"Method '{method.__class__.__name__}' cannot be executed as an anonymous user. ",
+            )  # todo
+
+        if not skip_initialization and not self.initialized:
             await self.update()
-        return await self.session.make_request(method.as_(self))
+
+        return await self.session.make_request(method, self)
 
     async def update(self, change_locale: Language | None = None) -> Self:
-        result = await self.session.make_request(
-            GetMainPage(change_locale=change_locale).as_(self),
-        )
+        result = await self.make_request(GetMainPage(change_locale=change_locale))
 
         self.csrf_token = result.response_obj.app_data.csrf_token
         self.locale = result.response_obj.app_data.locale
@@ -524,10 +486,8 @@ class Bot:
         self._userid = result.response_obj.header.user_id
         self._username = result.response_obj.header.username
         self._categories_cache = CategoriesCache(result.response_obj.categories)
-
         return self
 
-    @need_preinitialization
     async def start_polling(
         self,
         dp: Dispatcher,

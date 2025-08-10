@@ -66,11 +66,6 @@ class AioHttpSession(BaseSession):
             bot: Bot | None = None,
             timeout: float | None = None,
     ) -> Response[MethodReturnType]:
-        if (bot is None or bot.anonymous) and not method.allow_anonymous:
-            raise Exception(
-                f"Method '{method.__class__.__name__}' cannot be executed as an anonymous user. ",
-            )  # todo
-
         return await self._make_request(
             method=method,
             bot=bot,
