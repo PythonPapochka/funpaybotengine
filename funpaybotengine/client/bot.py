@@ -523,7 +523,7 @@ class Bot:
 
         self.csrf_token = result.response_obj.app_data.csrf_token
         self.locale = result.response_obj.app_data.locale
-        self.phpsessid = result.response_cookies.get('PHPSESSID')
+        self.phpsessid = result.cookies.get('PHPSESSID')
         self._userid = result.response_obj.header.user_id
         self._username = result.response_obj.header.username
         self._categories_cache = CategoriesCache(result.response_obj.categories)

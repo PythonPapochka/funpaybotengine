@@ -4,7 +4,7 @@ from __future__ import annotations
 __all__ = ('BaseSession', 'Response')
 
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 from http import HTTPStatus
 
@@ -41,10 +41,11 @@ class Response(Generic[ResponseObject]):
     url: str
     status_code: HTTPStatus | int
     raw_response: str
-    response_obj: ResponseObject
-    response_headers: dict[str, str]
-    response_cookies: dict[str, str]
+    headers: dict[str, str]
+    cookies: dict[str, str]
     method_obj: FunPayMethod[ResponseObject]
+    response_obj: ResponseObject | None
+    context: dict[str, Any] = field(default_factory=dict)
 
 
 class BaseSession(ABC):

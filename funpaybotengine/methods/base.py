@@ -11,19 +11,19 @@ from email.utils import parsedate_to_datetime
 from pydantic import Field, BaseModel, ConfigDict
 from funpayparsers.parsers.base import ParsingOptions, FunPayObjectParser
 
-from funpaybotengine.base import BindableObject
 from funpaybotengine.client.session.http_methods import HTTPMethod
 
 
 if TYPE_CHECKING:
     from funpaybotengine.types.enums import Language
     from funpaybotengine.client.session.base import Response
+    from funpaybotengine.client.bot import Bot
 
 
 MethodReturnType = TypeVar('MethodReturnType', bound=Any)
 
 
-class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
+class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
     """Base method class."""
 
     model_config = ConfigDict(
@@ -118,7 +118,6 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
     __model_to_build__: Type[MethodReturnType] | None = None
 
     def model_post_init(self, context: Any, /) -> None:
-        super(BindableObject, self).model_post_init(context)
         if self.parser_cls and self.parser_options is None:
             self.parser_options = self.parser_cls.get_options_cls()()
 
@@ -170,9 +169,13 @@ class FunPayMethod(BindableObject, BaseModel, Generic[MethodReturnType], ABC):
         context = context or {}
         context_from_response: dict[str, Any] = {}
 
-        if 'date' in response.response_headers:
+        if 'date' in response.headers:
             context_from_response['response_timestamp'] = parsedate_to_datetime(
-                response.response_headers['date'],
+                response.headers['date'],
             ).timestamp()
 
-        return self.context | context_from_response | context | {'bot': self._bot}
+        return self.context | context_from_response | context
+
+    async def execute(self, as_: Bot) -> MethodReturnType:
+        result = await as_.make_request(self)
+        return result.response_obj

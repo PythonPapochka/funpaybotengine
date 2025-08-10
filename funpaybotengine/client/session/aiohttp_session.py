@@ -15,6 +15,7 @@ from aiohttp.hdrs import USER_AGENT
 from funpaybotengine.loggers import session_logger
 from funpaybotengine.client.session.base import Response, BaseSession
 from funpaybotengine.client.session.http_methods import HTTPMethod
+from funpaybotengine.types.enums import Language
 
 
 if TYPE_CHECKING:
@@ -59,70 +60,57 @@ class AioHttpSession(BaseSession):
             # https://docs.aiohttp.org/en/stable/client_advanced.html#graceful-shutdown
             await asyncio.sleep(0.25)
 
-    def _prepare_method(
-        self,
-        method: FunPayMethod[MethodReturnType],
-        bot: Bot | None,
-    ) -> None:
-        if bot is not None:
-            method.bind_to(bot)
-
-        if method.bot is None:
-            raise Exception('Method is unbound')  # todo
-
-        if not method.allow_anonymous and method.bot.anonymous:
+    async def make_request(
+            self,
+            method: FunPayMethod[MethodReturnType],
+            bot: Bot | None = None,
+            timeout: float | None = None,
+    ) -> Response[MethodReturnType]:
+        if (bot is None or bot.anonymous) and not method.allow_anonymous:
             raise Exception(
                 f"Method '{method.__class__.__name__}' cannot be executed as an anonymous user. ",
             )  # todo
 
-    async def make_request(
+        return await self._make_request(
+            method=method,
+            bot=bot,
+            timeout=timeout
+        )
+
+    async def _make_request(
         self,
         method: FunPayMethod[MethodReturnType],
         bot: Bot | None = None,
         timeout: float | None = None,
     ) -> Response[MethodReturnType]:
-        if bot is not None:
-            method.bind_to(bot)
-
-        if method.bot is None:
-            raise Exception('Method is unbound')  # todo
-
-        if not method.allow_anonymous and method.bot.anonymous:
-            raise Exception(
-                f"Method '{method.__class__.__name__}' cannot be executed as an anonymous user. ",
-            )  # todo
-
         session = await self.session()
         session.cookie_jar.clear()
         session.cookie_jar.update_cookies({'cookie_prefs': '1'})  # no 3rd-party cookies
-        if method.bot.golden_key:
-            session.cookie_jar.update_cookies({'golden_key': method.bot.golden_key})
-        if method.bot.phpsessid:
-            session.cookie_jar.update_cookies({'PHPSESSID': method.bot.phpsessid})
+        if bot:
+            if bot.golden_key:
+                session.cookie_jar.update_cookies({'golden_key': bot.golden_key})
+            if bot.phpsessid:
+                session.cookie_jar.update_cookies({'PHPSESSID': bot.phpsessid})
+        csrf_token = bot.csrf_token if bot and bot.csrf_token else ''
 
         timeout_obj = ClientTimeout(total=timeout if timeout is not None else method.timeout)
 
-        url_to_log = (
-            method.url
-            if URL(method.url).is_absolute()
-            else str(session._base_url.join(URL(self.resolve_url(method))))  # type: ignore[union-attr]
-        )
-
-        session_logger.info(f'Making {method.method.name} request to {url_to_log}')
+        url = self.resolve_url(method, bot, session)
+        session_logger.info(f'Making {method.method.name} request to {url}')
         start_time = time.time()
 
         async with session:
             if method.method == HTTPMethod.GET:
                 response = await session.get(
-                    self.resolve_url(method),
+                    url,
                     params=method.data,
                     timeout=timeout_obj,
                     headers=self._default_headers | method.headers,
                 )
             elif method.method == HTTPMethod.POST:
                 response = await session.post(
-                    self.resolve_url(method),
-                    data=method.data,
+                    url,
+                    data=method.data | {'csrf_token': csrf_token} if csrf_token else {},
                     timeout=timeout_obj,
                     headers=self._default_headers | method.headers,
                 )
@@ -130,7 +118,7 @@ class AioHttpSession(BaseSession):
                 raise ValueError(f'Unsupported HTTP method {method.method.name}.')
 
         session_logger.debug(
-            f'Requesting {url_to_log} took {time.time() - start_time}s. Status: {response.status}.',
+            f'Requesting {url} took {time.time() - start_time}s. Status: {response.status}.',
         )
 
         self.check_status_code(method, response.status)
@@ -146,30 +134,39 @@ class AioHttpSession(BaseSession):
             url=str(response.real_url),
             status_code=response.status,
             raw_response=await response.text(),
-            response_obj=None,
-            response_headers={k.lower(): v for k, v in response.headers.items()},
-            response_cookies=cookies,
+            headers={k.lower(): v for k, v in response.headers.items()},
+            cookies=cookies,
             method_obj=method,
+            response_obj=None,
+            context={'session': self, 'bot': bot},
         )
 
         start_time = time.time()
         result = method.to_obj(output)
         output.response_obj = result
-        session_logger.debug(f'Parsing response of {url_to_log} took {time.time() - start_time}s.')
+        session_logger.debug(f'Parsing response of {url} took {time.time() - start_time}s.')
         return output
 
-    def resolve_url(self, method: FunPayMethod[Any]) -> str:
-        if method.ignore_locale:
-            locale = ''
+    @staticmethod
+    def resolve_url(
+            method: FunPayMethod[Any],
+            bot: Bot | None,
+            session: ClientSession,
+    ) -> str:
+        if URL(method.url).is_absolute():
+            return method.url
+
+        if method.ignore_locale or bot is None:
+            locale = Language.RU
         elif method.locale is not None:
-            locale = method.locale.value.url_alias
+            locale = method.locale
         else:
-            locale = method.bot.locale.value.url_alias  # type: ignore[union-attr] # always has bound bot
+            locale = bot.locale
 
-        if locale == 'ru':
-            locale = ''
-
-        return f'{locale}/{method.url[1 if method.url.startswith("/") else 0 :]}'
+        url = f'{locale.value.url_alias}/{method.url[1 if method.url.startswith("/") else 0 :]}'
+        if not session._base_url:
+            return url
+        return str(session._base_url.join(URL(url)))
 
     @property
     def proxy(self) -> str | None:
