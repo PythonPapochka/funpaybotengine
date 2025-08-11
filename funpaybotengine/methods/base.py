@@ -163,7 +163,7 @@ class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
         """
         if self.__model_to_build__ is not None and issubclass(self.__model_to_build__, BaseModel):
             return self.__model_to_build__.model_validate(
-                parsing_result, context=self.get_full_context(response),
+                parsing_result, context=await self.get_full_context(response),
             )
         raise NotImplementedError(
             f"{self.__class__.__name__} must either define a BaseModel in '__model_to_build__' "
@@ -190,10 +190,6 @@ class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
 
         return self_context | context_from_response | context
 
-    async def execute(self, as_: Bot) -> MethodReturnType:
-        result = await as_.make_request(self)
-        return result.response_obj
-
     async def _resolve_callable_field_value(self, value: R | CallableField[R], bot: Bot) -> R:
         if not callable(value):
             return value
@@ -214,3 +210,7 @@ class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
 
     async def get_context(self, bot: Bot) -> dict[str, Any]:
         return await self._resolve_callable_field_value(self.context, bot)
+
+    async def execute(self, as_: Bot) -> MethodReturnType:
+        result = await as_.make_request(self)
+        return result.response_obj

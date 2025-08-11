@@ -12,16 +12,11 @@ __all__ = (
     'Action',
     'SendingMessageData',
     'SendMessageAction',
-    'RunnerRequestData',
 )
-import json
 from typing import Literal
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
 
 from pydantic import Field, BaseModel, AliasChoices, computed_field
-
-from funpaybotengine.base import BindableObject
 
 
 class RequestableObject(ABC, BaseModel):
@@ -34,6 +29,7 @@ class RequestableObject(ABC, BaseModel):
     def type(self) -> str: ...
 
     """Request type identifier."""
+
 
 
 class OrdersCountersRequestObject(RequestableObject, BaseModel):
@@ -261,52 +257,3 @@ class SendMessageAction(Action, BaseModel):
     @computed_field
     def action(self) -> str:
         return 'chat_message'
-
-
-class RunnerRequestData(BindableObject, BaseModel):
-    """
-    Payload structure for requests sent to https://funpay.com/runner/.
-    """
-
-    requested_objects: Sequence[RequestableObject] | Literal[False] = Field(
-        default=False,
-        serialization_alias='objects',
-        validation_alias=AliasChoices('objects', 'requested_objects'),
-    )
-    """
-    Optional list of objects to request (or ``False`` if none).
-    
-    Defaults to ``False``.
-    """
-
-    action: Action | Literal[False] = Field(
-        default=False,
-        serialization_alias='request',
-        validation_alias=AliasChoices('request', 'action'),
-    )
-    """
-    Optional action to perform (e.g., send message).
-    
-    Defaults to ``False``.
-    """
-
-    csrf_token: str | None = None
-    """
-    Bot CSRF token.
-
-    Defaults to ``None``.
-    """
-
-    def serialize_as_request_data(self) -> dict[str, str | None]:
-        """Returns a dictionary suitable for runner HTTP requests."""
-        return {
-            'objects': json.dumps(
-                [i.model_dump(exclude_none=True, by_alias=True) for i in self.requested_objects],
-            )
-            if self.requested_objects
-            else 'false',
-            'request': self.action.model_dump_json(exclude_none=True, by_alias=True)
-            if self.action
-            else 'false',
-            'csrf_token': self.csrf_token,
-        }
