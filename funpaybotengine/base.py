@@ -5,7 +5,7 @@ __all__ = ('BindableObject', 'check_bound')
 
 from typing import TYPE_CHECKING, Any, TypeVar
 from collections.abc import Callable
-from funpaybotengine.exceptions import BotIsNotBoundError
+from funpaybotengine.exceptions import BotNotBoundError
 
 from pydantic import BaseModel, PrivateAttr
 from typing_extensions import Self
@@ -40,7 +40,7 @@ class BindableObject(BaseModel):
 
     def get_bound_bot(self) -> Bot:
         if not self.bot:
-            raise BotIsNotBoundError(self)
+            raise BotNotBoundError(self)
         return self.bot
 
 
