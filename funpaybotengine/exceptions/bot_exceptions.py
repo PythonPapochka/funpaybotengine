@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+__all__ = (
+    'BotIsNotBoundError',
+)
+
 from .base import FunPayBotEngineError
 from typing import Any
 

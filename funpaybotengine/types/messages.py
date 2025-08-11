@@ -4,14 +4,13 @@ from __future__ import annotations
 __all__ = ('Message',)
 
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, overload
 from io import BytesIO
 
 from pydantic import BaseModel, PrivateAttr, ValidationInfo, field_validator
 from funpayparsers.parsers.utils import parse_date_string
 
 from funpaybotengine.types.base import FunPayObject
-from funpaybotengine.base import check_bound
 from funpaybotengine.types.enums import MessageType
 from funpaybotengine.types.common import UserBadge
 
@@ -19,6 +18,7 @@ from funpaybotengine.types.common import UserBadge
 if TYPE_CHECKING:
     from funpaybotengine.types.pages.chat_page import ChatPage
     from funpaybotengine.types.pages.profile_page import ProfilePage
+    from funpaybotengine.types.chat import Chat
 
 
 class MessageMeta(FunPayObject, BaseModel):
@@ -142,21 +142,9 @@ class Message(FunPayObject, BaseModel):
             return info.context.get('chat_name') if value is None else value
         return None
 
-    @check_bound
-    async def reply(
-        self,
-        text: str | None = None,
-        image: str | BytesIO | int | None = None,
-        enforce_whitespaces: bool = True,
-    ) -> Message:
-        assert self.chat_id is not None or self.chat_name is not None
-
-        return await self.bot.send_message(  # type: ignore[union-attr] # @check_bound
-            chat_id=self.chat_id or self.chat_name,  # type: ignore[arg-type]
-            text=text,  # type: ignore[arg-type]
-            image=image,  # type: ignore[arg-type]
-            enforce_whitespaces=enforce_whitespaces,
-        )
+    @property
+    def chat_identifier(self) -> int | str | None:
+        return self.chat_id or self.chat_name
 
     @property
     def from_me(self) -> bool:
@@ -170,25 +158,54 @@ class Message(FunPayObject, BaseModel):
             return 0
         return parse_date_string(self.send_date_text)
 
-    async def chat(self, update: bool = False) -> None:
-        raise NotImplementedError
+    @overload
+    async def reply(
+        self,
+        text: str = ...,
+        image: None = ...,
+        enforce_whitespaces: bool = ...,
+    ) -> Message: ...
 
-    @check_bound
+    @overload
+    async def reply(
+        self,
+        text: None = ...,
+        image: str | BytesIO | int = ...,
+        enforce_whitespaces: bool = ...,
+    ) -> Message: ...
+
+    async def reply(
+        self,
+        text: str | None = None,
+        image: str | BytesIO | int | None = None,
+        enforce_whitespaces: bool = True,
+    ) -> Message:
+        assert self.chat_identifier is not None, 'Unable to resolve chat identifier.'
+
+        return await self.get_bound_bot().send_message(
+            chat_id=self.chat_identifier,
+            text=text, # type: ignore
+            image=image, # type: ignore
+            enforce_whitespaces=enforce_whitespaces,
+        )
+
+    async def chat(self, update: bool = False) -> Chat:
+        return (await self.chat_page(update=update)).chat  # type: ignore  # will have chat
+
     async def chat_page(self, update: bool = False) -> ChatPage:
-        assert self.chat_id is not None or self.chat_name is not None
+        assert self.chat_identifier is not None, 'Unable to resolve chat identifier.'
 
         if self._chat_page is not None and not update:
             return self._chat_page
 
-        return await self.bot.get_chat_page( # type: ignore[union-attr] # @check_bound
-            chat_id=self.chat_id or self.chat_name,  # type: ignore[arg-type]
+        return await self.get_bound_bot().get_chat_page(
+            chat_id=self.chat_identifier,
         )
 
-    @check_bound
     async def sender_profile_page(self, update: bool = False) -> ProfilePage:
-        assert self.sender_id is not None
+        assert self.sender_id is not None, 'Unable to resolve sender ID.'
 
         if self._sender_profile is not None and not update:
             return self._sender_profile
 
-        return await self.bot.get_profile_page(id=self.sender_id) # type: ignore[union-attr]
+        return await self.get_bound_bot().get_profile_page(id=self.sender_id)
