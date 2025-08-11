@@ -28,43 +28,108 @@ __all__ = (
 from pydantic import Field, PrivateAttr
 
 from funpaybotengine.types.chat import PrivateChatPreview
+from typing import Any
 from funpaybotengine.types.orders import OrderPreview
 from funpaybotengine.types.messages import Message
 
 from .base import RunnerEvent
 
 
-class ChatInitEvent(RunnerEvent[PrivateChatPreview]): ...
+class ChatInitEvent(RunnerEvent[PrivateChatPreview]):
+    @property
+    def chat_preview(self) -> PrivateChatPreview:
+        return self.object
+
+    @property
+    def workflow_dict(self) -> dict[str, Any]:
+        return {
+            'chat_preview': self.chat_preview
+        }
 
 
 class ChatChangedEvent(RunnerEvent[PrivateChatPreview]):
     previous: PrivateChatPreview | None = None
 
+    @property
+    def chat_preview(self) -> PrivateChatPreview:
+        return self.object
 
-class NewMessageEvent(RunnerEvent[Message]): ...
+    @property
+    def workflow_dict(self) -> dict[str, Any]:
+        return {
+            'chat_preview': self.chat_preview
+        }
 
 
-class CountersChangedEvent(RunnerEvent[tuple[int, int]]): ...
+
+class NewMessageEvent(RunnerEvent[Message]):
+    @property
+    def message(self) -> Message:
+        return self.object
+
+    @property
+    def workflow_dict(self) -> dict[str, Any]:
+        return {
+            'message': self.message
+        }
+
+
+class CountersChangedEvent(RunnerEvent[tuple[int, int]]):
+    @property
+    def sales_counters(self) -> int:
+        return self.object[0]
+
+    @property
+    def purchases_counters(self) -> int:
+        return self.object[1]
+
+    @property
+    def workflow_dict(self) -> dict[str, Any]:
+        return {
+            'sales_counter': self.sales_counters,
+            'purchases_counter': self.purchases_counters,
+        }
 
 
 class OrderEvent(RunnerEvent[Message]):
     related_new_message_event: NewMessageEvent
     _order_preview: OrderPreview | None = PrivateAttr(default=None)
 
+    @property
+    def message(self) -> Message:
+        return self.object
+
+    @property
+    def workflow_dict(self) -> dict[str, Any]:
+        return {
+            'message': self.message,
+            'new_message_event': self.related_new_message_event,
+        }
+
+
+class SaleEvent(OrderEvent):
     async def get_order_preview(self, update: bool = False) -> OrderPreview:
         if self._order_preview is not None and not update:
             return self._order_preview
 
-        assert self.bot is not None, 'Event not bound to any bot.'
+        orders = await self.get_bound_bot().get_sales(order_id_filter=self.object.meta.order_id)
+        return orders.orders[0]
 
-        return (await self.bot.get_sales(order_id_filter=self.object.meta.order_id)).orders[0]
+
+class PurchaseEvent(OrderEvent):
+    async def get_order_preview(self, update: bool = False) -> OrderPreview:
+        if self._order_preview is not None and not update:
+            return self._order_preview
+
+        orders = await self.get_bound_bot().get_purchases(order_id_filter=self.object.meta.order_id)
+        return orders.orders[0]
 
 
-class NewSaleEvent(OrderEvent):
+class NewSaleEvent(SaleEvent):
     related_auto_message_events: list[NewMessageEvent] = Field(default_factory=list)
 
 
-class SaleStatusChangedEvent(OrderEvent):
+class SaleStatusChangedEvent(SaleEvent):
     previous: OrderPreview | None = None
 
 
@@ -83,11 +148,11 @@ class SalePartiallyRefundedEvent(SaleRefundedEvent): ...
 class SaleReopenedEvent(SaleStatusChangedEvent): ...
 
 
-class NewPurchaseEvent(OrderEvent):
+class NewPurchaseEvent(PurchaseEvent):
     related_auto_message_events: list[NewMessageEvent] = Field(default_factory=list)
 
 
-class PurchaseStatusChangedEvent(OrderEvent):
+class PurchaseStatusChangedEvent(PurchaseEvent):
     previous: OrderPreview | None = None
 
 

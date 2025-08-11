@@ -63,6 +63,10 @@ class Event(BindableObject, BaseModel, Generic[EventObject]):
     def propagation_stopped(self) -> bool:
         return self._propagation_stopped
 
+    @property
+    def workflow_dict(self) -> dict[str, Any]:
+        return {}
+
     def __hash__(self) -> int:
         return id(self)
 

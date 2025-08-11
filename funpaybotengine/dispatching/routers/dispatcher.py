@@ -38,6 +38,7 @@ class Dispatcher(Router):
 
         workflow_data = {
             **self._workflow_data,
+            **event.workflow_dict,
             'event': event,
             'dispatcher': self,
             'events_stack': events_stack or (event,),
