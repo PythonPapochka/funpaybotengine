@@ -3,7 +3,7 @@ from __future__ import annotations
 __all__ = ('BindableObject', 'check_bound')
 
 
-from typing import TYPE_CHECKING, Any, TypeVar, ParamSpec, Concatenate
+from typing import TYPE_CHECKING, Any, TypeVar
 from collections.abc import Callable
 
 from pydantic import BaseModel, PrivateAttr
