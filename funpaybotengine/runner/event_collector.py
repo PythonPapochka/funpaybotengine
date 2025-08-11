@@ -144,9 +144,7 @@ class EventCollector:
 
         :return: ``RunnerResponse`` object with chat bookmarks.
         """
-        chats = ChatBookmarksRequestObject(id=self.bot.userid, runner_tag=random_runner_tag())
-        result = await self.bot.runner_request(objects_to_request=[chats])
-        return result
+        return await self.bot.runner_request(objects_to_request=[ChatBookmarksRequestObject()])
 
     @attempts()
     async def get_sales(self, order_id: str | None = None) -> tuple[OrderPreview, ...]:

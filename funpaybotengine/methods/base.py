@@ -21,14 +21,14 @@ if TYPE_CHECKING:
     from funpaybotengine.client.session.base import RawResponse
     from funpaybotengine.client.bot import Bot
 
+    R = TypeVar('R')
+    CallableField = Callable[['FunPayMethod[Any]', Bot], R | Awaitable[R]]
+else:
+    R = TypeVar('R')
+    CallableField = Callable[[Any, Any], R | Awaitable[R]]
+
 
 MethodReturnType = TypeVar('MethodReturnType', bound=Any)
-
-R = TypeVar('R')
-CallableField = Union[
-    Callable[['FunPayMethod[Any]', Bot], R | Awaitable[R]],
-    R
-]
 
 
 class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
@@ -39,7 +39,7 @@ class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
         arbitrary_types_allowed=True,
     )
 
-    url: CallableField[str]
+    url: CallableField[str] | str
     """Method URL."""
 
     method: HTTPMethod
@@ -64,14 +64,14 @@ class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
     If ``True``, ``FunPayMethod.locale`` will be ignored.
     """
 
-    headers: CallableField[dict[str, str]] = Field(default_factory=dict)
+    headers: CallableField[dict[str, str]] | dict[str, str] = Field(default_factory=dict)
     """
     Headers.
 
     Defaults to empty dict.
     """
 
-    data: CallableField[dict[str, Any]] = Field(default_factory=dict)
+    data: CallableField[dict[str, Any]] | dict[str, Any] = Field(default_factory=dict)
     """
     Additional data.
 
@@ -121,7 +121,7 @@ class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
     Defaults to ``10.0``.
     """
 
-    context: CallableField[dict[str, Any]] = Field(default_factory=dict)
+    context: CallableField[dict[str, Any]] | dict[str, Any] = Field(default_factory=dict)
     """
     Additional context for building a final `funpaybotengine` object.
     
