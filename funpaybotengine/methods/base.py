@@ -211,5 +211,10 @@ class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
         return await self._resolve_callable_field_value(self.context, bot)
 
     async def execute(self, as_: Bot) -> MethodReturnType:
+        """
+        Execute method as bot and return result.
+
+        :param as_: Bot instance to execute.
+        """
         result = await as_.make_request(self)
         return result.response_obj
