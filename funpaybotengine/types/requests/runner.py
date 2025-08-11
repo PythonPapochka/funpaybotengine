@@ -13,10 +13,14 @@ __all__ = (
     'SendingMessageData',
     'SendMessageAction',
 )
-from typing import Literal
+from typing import Literal, TYPE_CHECKING, Any
 from abc import ABC, abstractmethod
 
 from pydantic import Field, BaseModel, AliasChoices, computed_field
+from funpaybotengine.utils import random_runner_tag
+
+if TYPE_CHECKING:
+    from funpaybotengine.client.bot import Bot
 
 
 class RequestableObject(ABC, BaseModel):
@@ -30,6 +34,9 @@ class RequestableObject(ABC, BaseModel):
 
     """Request type identifier."""
 
+    async def as_data_dict(self, bot: Bot) -> dict[str, Any]:
+        return self.model_dump(exclude_none=True, by_alias=True)
+
 
 
 class OrdersCountersRequestObject(RequestableObject, BaseModel):
@@ -37,12 +44,10 @@ class OrdersCountersRequestObject(RequestableObject, BaseModel):
     Request for retrieving order counters of a specific user.
     """
 
-    id: int
-    """User ID whose order counters are being requested."""
-
     runner_tag: str = Field(
         serialization_alias='tag',
         validation_alias=AliasChoices('runner_tag', 'tag'),
+        default_factory=random_runner_tag
     )
     """Runner tag used for request tracking."""
 
@@ -54,18 +59,20 @@ class OrdersCountersRequestObject(RequestableObject, BaseModel):
     def data(self) -> bool:
         return False
 
+    async def as_data_dict(self, bot: Bot) -> dict[str, Any]:
+        result = await super().as_data_dict(bot)
+        return result | {'id': bot.userid}
+
 
 class ChatCounterRequestObject(RequestableObject, BaseModel):
     """
     Request for retrieving chat counter for a user.
     """
 
-    id: int
-    """User ID whose chat counter is being requested."""
-
     runner_tag: str = Field(
         serialization_alias='tag',
         validation_alias=AliasChoices('runner_tag', 'tag'),
+        default_factory=random_runner_tag
     )
     """Runner tag used for request tracking."""
 
@@ -76,6 +83,10 @@ class ChatCounterRequestObject(RequestableObject, BaseModel):
     @computed_field
     def data(self) -> bool:
         return False
+
+    async def as_data_dict(self, bot: Bot) -> dict[str, Any]:
+        result = await super().as_data_dict(bot)
+        return result | {'id': bot.userid}
 
 
 class CPURequestObject(RequestableObject, BaseModel):
@@ -89,6 +100,7 @@ class CPURequestObject(RequestableObject, BaseModel):
     runner_tag: str = Field(
         serialization_alias='tag',
         validation_alias=AliasChoices('runner_tag', 'tag'),
+        default_factory=random_runner_tag
     )
     """Runner tag used for request tracking."""
 
@@ -106,12 +118,10 @@ class ChatBookmarksRequestObject(RequestableObject, BaseModel):
     Request for retrieving chat bookmarks for a user.
     """
 
-    id: int
-    """User ID whose chat bookmarks are being requested."""
-
     runner_tag: str = Field(
         serialization_alias='tag',
         validation_alias=AliasChoices('runner_tag', 'tag'),
+        default_factory=random_runner_tag
     )
     """Runner tag used for request tracking."""
 
@@ -125,6 +135,10 @@ class ChatBookmarksRequestObject(RequestableObject, BaseModel):
     @computed_field
     def type(self) -> str:
         return 'chat_bookmarks'
+
+    async def as_data_dict(self, bot: Bot) -> dict[str, Any]:
+        result = await super().as_data_dict(bot)
+        return result | {'id': bot.userid}
 
 
 class RequestNodeInfo(BaseModel):
@@ -177,6 +191,7 @@ class NodeRequestObject(RequestableObject, BaseModel):
     runner_tag: str = Field(
         serialization_alias='tag',
         validation_alias=AliasChoices('runner_tag', 'tag'),
+        default_factory=random_runner_tag
     )
     """Runner tag used for request tracking."""
 
