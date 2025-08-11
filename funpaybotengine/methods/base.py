@@ -142,7 +142,7 @@ class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
         :param response: raw response.  # todo: not a string, but an object!
         """
         if self.parser_cls is None:
-            return response
+            return response.raw_response
 
         return self.parser_cls(response.raw_response, options=self.parser_options).parse()
 
