@@ -58,7 +58,7 @@ class Response(RawResponse[ResponseObject], Generic[ResponseObject]):
             raw: RawResponse[ResponseObject],
             response_obj: ResponseObject
     ) -> Response[ResponseObject]:
-        return cls(**asdict(raw), response_obj=response_obj)
+        return cls(**raw.__dict__, response_obj=response_obj)
 
 
 class BaseSession(ABC):
