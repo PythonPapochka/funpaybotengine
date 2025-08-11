@@ -101,15 +101,13 @@ class Bot:
 
         To initialize the bot instance, use ``Bot.update`` method.
         """
-        return bool(self._csrf_token) and bool(self._phpsessid)
-
-    @property
-    def userid(self) -> int | None:
-        return self._userid
-
-    @property
-    def username(self) -> str | None:
-        return self.username
+        to_check: list[Any] = [self.csrf_token, self.phpsessid, self.locale, self.categories_cache]
+        if not self.anonymous:
+            to_check.extend([
+                self.userid,
+                self.username,
+            ])
+        return all(bool(i) for i in to_check)
 
     @property
     def golden_key(self) -> str:
@@ -125,10 +123,6 @@ class Bot:
         """
         return self._csrf_token
 
-    @csrf_token.setter
-    def csrf_token(self, value: str | None) -> None:
-        self._csrf_token = value
-
     @property
     def phpsessid(self) -> str | None:
         """
@@ -136,9 +130,20 @@ class Bot:
         """
         return self._phpsessid
 
-    @phpsessid.setter
-    def phpsessid(self, value: str | None) -> None:
-        self._phpsessid = value
+    @property
+    def userid(self) -> int | None:
+        return self._userid
+
+    @property
+    def username(self) -> str | None:
+        return self.username
+
+    @property
+    def locale(self) -> Language:
+        """
+        Bot locale. Available only after initialization (``Bot.update`` method).
+        """
+        return self._locale
 
     @property
     def session(self) -> BaseSession:
@@ -150,17 +155,6 @@ class Bot:
     @property
     def storage(self) -> Storage:
         return self._storage
-
-    @property
-    def locale(self) -> Language:
-        """
-        Bot locale. Available only after initialization (``Bot.update`` method).
-        """
-        return self._locale
-
-    @locale.setter
-    def locale(self, value: Language) -> None:
-        self._locale = value
 
     @property
     def categories_cache(self) -> CategoriesCache | None:
@@ -475,15 +469,17 @@ class Bot:
             skip_initialization=True,
         )
 
-        self.csrf_token = result.response_obj.app_data.csrf_token
-        self.locale = result.response_obj.app_data.locale
-        self.phpsessid = result.cookies.get('PHPSESSID')
-        self._userid = result.response_obj.header.user_id
-        self._username = result.response_obj.header.username
+        self._csrf_token = result.response_obj.app_data.csrf_token
+        self._locale = result.response_obj.app_data.locale
+        self._phpsessid = result.cookies.get('PHPSESSID')
         self._categories_cache = CategoriesCache(result.response_obj.categories)
+
+        if not self.anonymous:
+            self._userid = result.response_obj.header.user_id
+            self._username = result.response_obj.header.username
         return self
 
-    async def start_polling(
+    async def listen_events(
         self,
         dp: Dispatcher,
         /,
