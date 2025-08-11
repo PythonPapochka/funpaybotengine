@@ -21,14 +21,13 @@ if TYPE_CHECKING:
     from funpaybotengine.client.session.base import RawResponse
     from funpaybotengine.client.bot import Bot
 
-    R = TypeVar('R')
+R = TypeVar('R')
+MethodReturnType = TypeVar('MethodReturnType', bound=Any)
+
+if TYPE_CHECKING:
     CallableField = Callable[['FunPayMethod[Any]', Bot], R | Awaitable[R]]
 else:
-    R = TypeVar('R')
     CallableField = Callable[[Any, Any], R | Awaitable[R]]
-
-
-MethodReturnType = TypeVar('MethodReturnType', bound=Any)
 
 
 class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):

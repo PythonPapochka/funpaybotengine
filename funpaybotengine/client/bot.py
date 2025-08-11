@@ -136,7 +136,7 @@ class Bot:
 
     @property
     def username(self) -> str | None:
-        return self.username
+        return self._username
 
     @property
     def locale(self) -> Language:
