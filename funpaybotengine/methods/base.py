@@ -3,7 +3,7 @@ from __future__ import annotations
 
 __all__ = ('FunPayMethod', 'MethodReturnType')
 
-from typing import TYPE_CHECKING, Any, Type, Generic, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Type, Generic, TypeVar
 from abc import ABC
 from http import HTTPStatus
 from email.utils import parsedate_to_datetime
@@ -13,6 +13,7 @@ from funpayparsers.parsers.base import ParsingOptions, FunPayObjectParser
 from collections.abc import Callable, Awaitable
 
 from funpaybotengine.client.session.http_methods import HTTPMethod
+from funpaybotengine.base import BindableObject
 import inspect
 
 
@@ -164,6 +165,7 @@ class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
             return self.__model_to_build__.model_validate(
                 parsing_result, context=await self.get_full_context(response),
             )
+
         raise NotImplementedError(
             f"{self.__class__.__name__} must either define a BaseModel in '__model_to_build__' "
             f"or override 'transform_result'. "
@@ -187,7 +189,7 @@ class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
                 response.headers['date'],
             ).timestamp()
 
-        return self_context | context_from_response | context
+        return self_context | context_from_response | context | {'bot': response.executed_as}
 
     async def _resolve_callable_field_value(self, value: R | CallableField[R], bot: Bot) -> R:
         if not callable(value):
