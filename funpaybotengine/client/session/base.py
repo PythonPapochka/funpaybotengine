@@ -4,7 +4,7 @@ from __future__ import annotations
 __all__ = ('BaseSession', 'RawResponse', 'Response')
 
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from abc import ABC, abstractmethod
 from http import HTTPStatus
 
@@ -45,6 +45,7 @@ class RawResponse(Generic[ResponseObject]):
     cookies: dict[str, str]
     method_obj: FunPayMethod[ResponseObject]
     context: dict[str, Any]
+    executed_as: Bot
 
 
 @dataclass
@@ -57,7 +58,7 @@ class Response(RawResponse[ResponseObject], Generic[ResponseObject]):
             raw: RawResponse[ResponseObject],
             response_obj: ResponseObject
     ) -> Response[ResponseObject]:
-        return cls(**raw.__dict__, response_obj=response_obj)
+        return cls(**asdict(raw), response_obj=response_obj)
 
 
 class BaseSession(ABC):

@@ -72,7 +72,7 @@ class GetChatHistory(FunPayMethod[list[Message]], BaseModel):
             before_message_id=before_message_id,
         )
 
-    def parse_result(self, response: RawResponse[Any]) -> list[ParserMessage]:
+    async def parse_result(self, response: RawResponse[Any]) -> list[ParserMessage]:
         result = json.loads(response.raw_response)
         messages = result['chat']['messages']
         html = '\n'.join(i['html'] for i in messages)
@@ -82,8 +82,8 @@ class GetChatHistory(FunPayMethod[list[Message]], BaseModel):
             # not None
         )
 
-    def transform_result(
+    async def transform_result(
         self, parsing_result: list[ParserMessage], response: RawResponse[Any],
     ) -> list[Message]:
-        context = self.get_context(response)
+        context = await self.get_full_context(response)
         return [Message.model_validate(i, context=context) for i in parsing_result]

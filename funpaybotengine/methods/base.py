@@ -3,15 +3,17 @@ from __future__ import annotations
 
 __all__ = ('FunPayMethod', 'MethodReturnType')
 
-from typing import TYPE_CHECKING, Any, Type, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Type, Generic, TypeVar, Union
 from abc import ABC
 from http import HTTPStatus
 from email.utils import parsedate_to_datetime
 
 from pydantic import Field, BaseModel, ConfigDict
 from funpayparsers.parsers.base import ParsingOptions, FunPayObjectParser
+from collections.abc import Callable, Awaitable
 
 from funpaybotengine.client.session.http_methods import HTTPMethod
+import inspect
 
 
 if TYPE_CHECKING:
@@ -22,6 +24,12 @@ if TYPE_CHECKING:
 
 MethodReturnType = TypeVar('MethodReturnType', bound=Any)
 
+R = TypeVar('R')
+CallableField = Union[
+    Callable[['FunPayMethod[Any]', Bot], R | Awaitable[R]],
+    R
+]
+
 
 class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
     """Base method class."""
@@ -31,7 +39,7 @@ class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
         arbitrary_types_allowed=True,
     )
 
-    url: str
+    url: CallableField[str]
     """Method URL."""
 
     method: HTTPMethod
@@ -56,14 +64,14 @@ class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
     If ``True``, ``FunPayMethod.locale`` will be ignored.
     """
 
-    headers: dict[str, str] = Field(default_factory=dict)
+    headers: CallableField[dict[str, str]] = Field(default_factory=dict)
     """
     Headers.
 
     Defaults to empty dict.
     """
 
-    data: dict[str, Any] = Field(default_factory=dict)
+    data: CallableField[dict[str, Any]] = Field(default_factory=dict)
     """
     Additional data.
 
@@ -113,7 +121,7 @@ class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
     Defaults to ``10.0``.
     """
 
-    context: dict[str, Any] = Field(default_factory=dict)
+    context: CallableField[dict[str, Any]] = Field(default_factory=dict)
     """
     Additional context for building a final `funpaybotengine` object.
     
@@ -126,7 +134,7 @@ class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
         if self.parser_cls and self.parser_options is None:
             self.parser_options = self.parser_cls.get_options_cls()()
 
-    def parse_result(self, response: RawResponse[Any]) -> Any:
+    async def parse_result(self, response: RawResponse[Any]) -> Any:
         """
         Method that parses raw response.
 
@@ -146,7 +154,7 @@ class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
 
         return self.parser_cls(response.raw_response, options=self.parser_options).parse()
 
-    def transform_result(self, parsing_result: Any, response: RawResponse[Any]) -> MethodReturnType:
+    async def transform_result(self, parsing_result: Any, response: RawResponse[Any]) -> MethodReturnType:
         """
         Transforms a raw response or parser output
         (i.e., the result of ``FunPayMethod.parse_result``)
@@ -155,7 +163,7 @@ class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
         """
         if self.__model_to_build__ is not None and issubclass(self.__model_to_build__, BaseModel):
             return self.__model_to_build__.model_validate(
-                parsing_result, context=self.get_context(response),
+                parsing_result, context=self.get_full_context(response),
             )
         raise NotImplementedError(
             f"{self.__class__.__name__} must either define a BaseModel in '__model_to_build__' "
@@ -164,23 +172,45 @@ class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
             f"'transform_result' has not been overridden.",
         )
 
-    def to_obj(self, response: RawResponse[Any]) -> MethodReturnType:
-        parsing_result = self.parse_result(response)
-        return self.transform_result(parsing_result, response)
+    async def to_obj(self, response: RawResponse[Any]) -> MethodReturnType:
+        parsing_result = await self.parse_result(response)
+        return await self.transform_result(parsing_result, response)
 
-    def get_context(
+    async def get_full_context(
         self, response: RawResponse[Any], context: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         context = context or {}
         context_from_response: dict[str, Any] = {}
+        self_context = await self.get_context(response.executed_as)
 
         if 'date' in response.headers:
             context_from_response['response_timestamp'] = parsedate_to_datetime(
                 response.headers['date'],
             ).timestamp()
 
-        return self.context | context_from_response | context
+        return self_context | context_from_response | context
 
     async def execute(self, as_: Bot) -> MethodReturnType:
         result = await as_.make_request(self)
         return result.response_obj
+
+    async def _resolve_callable_field_value(self, value: R | CallableField[R], bot: Bot) -> R:
+        if not callable(value):
+            return value
+
+        result = value(self, bot)
+        if inspect.isawaitable(result):
+            return await result
+        return result
+
+    async def get_url(self, bot: Bot) -> str:
+        return await self._resolve_callable_field_value(self.url, bot)
+
+    async def get_headers(self, bot: Bot) -> dict[str, str]:
+        return await self._resolve_callable_field_value(self.headers, bot)
+
+    async def get_data(self, bot: Bot) -> dict[str, Any]:
+        return await self._resolve_callable_field_value(self.data, bot)
+
+    async def get_context(self, bot: Bot) -> dict[str, Any]:
+        return await self._resolve_callable_field_value(self.context, bot)

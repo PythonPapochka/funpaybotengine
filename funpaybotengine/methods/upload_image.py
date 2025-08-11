@@ -39,5 +39,5 @@ class UploadImage(FunPayMethod[int], BaseModel):
             file=file,
         )
 
-    def transform_result(self, parsing_result: str, response: RawResponse[Any]) -> int:
+    async def transform_result(self, parsing_result: str, response: RawResponse[Any]) -> int:
         return cast(int, json.loads(parsing_result)['fileId'])

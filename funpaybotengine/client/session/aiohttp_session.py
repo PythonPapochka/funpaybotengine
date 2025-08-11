@@ -76,7 +76,7 @@ class AioHttpSession(BaseSession):
 
         timeout_obj = ClientTimeout(total=timeout if timeout is not None else method.timeout)
 
-        url = self.resolve_url(method, bot, session)
+        url = await self.resolve_url(method, bot, session)
         session_logger.info(f'Making {method.method.name} request to {url}')
         start_time = time.time()
 
@@ -84,16 +84,16 @@ class AioHttpSession(BaseSession):
             if method.method == HTTPMethod.GET:
                 response = await session.get(
                     url,
-                    params=method.data,
+                    params=await method.get_data(bot),
                     timeout=timeout_obj,
-                    headers=self._default_headers | method.headers,
+                    headers=self._default_headers | await method.get_headers(bot),
                 )
             elif method.method == HTTPMethod.POST:
                 response = await session.post(
                     url,
-                    data=method.data | {'csrf_token': csrf_token} if csrf_token else {},
+                    data=await method.get_data(bot) | {'csrf_token': csrf_token} if csrf_token else {},
                     timeout=timeout_obj,
-                    headers=self._default_headers | method.headers,
+                    headers=self._default_headers | await method.get_headers(bot),
                 )
             else:
                 raise ValueError(f'Unsupported HTTP method {method.method.name}.')
@@ -118,23 +118,25 @@ class AioHttpSession(BaseSession):
             headers={k.lower(): v for k, v in response.headers.items()},
             cookies=cookies,
             method_obj=method,
+            executed_as=bot,
             context={'session': self, 'bot': bot},
         )
 
         start_time = time.time()
-        response_obj = method.to_obj(raw_response)
+        response_obj = await method.to_obj(raw_response)
         result = Response.from_raw_response(raw_response, response_obj)
         session_logger.debug(f'Parsing response of {url} took {time.time() - start_time}s.')
         return result
 
     @staticmethod
-    def resolve_url(
+    async def resolve_url(
             method: FunPayMethod[Any],
-            bot: Bot | None,
+            bot: Bot,
             session: ClientSession,
     ) -> str:
-        if URL(method.url).is_absolute():
-            return method.url
+        method_url = await method.get_url(bot)
+        if URL(method_url).is_absolute():
+            return method_url
 
         if method.ignore_locale or bot is None:
             locale = Language.RU
@@ -143,7 +145,7 @@ class AioHttpSession(BaseSession):
         else:
             locale = bot.locale
 
-        url = f'{locale.value.url_alias}/{method.url[1 if method.url.startswith("/") else 0 :]}'
+        url = f'{locale.value.url_alias}/{method_url[1 if method_url.startswith("/") else 0 :]}'
         if not session._base_url:
             return url
         return str(session._base_url.join(URL(url)))

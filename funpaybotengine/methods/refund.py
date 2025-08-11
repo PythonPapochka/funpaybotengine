@@ -39,7 +39,7 @@ class Refund(FunPayMethod[bool], BaseModel):
             order_id=order_id,
         )
 
-    def parse_result(self, response: RawResponse[Any]) -> bool:
+    async def parse_result(self, response: RawResponse[Any]) -> bool:
         try:
             result = json.loads(response.raw_response)
         except:
@@ -55,5 +55,5 @@ class Refund(FunPayMethod[bool], BaseModel):
             )
         return True
 
-    def transform_result(self, parsing_result: Any, response: RawResponse[Any]) -> bool:
+    async def transform_result(self, parsing_result: Any, response: RawResponse[Any]) -> bool:
         return True
