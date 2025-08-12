@@ -35,10 +35,7 @@ class Filter(ABC):
     @abstractmethod
     async def __call__(self, *args: Any, **kwargs: Any) -> bool: ...
 
-    def __and__(
-        self,
-        other: Filter | CallableFilter | AwaitableFilter,
-    ) -> AndFilter:
+    def __and__(self, other: Filter | CallableFilter | AwaitableFilter) -> AndFilter:
         """
         Combines this filter with another using logical AND.
 

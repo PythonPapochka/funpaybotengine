@@ -61,7 +61,6 @@ class ChatChangedEvent(RunnerEvent[PrivateChatPreview]):
         }
 
 
-
 class NewMessageEvent(RunnerEvent[Message]):
     @property
     def message(self) -> Message:
