@@ -25,6 +25,8 @@ from funpaybotengine.utils import (
 from funpaybotengine.runner import Runner
 from funpaybotengine.methods import (
     Refund,
+    Review,
+    DeleteReview,
     GetSales,
     GetChatPage,
     GetMainPage,
@@ -271,6 +273,12 @@ class Bot:
 
     async def refund(self, order_id: str) -> bool:
         return await Refund(order_id=order_id).execute(self)
+
+    async def review(self, order_id: str, text: str, rating: Literal[0, 1, 2, 3, 4, 5]) -> bool:
+        return await Review(order_id=order_id, text=text, rating=rating).execute(self)
+
+    async def delete_review(self, order_id: str) -> bool:
+        return await DeleteReview(order_id=order_id).execute(self)
 
     # ----- Getters -----
     async def get_chat_history(

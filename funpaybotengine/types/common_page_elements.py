@@ -17,10 +17,10 @@ class WebPush(FunPayObject, BaseModel):
     app: str
     """App ID."""
 
-    enabled: bool
+    enabled: bool | None
     """Is WebPush enabled?"""
 
-    hwid_required: bool
+    hwid_required: bool | None
     """Whether HWID is required or not."""
 
 

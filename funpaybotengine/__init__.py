@@ -1,8 +1,3 @@
-from __future__ import annotations
-
-
-__all__ = ('Bot', 'AioHttpSession')
-
 import funpaybotengine.dispatching.events as events
 import funpaybotengine.dispatching.filters as filters
 from funpaybotengine.client.bot import Bot

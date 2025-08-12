@@ -43,6 +43,12 @@ class AioHttpSession(BaseSession):
 
         self._connector: TCPConnector | None = None
 
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.close()
+
     async def session(self) -> ClientSession:
         if self._connector is None or self._connector.closed:
             self._connector = TCPConnector()
