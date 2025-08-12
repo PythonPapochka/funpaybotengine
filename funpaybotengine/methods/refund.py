@@ -4,6 +4,7 @@ from __future__ import annotations
 __all__ = ('Refund',)
 
 
+import json
 from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel
@@ -12,7 +13,6 @@ from funpaybotengine.types.enums import Language
 from funpaybotengine.methods.base import FunPayMethod
 from funpaybotengine.client.session.http_methods import HTTPMethod
 from funpaybotengine.exceptions.action_exceptions import RefundError
-import json
 
 
 if TYPE_CHECKING:
@@ -45,13 +45,13 @@ class Refund(FunPayMethod[bool], BaseModel):
         except:
             raise RefundError(
                 order_id=self.order_id,
-                message=f'Unable to refund order {self.order_id}'
+                message=f'Unable to refund order {self.order_id}',
             )
 
         if result.get('error'):
             raise RefundError(
                 order_id=self.order_id,
-                message=result.get('msg') or f'Unable to refund order {self.order_id}'
+                message=result.get('msg') or f'Unable to refund order {self.order_id}',
             )
         return True
 

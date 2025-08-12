@@ -165,7 +165,8 @@ class EventCollector:
         return (await self.bot.get_purchases(order_id_filter=order_id)).orders
 
     async def get_chat_histories(
-        self, chat_ids: list[int],
+        self,
+        chat_ids: list[int],
     ) -> dict[int, RunnerResponseObject[ChatNode]]:
         """
         Fetches specified in ``chat_ids`` chat histories.
@@ -187,7 +188,8 @@ class EventCollector:
         return await self.bot.runner_request(objects_to_request=objs)
 
     async def get_chat_changed_events(
-        self, runner_response: RunnerResponse,
+        self,
+        runner_response: RunnerResponse,
     ) -> list[ChatChangedEvent]:
         """
         Iterates over chat bookmarks in the runner response, compares each chat
@@ -221,7 +223,8 @@ class EventCollector:
         return result
 
     async def get_new_message_events(
-        self, events: list[ChatChangedEvent],
+        self,
+        events: list[ChatChangedEvent],
     ) -> list[NewMessageEvent]:
         """
         Fetches chat histories for each ``ChatChangedEvent`` in the ``events`` list, identifies
@@ -259,7 +262,8 @@ class EventCollector:
         return result
 
     async def get_order_related_messages(
-        self, events: list[NewMessageEvent],
+        self,
+        events: list[NewMessageEvent],
     ) -> OrderRelatedMessages:
         """
         Searches for order related message in the ``events`` list, determines whether it is the
@@ -384,7 +388,10 @@ class EventCollector:
         return total_events
 
     async def _make_order_events(
-        self, messages: list[NewMessageEvent], orders: dict[str, OrderPreview], sales: bool = True,
+        self,
+        messages: list[NewMessageEvent],
+        orders: dict[str, OrderPreview],
+        sales: bool = True,
     ) -> list[OrderEvent]:
         if not messages:
             return []

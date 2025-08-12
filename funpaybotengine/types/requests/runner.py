@@ -13,11 +13,13 @@ __all__ = (
     'SendingMessageData',
     'SendMessageAction',
 )
-from typing import Literal, TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 from abc import ABC, abstractmethod
 
 from pydantic import Field, BaseModel, AliasChoices, computed_field
+
 from funpaybotengine.utils import random_runner_tag
+
 
 if TYPE_CHECKING:
     from funpaybotengine.client.bot import Bot
@@ -38,7 +40,6 @@ class RequestableObject(ABC, BaseModel):
         return self.model_dump(exclude_none=True, by_alias=True)
 
 
-
 class OrdersCountersRequestObject(RequestableObject, BaseModel):
     """
     Request for retrieving order counters of a specific user.
@@ -47,7 +48,7 @@ class OrdersCountersRequestObject(RequestableObject, BaseModel):
     runner_tag: str = Field(
         serialization_alias='tag',
         validation_alias=AliasChoices('runner_tag', 'tag'),
-        default_factory=random_runner_tag
+        default_factory=random_runner_tag,
     )
     """Runner tag used for request tracking."""
 
@@ -72,7 +73,7 @@ class ChatCounterRequestObject(RequestableObject, BaseModel):
     runner_tag: str = Field(
         serialization_alias='tag',
         validation_alias=AliasChoices('runner_tag', 'tag'),
-        default_factory=random_runner_tag
+        default_factory=random_runner_tag,
     )
     """Runner tag used for request tracking."""
 
@@ -100,7 +101,7 @@ class CPURequestObject(RequestableObject, BaseModel):
     runner_tag: str = Field(
         serialization_alias='tag',
         validation_alias=AliasChoices('runner_tag', 'tag'),
-        default_factory=random_runner_tag
+        default_factory=random_runner_tag,
     )
     """Runner tag used for request tracking."""
 
@@ -121,7 +122,7 @@ class ChatBookmarksRequestObject(RequestableObject, BaseModel):
     runner_tag: str = Field(
         serialization_alias='tag',
         validation_alias=AliasChoices('runner_tag', 'tag'),
-        default_factory=random_runner_tag
+        default_factory=random_runner_tag,
     )
     """Runner tag used for request tracking."""
 
@@ -191,7 +192,7 @@ class NodeRequestObject(RequestableObject, BaseModel):
     runner_tag: str = Field(
         serialization_alias='tag',
         validation_alias=AliasChoices('runner_tag', 'tag'),
-        default_factory=random_runner_tag
+        default_factory=random_runner_tag,
     )
     """Runner tag used for request tracking."""
 

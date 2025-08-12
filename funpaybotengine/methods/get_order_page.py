@@ -8,9 +8,9 @@ from pydantic import BaseModel
 from funpayparsers.types import Language
 from funpayparsers.parsers.page_parsers import OrderPageParser
 
-from funpaybotengine.client.session import HTTPMethod
 from funpaybotengine.types.pages import OrderPage
 from funpaybotengine.methods.base import FunPayMethod
+from funpaybotengine.client.session import HTTPMethod
 
 
 class GetOrderPage(FunPayMethod[OrderPage], BaseModel):
@@ -31,6 +31,5 @@ class GetOrderPage(FunPayMethod[OrderPage], BaseModel):
             method=HTTPMethod.GET,
             parser_cls=OrderPageParser,
             locale=locale,
-
             order_id=order_id,
         )

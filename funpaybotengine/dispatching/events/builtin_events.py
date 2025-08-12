@@ -25,10 +25,11 @@ __all__ = (
 )
 
 
+from typing import Any
+
 from pydantic import Field, PrivateAttr
 
 from funpaybotengine.types.chat import PrivateChatPreview
-from typing import Any
 from funpaybotengine.types.orders import OrderPreview
 from funpaybotengine.types.messages import Message
 
@@ -43,7 +44,7 @@ class ChatInitEvent(RunnerEvent[PrivateChatPreview]):
     @property
     def workflow_dict(self) -> dict[str, Any]:
         return {
-            'chat_preview': self.chat_preview
+            'chat_preview': self.chat_preview,
         }
 
 
@@ -57,7 +58,7 @@ class ChatChangedEvent(RunnerEvent[PrivateChatPreview]):
     @property
     def workflow_dict(self) -> dict[str, Any]:
         return {
-            'chat_preview': self.chat_preview
+            'chat_preview': self.chat_preview,
         }
 
 
@@ -69,7 +70,7 @@ class NewMessageEvent(RunnerEvent[Message]):
     @property
     def workflow_dict(self) -> dict[str, Any]:
         return {
-            'message': self.message
+            'message': self.message,
         }
 
 
@@ -120,7 +121,9 @@ class PurchaseEvent(OrderEvent):
         if self._order_preview is not None and not update:
             return self._order_preview
 
-        orders = await self.get_bound_bot().get_purchases(order_id_filter=self.object.meta.order_id)
+        orders = await self.get_bound_bot().get_purchases(
+            order_id_filter=self.object.meta.order_id
+        )
         return orders.orders[0]
 
 

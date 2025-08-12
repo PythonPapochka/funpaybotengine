@@ -1,14 +1,16 @@
 from __future__ import annotations
 
+
 __all__ = ('BindableObject', 'check_bound')
 
 
 from typing import TYPE_CHECKING, Any, TypeVar
 from collections.abc import Callable
-from funpaybotengine.exceptions import BotNotBoundError
 
 from pydantic import BaseModel, PrivateAttr
 from typing_extensions import Self
+
+from funpaybotengine.exceptions import BotNotBoundError
 
 
 if TYPE_CHECKING:

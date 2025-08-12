@@ -16,9 +16,9 @@ from funpaybotengine.types.common import UserBadge
 
 
 if TYPE_CHECKING:
+    from funpaybotengine.types.chat import Chat
     from funpaybotengine.types.pages.chat_page import ChatPage
     from funpaybotengine.types.pages.profile_page import ProfilePage
-    from funpaybotengine.types.chat import Chat
 
 
 class MessageMeta(FunPayObject, BaseModel):
@@ -184,8 +184,8 @@ class Message(FunPayObject, BaseModel):
 
         return await self.get_bound_bot().send_message(
             chat_id=self.chat_identifier,
-            text=text, # type: ignore
-            image=image, # type: ignore
+            text=text,  # type: ignore
+            image=image,  # type: ignore
             enforce_whitespaces=enforce_whitespaces,
         )
 

@@ -103,10 +103,12 @@ class Bot:
         """
         to_check: list[Any] = [self.csrf_token, self.phpsessid, self.locale, self.categories_cache]
         if not self.anonymous:
-            to_check.extend([
-                self.userid,
-                self.username,
-            ])
+            to_check.extend(
+                [
+                    self.userid,
+                    self.username,
+                ]
+            )
         return all(bool(i) for i in to_check)
 
     @property
@@ -171,7 +173,7 @@ class Bot:
         """
         return await RunnerRequest(
             objects_to_request=objects_to_request,
-            action=action
+            action=action,
         ).execute(self)
 
     # ----- Actions -----
@@ -257,8 +259,10 @@ class Bot:
 
         msg_data = SendingMessageData(chat_id=chat_id, message_text=text or '', image_id=image_id)
         result = await RunnerRequest(
-            objects_to_request=[NodeRequestObject(chat_id=chat_id, runner_tag=random_runner_tag())],
-            action=SendMessageAction(message_data=msg_data)
+            objects_to_request=[
+                NodeRequestObject(chat_id=chat_id, runner_tag=random_runner_tag())
+            ],
+            action=SendMessageAction(message_data=msg_data),
         ).execute(self)
 
         if result.response and result.response.error:
@@ -290,7 +294,7 @@ class Bot:
         :return: A list of up to 50 ``Message`` objects, sorted from oldest to newest.
         """
         return await GetChatHistory(chat_id=chat_id, before_message_id=before_message_id).execute(
-            self
+            self,
         )
 
     async def get_sales(
@@ -416,7 +420,7 @@ class Bot:
                 f'Invalid subcategory input: '
                 f"either provide both 'subcategory_type' and 'subcategory_id' "
                 f"(got {subcategory_type=}, {subcategory_id=}), or provide 'subcategory' object "
-                f'(got {subcategory=}).'
+                f'(got {subcategory=}).',
             )
         return await GetSubcategoryPage(type=t, subcategory_id=i).execute(self)
 
@@ -443,7 +447,7 @@ class Bot:
             raise ValueError(
                 f'Invalid order_id input: '
                 f"either provide 'order_id' (got {order_id=}), "
-                f"or provide 'order' object (got {order=})."
+                f"or provide 'order' object (got {order=}).",
             )
 
         return await GetOrderPage(order_id=oid).execute(self)
@@ -451,7 +455,7 @@ class Bot:
     async def make_request(
         self,
         method: FunPayMethod[MethodReturnType],
-        skip_initialization: bool = False
+        skip_initialization: bool = False,
     ) -> Response[MethodReturnType]:
         if not method.allow_anonymous and self.anonymous:
             raise RuntimeError(

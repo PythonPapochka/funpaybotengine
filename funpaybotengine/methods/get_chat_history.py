@@ -10,9 +10,9 @@ from pydantic import BaseModel
 from funpayparsers.types import Message as ParserMessage
 from funpayparsers.parsers import MessagesParser
 
-from funpaybotengine.client.session import HTTPMethod
 from funpaybotengine.types.enums import Language
 from funpaybotengine.methods.base import FunPayMethod
+from funpaybotengine.client.session import HTTPMethod
 from funpaybotengine.types.messages import Message
 
 
@@ -67,7 +67,6 @@ class GetChatHistory(FunPayMethod[list[Message]], BaseModel):
             allow_uninitialized=True,
             parser_cls=MessagesParser,
             context={'chat_id': chat_id} if isinstance(chat_id, int) else {'chat_name': chat_id},
-
             chat_id=chat_id,
             before_message_id=before_message_id,
         )
@@ -83,7 +82,9 @@ class GetChatHistory(FunPayMethod[list[Message]], BaseModel):
         )
 
     async def transform_result(
-        self, parsing_result: list[ParserMessage], response: RawResponse[Any],
+        self,
+        parsing_result: list[ParserMessage],
+        response: RawResponse[Any],
     ) -> list[Message]:
         context = await self.get_full_context(response)
         return [Message.model_validate(i, context=context) for i in parsing_result]

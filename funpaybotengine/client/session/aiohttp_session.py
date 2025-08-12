@@ -13,9 +13,9 @@ from aiohttp import TCPConnector, ClientSession, ClientTimeout
 from aiohttp.hdrs import USER_AGENT
 
 from funpaybotengine.loggers import session_logger
-from funpaybotengine.client.session.base import RawResponse, Response, BaseSession
-from funpaybotengine.client.session.http_methods import HTTPMethod
 from funpaybotengine.types.enums import Language
+from funpaybotengine.client.session.base import Response, BaseSession, RawResponse
+from funpaybotengine.client.session.http_methods import HTTPMethod
 
 
 if TYPE_CHECKING:
@@ -60,7 +60,8 @@ class AioHttpSession(BaseSession):
             # https://docs.aiohttp.org/en/stable/client_advanced.html#graceful-shutdown
             await asyncio.sleep(0.25)
 
-    async def make_request(self,
+    async def make_request(
+        self,
         method: FunPayMethod[MethodReturnType],
         bot: Bot,
         timeout: float | None = None,
@@ -91,7 +92,9 @@ class AioHttpSession(BaseSession):
             elif method.method == HTTPMethod.POST:
                 response = await session.post(
                     url,
-                    data=await method.get_data(bot) | {'csrf_token': csrf_token} if csrf_token else {},
+                    data=await method.get_data(bot) | {'csrf_token': csrf_token}
+                    if csrf_token
+                    else {},
                     timeout=timeout_obj,
                     headers=self._default_headers | await method.get_headers(bot),
                 )
@@ -130,9 +133,9 @@ class AioHttpSession(BaseSession):
 
     @staticmethod
     async def resolve_url(
-            method: FunPayMethod[Any],
-            bot: Bot,
-            session: ClientSession,
+        method: FunPayMethod[Any],
+        bot: Bot,
+        session: ClientSession,
     ) -> str:
         method_url = await method.get_url(bot)
         if URL(method_url).is_absolute():

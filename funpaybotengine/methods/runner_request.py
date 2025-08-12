@@ -3,8 +3,9 @@ from __future__ import annotations
 
 __all__ = ('RunnerRequest',)
 
+import json
+from typing import TYPE_CHECKING, Literal
 from collections.abc import Sequence
-from typing import Literal, TYPE_CHECKING
 
 from pydantic import BaseModel
 from funpayparsers.parsers import UpdatesParser
@@ -12,9 +13,9 @@ from funpayparsers.parsers import UpdatesParser
 from funpaybotengine.types import RunnerResponse
 from funpaybotengine.types.enums import Language
 from funpaybotengine.methods.base import FunPayMethod
-from funpaybotengine.types.requests import RequestableObject, Action
+from funpaybotengine.types.requests import Action, RequestableObject
 from funpaybotengine.client.session.http_methods import HTTPMethod
-import json
+
 
 if TYPE_CHECKING:
     from funpaybotengine.client.bot import Bot
@@ -33,10 +34,10 @@ class RunnerRequest(FunPayMethod[RunnerResponse], BaseModel):
     __model_to_build__ = RunnerResponse
 
     def __init__(
-            self,
-            objects_to_request: Sequence[RequestableObject] | Literal[False] = False,
-            action: Action | Literal[False] = False,
-            locale: Language | None = None
+        self,
+        objects_to_request: Sequence[RequestableObject] | Literal[False] = False,
+        action: Action | Literal[False] = False,
+        locale: Language | None = None,
     ):
         super().__init__(
             url='runner/',
@@ -45,9 +46,8 @@ class RunnerRequest(FunPayMethod[RunnerResponse], BaseModel):
             parser_cls=UpdatesParser,
             data=make_data,
             headers={'X-Requested-With': 'XMLHttpRequest'},
-
             objects_to_request=objects_to_request,
-            action=action
+            action=action,
         )
 
 
@@ -55,8 +55,10 @@ async def make_data(method: RunnerRequest, bot: Bot) -> dict[str, str]:
     return {
         'objects': json.dumps(
             [await i.as_data_dict(bot) for i in method.objects_to_request]
-            if method.objects_to_request else 'false'
+            if method.objects_to_request
+            else 'false',
         ),
         'request': method.action.model_dump_json(exclude_none=True, by_alias=True)
-        if method.action else 'false',
+        if method.action
+        else 'false',
     }

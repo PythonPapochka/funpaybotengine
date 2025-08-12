@@ -4,7 +4,7 @@ from __future__ import annotations
 __all__ = ('BaseSession', 'RawResponse', 'Response')
 
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from http import HTTPStatus
 
@@ -54,9 +54,9 @@ class Response(RawResponse[ResponseObject], Generic[ResponseObject]):
 
     @classmethod
     def from_raw_response(
-            cls,
-            raw: RawResponse[ResponseObject],
-            response_obj: ResponseObject
+        cls,
+        raw: RawResponse[ResponseObject],
+        response_obj: ResponseObject,
     ) -> Response[ResponseObject]:
         return cls(**raw.__dict__, response_obj=response_obj)
 

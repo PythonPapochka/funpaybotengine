@@ -8,9 +8,9 @@ from pydantic import BaseModel
 from funpayparsers.types import Language
 from funpayparsers.parsers.page_parsers import ProfilePageParser
 
-from funpaybotengine.client.session import HTTPMethod
 from funpaybotengine.types.pages import ProfilePage
 from funpaybotengine.methods.base import FunPayMethod
+from funpaybotengine.client.session import HTTPMethod
 
 
 class GetProfilePage(FunPayMethod[ProfilePage], BaseModel):

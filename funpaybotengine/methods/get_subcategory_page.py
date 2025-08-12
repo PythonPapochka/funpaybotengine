@@ -8,10 +8,10 @@ from pydantic import BaseModel
 from funpayparsers.types import Language
 from funpayparsers.parsers.page_parsers import SubcategoryPageParser
 
-from funpaybotengine.client.session import HTTPMethod
 from funpaybotengine.types.enums import SubcategoryType
 from funpaybotengine.types.pages import SubcategoryPage
 from funpaybotengine.methods.base import FunPayMethod
+from funpaybotengine.client.session import HTTPMethod
 
 
 class GetSubcategoryPage(FunPayMethod[SubcategoryPage], BaseModel):

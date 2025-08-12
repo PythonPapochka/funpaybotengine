@@ -3,24 +3,23 @@ from __future__ import annotations
 
 __all__ = ('FunPayMethod', 'MethodReturnType')
 
+import inspect
 from typing import TYPE_CHECKING, Any, Type, Generic, TypeVar
 from abc import ABC
 from http import HTTPStatus
 from email.utils import parsedate_to_datetime
+from collections.abc import Callable, Awaitable
 
 from pydantic import Field, BaseModel, ConfigDict
 from funpayparsers.parsers.base import ParsingOptions, FunPayObjectParser
-from collections.abc import Callable, Awaitable
 
 from funpaybotengine.client.session.http_methods import HTTPMethod
-from funpaybotengine.base import BindableObject
-import inspect
 
 
 if TYPE_CHECKING:
+    from funpaybotengine.client.bot import Bot
     from funpaybotengine.types.enums import Language
     from funpaybotengine.client.session.base import RawResponse
-    from funpaybotengine.client.bot import Bot
 
 R = TypeVar('R')
 MethodReturnType = TypeVar('MethodReturnType', bound=Any)
@@ -154,7 +153,9 @@ class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
 
         return self.parser_cls(response.raw_response, options=self.parser_options).parse()
 
-    async def transform_result(self, parsing_result: Any, response: RawResponse[Any]) -> MethodReturnType:
+    async def transform_result(
+        self, parsing_result: Any, response: RawResponse[Any]
+    ) -> MethodReturnType:
         """
         Transforms a raw response or parser output
         (i.e., the result of ``FunPayMethod.parse_result``)
@@ -163,7 +164,8 @@ class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
         """
         if self.__model_to_build__ is not None and issubclass(self.__model_to_build__, BaseModel):
             return self.__model_to_build__.model_validate(
-                parsing_result, context=await self.get_full_context(response),
+                parsing_result,
+                context=await self.get_full_context(response),
             )
 
         raise NotImplementedError(
@@ -178,7 +180,9 @@ class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
         return await self.transform_result(parsing_result, response)
 
     async def get_full_context(
-        self, response: RawResponse[Any], context: dict[str, Any] | None = None,
+        self,
+        response: RawResponse[Any],
+        context: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         context = context or {}
         context_from_response: dict[str, Any] = {}
