@@ -15,7 +15,7 @@ from funpaybotengine.types import (
     Subcategory,
     OrderPreview,
     RunnerResponse,
-    OrderPreviewsBatch,
+    OrderPreviewsBatch, OfferFields,
 )
 from funpaybotengine.utils import (
     random_runner_tag,
@@ -26,6 +26,7 @@ from funpaybotengine.runner import Runner
 from funpaybotengine.methods import (
     Refund,
     Review,
+    GetOfferFields,
     DeleteReview,
     GetSales,
     GetChatPage,
@@ -378,6 +379,50 @@ class Bot:
         )
 
         return await method.execute(self)
+
+    @overload
+    async def get_offer_fields(
+        self,
+        subcategory_type: SubcategoryType = ...,
+        subcategory_id: int = ...,
+        subcategory: None = ...,
+        offer_id: int | None = ...
+    ) -> OfferFields: ...
+
+    @overload
+    async def get_offer_fields(
+        self,
+        subcategory_type: None = ...,
+        subcategory_id: None = ...,
+        subcategory: Subcategory = ...,
+        offer_id: int | None = ...
+    ) -> OfferFields: ...
+
+    async def get_offer_fields(
+        self,
+        subcategory_type: SubcategoryType | None = None,
+        subcategory_id: int | None = None,
+        subcategory: Subcategory | None = None,
+        offer_id: int | None = None
+    ) -> OfferFields:
+        # todo: If getting fields of existing offer, no need to pass subcategory type and id.
+        if isinstance(subcategory_type, SubcategoryType) and isinstance(subcategory_id, int):
+            t, i = subcategory_type, subcategory_id
+        elif isinstance(subcategory, Subcategory):
+            t, i = subcategory.type, subcategory.id
+        else:
+            raise ValueError(
+                f'Invalid subcategory input: '
+                f"either provide both 'subcategory_type' and 'subcategory_id' "
+                f"(got {subcategory_type=}, {subcategory_id=}), or provide 'subcategory' object "
+                f'(got {subcategory=}).',
+            )
+
+        return await GetOfferFields(
+            subcategory_type=t,
+            subcategory_id=i,
+            offer_id=offer_id
+        ).execute(self)
 
     # ----- Page getters -----
     async def get_main_page(self) -> MainPage:
