@@ -386,7 +386,7 @@ class Bot:
         subcategory_type: SubcategoryType = ...,
         subcategory_id: int = ...,
         subcategory: None = ...,
-        offer_id: int | None = ...
+        offer_id: None = ...
     ) -> OfferFields: ...
 
     @overload
@@ -395,7 +395,16 @@ class Bot:
         subcategory_type: None = ...,
         subcategory_id: None = ...,
         subcategory: Subcategory = ...,
-        offer_id: int | None = ...
+        offer_id: None = ...
+    ) -> OfferFields: ...
+
+    @overload
+    async def get_offer_fields(
+        self,
+        subcategory_type: None = ...,
+        subcategory_id: None = ...,
+        subcategory: None = ...,
+        offer_id: int = ...,
     ) -> OfferFields: ...
 
     async def get_offer_fields(
