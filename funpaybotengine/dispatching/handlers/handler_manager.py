@@ -24,6 +24,7 @@ from funpaybotengine.dispatching.middlewares.middleware_manager import Middlewar
 
 if TYPE_CHECKING:
     from funpaybotengine.dispatching.routers.base import Router
+    from funpaybotengine.dispatching.bases import MiddlewareCallableType
 
 
 EventType = TypeVar('EventType', bound=Any)
@@ -61,7 +62,6 @@ class HandlerManager(Generic[EventType]):
         event_type_filter: Type[EventType] | None = None,
     ) -> None:
         self._handlers: dict[str, HandlerInfo] = {}
-        self._handlers_mapping_proxy = MappingProxyType(self._handlers)
         self._router = router
         self._event_type_filter = event_type_filter
         self._name = name
@@ -191,7 +191,8 @@ class HandlerManager(Generic[EventType]):
         for handler in self._handlers.values():
             if handler.event_type_filter is not None and type(event) != handler.event_type_filter:
                 router_logger.debug(
-                    f'{self.router.name}.{self.name} skipping handler {handler.name}: '
+                    f'Handler manager {self.router.name}.{self.name} '
+                    f'skipped handler {handler.name}: '
                     f'event type {type(event)} is not {handler.event_type_filter} '
                     f'(from handler event type filter).',
                 )
@@ -199,8 +200,8 @@ class HandlerManager(Generic[EventType]):
 
             if handler.filter is None:
                 router_logger.debug(
-                    f'{self.router.name}.{self.name} yielding handler {handler.name}: '
-                    f'handler has no filter.',
+                    f'Handler manager {self.router.name}.{self.name} yielded handler '
+                    f'{handler.name}: handler has no filter.',
                 )
                 yield handler, None
                 continue
@@ -210,19 +211,23 @@ class HandlerManager(Generic[EventType]):
             except KeyboardInterrupt:
                 raise
             except Exception as e:
+                router_logger.debug(
+                    f'An error occurred in handler manager {self.router.name}.{self.name} while '
+                    f'executing filters of handler {handler.name}. An exception yielded.'
+                )
                 yield handler, e
                 continue
 
             if filter_result:
                 router_logger.debug(
-                    f'{self.router.name}.{self.name} yielding handler {handler.name}: '
-                    f'handler filter result is {filter_result}.',
+                    f'Handler manager {self.router.name}.{self.name} '
+                    f'yielded handler {handler.name}: handler filter result is {filter_result}.',
                 )
                 yield handler, None
             else:
                 router_logger.debug(
-                    f'{self.router.name}.{self.name} skipping handler {handler.name}: '
-                    f'handler filter result is {filter_result}.',
+                    f'Handler manager {self.router.name}.{self.name} '
+                    f'skipped handler {handler.name}: handler filter result is {filter_result}.',
                 )
 
     @overload
@@ -236,7 +241,7 @@ class HandlerManager(Generic[EventType]):
         name: str | None = None,
         filter: Filter | CallableFilter | AwaitableFilter | None = None,
         as_task: bool = False,
-        middlewares: list[Any] | None = None,  # todo: middleware type
+        middlewares: list[MiddlewareCallableType] | None = None,
         ensure_after: dict[str, Any] | None = None,
     ) -> Callable[[F], F]: ...
 
@@ -248,7 +253,7 @@ class HandlerManager(Generic[EventType]):
         name: str | None = None,
         filter: Filter | CallableFilter | AwaitableFilter | None = None,
         as_task: bool = False,
-        middlewares: list[Any] | None = None,  # todo: middleware type
+        middlewares: list[MiddlewareCallableType] | None = None,
         ensure_after: dict[str, Any] | None = None,
     ) -> F | Callable[[F], F]:
         def inner(handler: F) -> F:
@@ -277,7 +282,7 @@ class HandlerManager(Generic[EventType]):
         A read-only mapping of handler IDs to their corresponding ``Handler`` instances,
         registered in this manager.
         """
-        return self._handlers_mapping_proxy
+        return MappingProxyType(self._handlers)
 
     @property
     def router(self) -> Router:
@@ -308,11 +313,11 @@ def gen_default_handler_id(
     handler: HandlerCallableType,
     manager: HandlerManager[Any],
 ) -> str:
-    is_class_based = not (
+    is_class_instance = not (
         inspect.isfunction(handler) or inspect.ismethod(handler) or inspect.isclass(handler)
     )
 
-    handler = handler if not is_class_based else handler.__class__
+    handler = handler if not is_class_instance else handler.__class__
     func_file = pathlib.Path(inspect.getfile(handler)).resolve()
 
     main_file = pathlib.Path(sys.modules['__main__'].__file__).resolve()
