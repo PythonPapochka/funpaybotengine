@@ -14,3 +14,4 @@ from .get_profile_page import *
 from .get_subcategory_page import *
 from .review import *
 from .delete_review import *
+from .get_offer_fields import *

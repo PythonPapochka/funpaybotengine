@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 class DeleteReview(FunPayMethod[bool], BaseModel):
     """
-    Leave / Edit a review / reply to review (``https://funpay.com/orders/review``).
+    Delete a review / reply to review (``https://funpay.com/orders/reviewDelete``).
 
     Returns ``True``.
     """
