@@ -47,13 +47,13 @@ class WrappedWithMiddlewaresCallable:
         wrapped_callable: Callable[[CallState], Awaitable[Any]] | None = None,
         /,
     ):
-        self.wrapped_callable = wrapped_callable
+        self._wrapped_callable = wrapped_callable
 
     async def __call__(self) -> CallState:
-        assert self.wrapped_callable is not None
+        assert self._wrapped_callable is not None
 
         state = CallState()
-        await self.wrapped_callable(state)
+        await self._wrapped_callable(state)
         return state
 
 
@@ -61,10 +61,7 @@ class MiddlewareManager(Sequence[MiddlewareCallableType]):
     def __init__(self) -> None:
         self._middlewares: list[MiddlewareCallableType] = []
 
-    def register_middleware(
-        self,
-        middleware: F,
-    ) -> F:
+    def register_middleware(self, middleware: F) -> F:
         self._middlewares.append(middleware)
         return middleware
 
@@ -74,10 +71,7 @@ class MiddlewareManager(Sequence[MiddlewareCallableType]):
     @overload
     def __call__(self) -> Callable[[F], F]: ...
 
-    def __call__(
-        self,
-        middleware: F | None = None,
-    ) -> F | Callable[[F], F]:
+    def __call__(self, middleware: F | None = None) -> F | Callable[[F], F]:
         if middleware is None:
             return self.register_middleware
         return self.register_middleware(middleware)
@@ -89,8 +83,8 @@ class MiddlewareManager(Sequence[MiddlewareCallableType]):
     def __getitem__(self, index: slice) -> list[MiddlewareCallableType]: ...
 
     def __getitem__(
-        self,
-        index: int | slice,
+            self,
+            index: int | slice
     ) -> MiddlewareCallableType | list[MiddlewareCallableType]:
         return self._middlewares[index]
 
@@ -138,9 +132,12 @@ class MiddlewareManager(Sequence[MiddlewareCallableType]):
         original callable and can be called with ``async obj()``.
         """
 
+        handler_obj = CallableInfo(callable_to_wrap)
+
         @wraps(callable_to_wrap)
         async def last_call(state: CallState) -> Any:
-            handler_obj = CallableInfo(callable_to_wrap)
+            nonlocal handler_obj
+
             result = await handler_obj(
                 **workflow_data | {'local_workflow_data': state.local_scope_workflow_data},
             )
@@ -161,24 +158,23 @@ class MiddlewareManager(Sequence[MiddlewareCallableType]):
         middleware: MiddlewareCallableType,
         workflow_data: dict[str, Any],
     ) -> WrappedWithMiddlewaresType:
-        @wraps(callable_to_wrap)
-        def next_call_factory(state: CallState) -> Callable[..., Any]:
-            async def next_call() -> Any:
-                return await callable_to_wrap(state)
-
-            return next_call
+        middleware_obj = CallableInfo(middleware)
 
         @wraps(middleware)
         async def wrapped(state: CallState) -> Any:
-            middleware_obj = CallableInfo(middleware)
+            nonlocal middleware_obj
+
+            @wraps(callable_to_wrap)
+            async def next_call() -> Any:
+                return await callable_to_wrap(state)
+
             result = await middleware_obj(
                 **workflow_data
                 | {
-                    'next_call': next_call_factory(state),
+                    'next_call': next_call,
                     'local_workflow_data': state.local_scope_workflow_data,
                 },
             )
 
             return result
-
         return wrapped
