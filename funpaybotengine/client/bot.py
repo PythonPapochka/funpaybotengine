@@ -27,6 +27,7 @@ from funpaybotengine.methods import (
     Refund,
     Review,
     GetOfferFields,
+    SaveOfferFields,
     DeleteReview,
     GetSales,
     GetChatPage,
@@ -281,6 +282,9 @@ class Bot:
     async def delete_review(self, order_id: str) -> bool:
         return await DeleteReview(order_id=order_id).execute(self)
 
+    async def save_offer_fields(self, offer_fields: OfferFields) -> bool:
+        return await SaveOfferFields(offer_fields=offer_fields).execute(self)
+
     # ----- Getters -----
     async def get_chat_history(
         self,
@@ -419,6 +423,8 @@ class Bot:
             t, i = subcategory_type, subcategory_id
         elif isinstance(subcategory, Subcategory):
             t, i = subcategory.type, subcategory.id
+        elif isinstance(offer_id, int):
+            t, i = SubcategoryType.COMMON, 1
         else:
             raise ValueError(
                 f'Invalid subcategory input: '

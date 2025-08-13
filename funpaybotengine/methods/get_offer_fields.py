@@ -36,7 +36,7 @@ class GetOfferFields(FunPayMethod[OfferFields], BaseModel):
     ):
         if subcategory_type is SubcategoryType.COMMON:
             url = 'lots/offerEdit'
-            data = {'node': subcategory_id} | ({'offer': offer_id} if offer_id is not None else {})
+            data = {'offer': offer_id} if offer_id is not None else {'node': subcategory_id}
         else:
             url = f'chips/{subcategory_id}/trade'
             data = {}

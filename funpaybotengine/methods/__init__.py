@@ -15,3 +15,4 @@ from .get_subcategory_page import *
 from .review import *
 from .delete_review import *
 from .get_offer_fields import *
+from .save_offer_fields import *
