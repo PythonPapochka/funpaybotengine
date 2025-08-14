@@ -13,6 +13,7 @@ from pydantic import BaseModel, BeforeValidator
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.enums import PaymentMethod, TransactionStatus
 from funpaybotengine.types.common import MoneyValue
+from funpayparsers.parsers.utils import parse_date_string
 
 
 class TransactionPreview(FunPayObject, BaseModel):
@@ -38,6 +39,18 @@ class TransactionPreview(FunPayObject, BaseModel):
 
     withdrawal_number: str | None
     """Withdrawal card / phone / wallet number, if applicable."""
+
+    @property
+    def timestamp(self) -> int:
+        """
+        Transaction timestamp.
+
+        ``0``, if an error occurred while parsing.
+        """
+        try:
+            return parse_date_string(self.date_text)
+        except ValueError:
+            return 0
 
 
 class TransactionInfo(FunPayObject, BaseModel):

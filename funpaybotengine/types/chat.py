@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.common import UserPreview, CurrentlyViewingOfferInfo
 from funpaybotengine.types.messages import Message
+from funpayparsers.parsers.utils import parse_date_string
 
 
 class PrivateChatPreview(FunPayObject, BaseModel):
@@ -117,3 +118,15 @@ class PrivateChatInfo(FunPayObject, BaseModel):
     """
     Info about the offer currently being viewed by the interlocutor.
     """
+
+    @property
+    def registration_timestamp(self) -> int:
+        """
+        Interlocutors registration timestamp.
+
+        ``0``, if an error occurred while parsing.
+        """
+        try:
+            return parse_date_string(self.registration_date_text)
+        except ValueError:
+            return 0
