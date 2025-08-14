@@ -7,6 +7,7 @@ __all__ = (
     'AwaitableFilter',
     'any_of',
     'all_of',
+    'not_'
 )
 
 from typing import Any, Callable, Iterable, Awaitable
@@ -182,3 +183,18 @@ def all_of(*filters: CallableFilter | AwaitableFilter | Filter) -> AndFilter:
     If no filters are provided, the resulting filter always returns ``True``.
     """
     return AndFilter(*_convert_filters(filters))
+
+
+def not_(filter: CallableFilter | AwaitableFilter | Filter) -> NotFilter:
+    """
+    Creates a filter that negates the given filter.
+
+    This function behaves like the built-in ``not`` operator,
+    but returns a new ``NotFilter`` instance that can be used as a filter object.
+
+    The passed filter may be:
+    - an instance of ``Filter``,
+    - a synchronous function returning ``bool``,
+    - or an asynchronous function returning ``bool``.
+    """
+    return NotFilter(_convert_filters([filter])[0])

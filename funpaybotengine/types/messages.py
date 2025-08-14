@@ -209,3 +209,6 @@ class Message(FunPayObject, BaseModel):
             return self._sender_profile
 
         return await self.get_bound_bot().get_profile_page(id=self.sender_id)
+
+    async def is_sent_by_bot(self) -> bool:
+        return await self.get_bound_bot().storage.is_message_sent_by_bot(self.id)

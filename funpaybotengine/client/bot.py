@@ -64,6 +64,7 @@ from funpaybotengine.client.session.base import Response
 from funpaybotengine.client.categories_cache import CategoriesCache
 from funpaybotengine.storage.inmemory_storage import InMemoryStorage
 from funpaybotengine.client.session.aiohttp_session import AioHttpSession
+from asyncio import Lock
 
 
 if TYPE_CHECKING:
@@ -269,6 +270,7 @@ class Bot:
             check_message_text(text)
 
         msg_data = SendingMessageData(chat_id=chat_id, message_text=text or '', image_id=image_id)
+
         result = await RunnerRequest(
             objects_to_request=[
                 NodeRequestObject(chat_id=chat_id, runner_tag=random_runner_tag()),
@@ -278,7 +280,9 @@ class Bot:
 
         if result.response and result.response.error:
             raise Exception(result.response.error)  # todo
-        return result.nodes[0].data.messages[-1]  # type: ignore[index] # will have nodes
+        msg = result.nodes[0].data.messages[-1]  # type: ignore[index] # will have nodes
+        await self.storage.mark_message_as_sent_by_bot(message_id=msg.id)
+        return msg
 
     async def refund(self, order_id: str) -> bool:
         return await Refund(order_id=order_id).execute(self)
