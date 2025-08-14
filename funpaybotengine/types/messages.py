@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from funpaybotengine.types.chat import Chat
     from funpaybotengine.types.pages.chat_page import ChatPage
     from funpaybotengine.types.pages.profile_page import ProfilePage
+    from funpaybotengine.client.bot import Bot
 
 
 class MessageMeta(FunPayObject, BaseModel):
@@ -212,3 +213,7 @@ class Message(FunPayObject, BaseModel):
 
     async def is_sent_by_bot(self) -> bool:
         return await self.get_bound_bot().storage.is_message_sent_by_bot(self.id)
+
+    async def mark_as_sent_by_bot(self, bot: Bot | None = None, by_bot: bool = True) -> None:
+        bot = bot or self.get_bound_bot()
+        await bot.storage.mark_message_as_sent_by_bot(self.id, by_bot=by_bot)

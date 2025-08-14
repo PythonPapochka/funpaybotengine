@@ -26,11 +26,11 @@ class InMemoryStorage(Storage):
     async def update_order(self, order: OrderPreview) -> None:
         self._orders[order.id] = order
 
-    async def mark_message_as_sent_by_bot(self, message_id: int) -> None:
-        self._sent_by_bot.add(message_id)
-
-    async def unmark_message_as_sent_by_bot(self, message_id: int) -> None:
-        self._sent_by_bot.discard(message_id)
+    async def mark_message_as_sent_by_bot(self, message_id: int, by_bot: bool = True) -> None:
+        if by_bot:
+            self._sent_by_bot.add(message_id)
+        else:
+            self._sent_by_bot.discard(message_id)
 
     async def is_message_sent_by_bot(self, message_id: int) -> bool:
         return message_id in self._sent_by_bot
