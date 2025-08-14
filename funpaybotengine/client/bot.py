@@ -64,6 +64,7 @@ from funpaybotengine.client.categories_cache import CategoriesCache
 from funpaybotengine.storage.inmemory_storage import InMemoryStorage
 from funpaybotengine.client.session.aiohttp_session import AioHttpSession
 
+import time
 
 if TYPE_CHECKING:
     from funpaybotengine.client.session.base import BaseSession
@@ -92,6 +93,8 @@ class Bot:
         self._userid: int | None = None
         self._username: str | None = None
         self._categories_cache: CategoriesCache | None = None
+
+        self._last_update_timestamp = 0
 
     @property
     def anonymous(self) -> bool:
@@ -165,6 +168,10 @@ class Bot:
     @property
     def categories_cache(self) -> CategoriesCache | None:
         return self._categories_cache
+
+    @property
+    def last_update_timestamp(self) -> int:
+        return self._last_update_timestamp
 
     async def runner_request(
         self,
@@ -286,8 +293,7 @@ class Bot:
         return await SaveOfferFields(offer_fields=offer_fields).execute(self)
 
     # ----- Getters -----
-    async def get_chat_history(
-        self,
+    async def get_chat_history(self,
         chat_id: int | str,
         before_message_id: int = 999999999999,
     ) -> list[Message]:
@@ -457,68 +463,17 @@ class Bot:
     async def get_profile_page(self, id: int) -> ProfilePage:
         return await GetProfilePage(user_id=id).execute(self)
 
-    @overload
     async def get_subcategory_page(
         self,
-        subcategory_type: SubcategoryType = ...,
-        subcategory_id: int = ...,
-        subcategory: None = ...,
-    ) -> SubcategoryPage: ...
-
-    @overload
-    async def get_subcategory_page(
-        self,
-        subcategory_type: None = ...,
-        subcategory_id: None = ...,
-        subcategory: Subcategory = ...,
-    ) -> SubcategoryPage: ...
-
-    async def get_subcategory_page(
-        self,
-        subcategory_type: SubcategoryType | None = None,
-        subcategory_id: int | None = None,
-        subcategory: Subcategory | None = None,
+        subcategory_type: SubcategoryType,
+        subcategory_id: int,
     ) -> SubcategoryPage:
-        if isinstance(subcategory_type, SubcategoryType) and isinstance(subcategory_id, int):
-            t, i = subcategory_type, subcategory_id
-        elif isinstance(subcategory, Subcategory):
-            t, i = subcategory.type, subcategory.id
-        else:
-            raise ValueError(
-                f'Invalid subcategory input: '
-                f"either provide both 'subcategory_type' and 'subcategory_id' "
-                f"(got {subcategory_type=}, {subcategory_id=}), or provide 'subcategory' object "
-                f'(got {subcategory=}).',
-            )
-        return await GetSubcategoryPage(type=t, subcategory_id=i).execute(self)
+        return await GetSubcategoryPage(
+            type=subcategory_type, subcategory_id=subcategory_id
+        ).execute(self)
 
-    @overload
-    async def get_order_page(self, order_id: str = ..., order: None = ...) -> OrderPage: ...
-
-    @overload
-    async def get_order_page(
-        self,
-        order_id: None = ...,
-        order: OrderPreview | OrderPage = ...,
-    ) -> OrderPage: ...
-
-    async def get_order_page(
-        self,
-        order_id: str | None = None,
-        order: OrderPreview | OrderPage | None = None,
-    ) -> OrderPage:
-        if isinstance(order_id, str):
-            oid = order_id
-        elif isinstance(order, OrderPreview | OrderPage):
-            oid = order.id if isinstance(order, OrderPreview) else order.order_id
-        else:
-            raise ValueError(
-                f'Invalid order_id input: '
-                f"either provide 'order_id' (got {order_id=}), "
-                f"or provide 'order' object (got {order=}).",
-            )
-
-        return await GetOrderPage(order_id=oid).execute(self)
+    async def get_order_page(self, order_id: str) -> OrderPage:
+        return await GetOrderPage(order_id=order_id).execute(self)
 
     async def make_request(
         self,
@@ -527,10 +482,12 @@ class Bot:
     ) -> Response[MethodReturnType]:
         if not method.allow_anonymous and self.anonymous:
             raise RuntimeError(
-                f"Method '{method.__class__.__name__}' cannot be executed as an anonymous user. ",
-            )  # todo
+                f"Method '{method.__class__.__name__}' cannot be executed anonymously.",
+            )
 
-        if not skip_initialization and not self.initialized:
+        if not skip_initialization and (
+            not self.initialized or time.time() - self.last_update_timestamp >= 1200
+        ):
             await self.update()
 
         return await self.session.make_request(method, self)
@@ -546,9 +503,10 @@ class Bot:
         self._phpsessid = result.cookies.get('PHPSESSID')
         self._categories_cache = CategoriesCache(result.response_obj.categories)
 
-        if not self.anonymous:
-            self._userid = result.response_obj.header.user_id
-            self._username = result.response_obj.header.username
+        self._userid = result.response_obj.header.user_id
+        self._username = result.response_obj.header.username
+
+        self._last_update_timestamp = int(time.time())
         return self
 
     async def listen_events(

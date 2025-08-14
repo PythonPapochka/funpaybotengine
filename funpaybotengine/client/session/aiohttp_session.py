@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any
 from yarl import URL
 from aiohttp import TCPConnector, ClientSession, ClientTimeout
 from aiohttp.hdrs import USER_AGENT
+from typing_extensions import Self
 
 from funpaybotengine.loggers import session_logger
 from funpaybotengine.types.enums import Language
@@ -43,10 +44,10 @@ class AioHttpSession(BaseSession):
 
         self._connector: TCPConnector | None = None
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> Self:
         return self
 
-    async def __aexit__(self, exc_type, exc, tb):
+    async def __aexit__(self, exc_type, exc, tb) -> None:
         await self.close()
 
     async def session(self) -> ClientSession:
@@ -73,7 +74,6 @@ class AioHttpSession(BaseSession):
         timeout: float | None = None,
     ) -> Response[MethodReturnType]:
         session = await self.session()
-        session.cookie_jar.clear()
         session.cookie_jar.update_cookies({'cookie_prefs': '1'})  # no 3rd-party cookies
         if bot.golden_key:
             session.cookie_jar.update_cookies({'golden_key': bot.golden_key})
