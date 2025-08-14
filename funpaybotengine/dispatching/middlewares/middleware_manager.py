@@ -83,8 +83,8 @@ class MiddlewareManager(Sequence[MiddlewareCallableType]):
     def __getitem__(self, index: slice) -> list[MiddlewareCallableType]: ...
 
     def __getitem__(
-            self,
-            index: int | slice
+        self,
+        index: int | slice,
     ) -> MiddlewareCallableType | list[MiddlewareCallableType]:
         return self._middlewares[index]
 
@@ -177,4 +177,5 @@ class MiddlewareManager(Sequence[MiddlewareCallableType]):
             )
 
             return result
+
         return wrapped

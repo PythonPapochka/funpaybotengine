@@ -8,10 +8,10 @@ from pydantic import BaseModel
 from funpayparsers.types import Language
 from funpayparsers.parsers import OfferFieldsParser
 
-from funpaybotengine.types.offers import OfferFields
-from funpaybotengine.methods.base import FunPayMethod
-from funpaybotengine.client.session import HTTPMethod
 from funpaybotengine.types.enums import SubcategoryType
+from funpaybotengine.methods.base import FunPayMethod
+from funpaybotengine.types.offers import OfferFields
+from funpaybotengine.client.session import HTTPMethod
 
 
 class GetOfferFields(FunPayMethod[OfferFields], BaseModel):
@@ -32,7 +32,7 @@ class GetOfferFields(FunPayMethod[OfferFields], BaseModel):
         subcategory_type: SubcategoryType,
         subcategory_id: int,
         offer_id: int | None = None,
-        locale: Language | None = None
+        locale: Language | None = None,
     ):
         if subcategory_type is SubcategoryType.COMMON:
             url = 'lots/offerEdit'
@@ -47,7 +47,6 @@ class GetOfferFields(FunPayMethod[OfferFields], BaseModel):
             data=data,
             parser_cls=OfferFieldsParser,
             locale=locale,
-
             subcategory_type=subcategory_type,
             subcategory_id=subcategory_id,
             offer_id=offer_id,

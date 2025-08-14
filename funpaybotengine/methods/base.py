@@ -154,7 +154,9 @@ class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
         return self.parser_cls(response.raw_response, options=self.parser_options).parse()
 
     async def transform_result(
-        self, parsing_result: Any, response: RawResponse[Any]
+        self,
+        parsing_result: Any,
+        response: RawResponse[Any],
     ) -> MethodReturnType:
         """
         Transforms a raw response or parser output

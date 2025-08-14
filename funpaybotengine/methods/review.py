@@ -4,20 +4,18 @@ from __future__ import annotations
 __all__ = ('Review',)
 
 
-import json
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel
 
 from funpaybotengine.types.enums import Language
 from funpaybotengine.methods.base import FunPayMethod
 from funpaybotengine.client.session.http_methods import HTTPMethod
-from typing import Literal
 
 
 if TYPE_CHECKING:
-    from funpaybotengine.client.session.base import RawResponse
     from funpaybotengine.client.bot import Bot
+    from funpaybotengine.client.session.base import RawResponse
 
 
 class Review(FunPayMethod[bool], BaseModel):
@@ -36,13 +34,12 @@ class Review(FunPayMethod[bool], BaseModel):
     rating: Literal[0, 1, 2, 3, 4, 5]
     """Review rating."""
 
-
     def __init__(
-            self,
-            order_id: str,
-            text: str,
-            rating: Literal[0, 1, 2, 3, 4, 5],
-            locale: Language | None = None
+        self,
+        order_id: str,
+        text: str,
+        rating: Literal[0, 1, 2, 3, 4, 5],
+        locale: Language | None = None,
     ):
         super().__init__(
             method=HTTPMethod.POST,
@@ -50,10 +47,9 @@ class Review(FunPayMethod[bool], BaseModel):
             locale=locale,
             data=make_data,
             headers={'X-Requested-With': 'XMLHttpRequest'},
-
             order_id=order_id,
             text=text,
-            rating=rating
+            rating=rating,
         )
 
     async def parse_result(self, response: RawResponse[Any]) -> bool:
@@ -68,5 +64,5 @@ async def make_data(method: Review, bot: Bot) -> dict[str, Any]:
         'orderId': method.order_id,
         'rating': method.rating or '',
         'text': method.text,
-        'authorId': bot.userid
+        'authorId': bot.userid,
     }

@@ -122,7 +122,7 @@ class PurchaseEvent(OrderEvent):
             return self._order_preview
 
         orders = await self.get_bound_bot().get_purchases(
-            order_id_filter=self.object.meta.order_id
+            order_id_filter=self.object.meta.order_id,
         )
         return orders.orders[0]
 

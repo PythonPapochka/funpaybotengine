@@ -98,9 +98,8 @@ class AioHttpSession(BaseSession):
             elif method.method == HTTPMethod.POST:
                 response = await session.post(
                     url,
-                    data=await method.get_data(bot) | ({'csrf_token': csrf_token}
-                    if csrf_token
-                    else {}),
+                    data=await method.get_data(bot)
+                    | ({'csrf_token': csrf_token} if csrf_token else {}),
                     timeout=timeout_obj,
                     headers=self._default_headers | await method.get_headers(bot),
                 )

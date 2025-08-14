@@ -23,8 +23,8 @@ from funpaybotengine.dispatching.middlewares.middleware_manager import Middlewar
 
 
 if TYPE_CHECKING:
-    from funpaybotengine.dispatching.routers.base import Router
     from funpaybotengine.dispatching.bases import MiddlewareCallableType
+    from funpaybotengine.dispatching.routers.base import Router
 
 
 EventType = TypeVar('EventType', bound=Any)
@@ -213,7 +213,7 @@ class HandlerManager(Generic[EventType]):
             except Exception as e:
                 router_logger.debug(
                     f'An error occurred in handler manager {self.router.name}.{self.name} while '
-                    f'executing filters of handler {handler.name}. An exception yielded.'
+                    f'executing filters of handler {handler.name}. An exception yielded.',
                 )
                 yield handler, e
                 continue

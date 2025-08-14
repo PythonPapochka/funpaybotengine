@@ -3,6 +3,7 @@ from __future__ import annotations
 
 __all__ = ('Bot',)
 
+import time
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 from io import BytesIO
 from collections.abc import Callable, Sequence
@@ -12,10 +13,10 @@ from typing_extensions import Self
 from funpaybotengine.types import (
     Message,
     Language,
+    OfferFields,
     Subcategory,
-    OrderPreview,
     RunnerResponse,
-    OrderPreviewsBatch, OfferFields,
+    OrderPreviewsBatch,
 )
 from funpaybotengine.utils import (
     random_runner_tag,
@@ -26,19 +27,19 @@ from funpaybotengine.runner import Runner
 from funpaybotengine.methods import (
     Refund,
     Review,
-    GetOfferFields,
-    SaveOfferFields,
-    DeleteReview,
     GetSales,
     GetChatPage,
     GetMainPage,
     UploadImage,
+    DeleteReview,
     FunPayMethod,
     GetOrderPage,
     GetPurchases,
     RunnerRequest,
     GetChatHistory,
+    GetOfferFields,
     GetProfilePage,
+    SaveOfferFields,
     MethodReturnType,
     GetSubcategoryPage,
 )
@@ -64,7 +65,6 @@ from funpaybotengine.client.categories_cache import CategoriesCache
 from funpaybotengine.storage.inmemory_storage import InMemoryStorage
 from funpaybotengine.client.session.aiohttp_session import AioHttpSession
 
-import time
 
 if TYPE_CHECKING:
     from funpaybotengine.client.session.base import BaseSession
@@ -114,7 +114,7 @@ class Bot:
                 [
                     self.userid,
                     self.username,
-                ]
+                ],
             )
         return all(bool(i) for i in to_check)
 
@@ -271,7 +271,7 @@ class Bot:
         msg_data = SendingMessageData(chat_id=chat_id, message_text=text or '', image_id=image_id)
         result = await RunnerRequest(
             objects_to_request=[
-                NodeRequestObject(chat_id=chat_id, runner_tag=random_runner_tag())
+                NodeRequestObject(chat_id=chat_id, runner_tag=random_runner_tag()),
             ],
             action=SendMessageAction(message_data=msg_data),
         ).execute(self)
@@ -293,7 +293,8 @@ class Bot:
         return await SaveOfferFields(offer_fields=offer_fields).execute(self)
 
     # ----- Getters -----
-    async def get_chat_history(self,
+    async def get_chat_history(
+        self,
         chat_id: int | str,
         before_message_id: int = 999999999999,
     ) -> list[Message]:
@@ -396,7 +397,7 @@ class Bot:
         subcategory_type: SubcategoryType = ...,
         subcategory_id: int = ...,
         subcategory: None = ...,
-        offer_id: None = ...
+        offer_id: None = ...,
     ) -> OfferFields: ...
 
     @overload
@@ -405,7 +406,7 @@ class Bot:
         subcategory_type: None = ...,
         subcategory_id: None = ...,
         subcategory: Subcategory = ...,
-        offer_id: None = ...
+        offer_id: None = ...,
     ) -> OfferFields: ...
 
     @overload
@@ -422,7 +423,7 @@ class Bot:
         subcategory_type: SubcategoryType | None = None,
         subcategory_id: int | None = None,
         subcategory: Subcategory | None = None,
-        offer_id: int | None = None
+        offer_id: int | None = None,
     ) -> OfferFields:
         # todo: If getting fields of existing offer, no need to pass subcategory type and id.
         if isinstance(subcategory_type, SubcategoryType) and isinstance(subcategory_id, int):
@@ -442,7 +443,7 @@ class Bot:
         return await GetOfferFields(
             subcategory_type=t,
             subcategory_id=i,
-            offer_id=offer_id
+            offer_id=offer_id,
         ).execute(self)
 
     # ----- Page getters -----
@@ -469,7 +470,8 @@ class Bot:
         subcategory_id: int,
     ) -> SubcategoryPage:
         return await GetSubcategoryPage(
-            type=subcategory_type, subcategory_id=subcategory_id
+            type=subcategory_type,
+            subcategory_id=subcategory_id,
         ).execute(self)
 
     async def get_order_page(self, order_id: str) -> OrderPage:

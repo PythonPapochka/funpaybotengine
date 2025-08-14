@@ -14,8 +14,8 @@ from funpaybotengine.client.session.http_methods import HTTPMethod
 
 
 if TYPE_CHECKING:
-    from funpaybotengine.client.session.base import RawResponse
     from funpaybotengine.client.bot import Bot
+    from funpaybotengine.client.session.base import RawResponse
 
 
 class DeleteReview(FunPayMethod[bool], BaseModel):
@@ -35,7 +35,6 @@ class DeleteReview(FunPayMethod[bool], BaseModel):
             locale=locale,
             data=make_data,
             headers={'X-Requested-With': 'XMLHttpRequest'},
-
             order_id=order_id,
         )
 
@@ -49,5 +48,5 @@ class DeleteReview(FunPayMethod[bool], BaseModel):
 async def make_data(method: DeleteReview, bot: Bot) -> dict[str, Any]:
     return {
         'orderId': method.order_id,
-        'authorId': bot.userid
+        'authorId': bot.userid,
     }
