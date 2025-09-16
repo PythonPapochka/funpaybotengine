@@ -5,11 +5,11 @@ __all__ = ('PrivateChatPreview', 'Chat', 'PrivateChatInfo')
 
 
 from pydantic import BaseModel
+from funpayparsers.parsers.utils import parse_date_string
 
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.common import UserPreview, CurrentlyViewingOfferInfo
 from funpaybotengine.types.messages import Message
-from funpayparsers.parsers.utils import parse_date_string
 
 
 class PrivateChatPreview(FunPayObject, BaseModel):

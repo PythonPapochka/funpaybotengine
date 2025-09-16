@@ -4,11 +4,13 @@ from __future__ import annotations
 __all__ = ('Dispatcher',)
 
 
-from eventry.asyncio.dispatcher import Dispatcher as BaseDispatcher, ErrorContext
-from funpaybotengine.dispatching.routers import Router
-from funpaybotengine.dispatching.events import ExceptionEvent
-from eventry.config import DispatcherConfig
 from typing import Any
+
+from eventry.config import DispatcherConfig
+from eventry.asyncio.dispatcher import Dispatcher as BaseDispatcher, ErrorContext
+
+from funpaybotengine.dispatching.events import ExceptionEvent
+from funpaybotengine.dispatching.routers import Router
 
 
 def error_event_factory(context: ErrorContext) -> ExceptionEvent:
@@ -22,8 +24,8 @@ class Dispatcher(BaseDispatcher, Router):
             error_event_factory=error_event_factory,
             workflow_data=workflow_data,
             config=DispatcherConfig(
-                single_handler_mode=False
-            )
+                single_handler_mode=False,
+            ),
         )
 
         Router.__init__(self, router_id='Dispatcher')

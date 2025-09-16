@@ -4,6 +4,8 @@ from __future__ import annotations
 __all__ = ['Router']
 
 
+from eventry.asyncio.router import Router as BaseRouter
+
 from funpaybotengine.dispatching.events.base import ExceptionEvent
 from funpaybotengine.dispatching.events.builtin_events import (
     NewSaleEvent,
@@ -25,7 +27,6 @@ from funpaybotengine.dispatching.events.builtin_events import (
     PurchasePartiallyRefundedEvent,
 )
 from funpaybotengine.dispatching.handlers.handler_manager import HandlerManager
-from eventry.asyncio.router import Router as BaseRouter
 
 
 _events = {
@@ -78,4 +79,4 @@ class Router(BaseRouter):
             manager = self._add_handler_manager(HandlerManager(self, name, event))  # type: ignore
             setattr(self, f'on_{name}', manager)
 
-        setattr(self, f'on_event', property(lambda s: s._default_handler_manager))
+        setattr(self, 'on_event', property(lambda s: s._default_handler_manager))

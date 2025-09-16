@@ -5,10 +5,10 @@ __all__ = ('Review', 'ReviewsBatch')
 
 
 from pydantic import BaseModel
+from funpayparsers.parsers.utils import parse_date_string
 
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.common import MoneyValue
-from funpayparsers.parsers.utils import parse_date_string
 
 
 class Review(FunPayObject, BaseModel):

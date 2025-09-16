@@ -7,9 +7,9 @@ __all__ = ('Event', 'RunnerEvent', 'BotEngineEvent', 'ExceptionEvent')
 from typing import Any, Generic, TypeVar
 
 from pydantic import Field
+from eventry.asyncio.event import ExtendedEvent
 
 from funpaybotengine.base import BindableObject
-from eventry.asyncio.event import ExtendedEvent
 
 
 EventObject = TypeVar('EventObject')
@@ -34,7 +34,6 @@ class RunnerEvent(Event[EventObject]):
         injection = super().workflow_injection
         injection['tag'] = self.tag
         return injection
-
 
 
 class BotEngineEvent(Event[EventObject]): ...

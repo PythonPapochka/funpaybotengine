@@ -4,16 +4,16 @@ from __future__ import annotations
 __all__ = ('OfferPreview', 'OfferSeller', 'OfferFields')
 
 
-from typing import Annotated, Any, TypeVar, ParamSpec
+from typing import Any, TypeVar, Annotated, ParamSpec
 from types import MappingProxyType
-from collections.abc import Mapping
-from typing_extensions import Self
+from collections.abc import Mapping, Callable
+
 from pydantic import Field, BaseModel, BeforeValidator
+from typing_extensions import Self
+from funpayparsers.parsers.utils import parse_date_string
 
 from funpaybotengine.types.base import FunPayObject, FunPayMutableObject
 from funpaybotengine.types.common import MoneyValue
-from collections.abc import Callable
-from funpayparsers.parsers.utils import parse_date_string
 
 
 class OfferSeller(FunPayObject, BaseModel):
@@ -101,15 +101,17 @@ class OfferPreview(FunPayObject, BaseModel):
 T = TypeVar('T')
 P = ParamSpec('P')
 
+
 def chips_only(func: Callable[P, T]) -> Callable[P, T]:
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> Any:
         obj: OfferFields = args[0]  # type: ignore
         if not obj.is_currency:
             raise RuntimeError(
                 f'Instance of {obj.__class__.__name__} is not describing a chips lot fields.\n'
-                f'Use {obj.__class__.__name__}.convert_to_chip to convert it to chips lot fields.'
+                f'Use {obj.__class__.__name__}.convert_to_chip to convert it to chips lot fields.',
             )
         return func(*args, **kwargs)
+
     return wrapper
 
 
@@ -119,9 +121,10 @@ def common_only(func: Callable[P, T]) -> Callable[P, T]:
         if not obj.is_common:
             raise RuntimeError(
                 f'Instance of {obj.__class__.__name__} is not describing a common lot fields.\n'
-                f'Use {obj.__class__.__name__}.convert_to_common to convert it to common lot fields.'
+                f'Use {obj.__class__.__name__}.convert_to_common to convert it to common lot fields.',
             )
         return func(*args, **kwargs)
+
     return wrapper
 
 
@@ -247,8 +250,9 @@ class OfferFields(FunPayMutableObject, BaseModel):
         return float(self.fields_dict[f'offer[{server_id}][{side_id}][amount]'])
 
     @chips_only
-    def set_currency_amount(self, server_id: int, side_id: int,
-                            amount: int | float | None) -> None:
+    def set_currency_amount(
+        self, server_id: int, side_id: int, amount: int | float | None
+    ) -> None:
         """
         Sets the currency amount.
 
@@ -320,7 +324,7 @@ class OfferFields(FunPayMutableObject, BaseModel):
         """
         self.set_field(
             f'offer[{server_id}][{side_id}][active]',
-            'on' if status else '' if status is not None else None
+            'on' if status else '' if status is not None else None,
         )
 
     @property

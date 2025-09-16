@@ -10,7 +10,7 @@ __all__ = (
 )
 
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from funpaybotengine.types.enums import MessageType
 

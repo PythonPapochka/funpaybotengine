@@ -6,7 +6,7 @@ __all__ = (
     'FilterFromFunction',
     'any_of',
     'all_of',
-    'not_'
+    'not_',
 )
 
-from eventry.asyncio.filter import Filter, FilterFromFunction, any_of, all_of, not_
+from eventry.asyncio.filter import Filter, FilterFromFunction, not_, all_of, any_of

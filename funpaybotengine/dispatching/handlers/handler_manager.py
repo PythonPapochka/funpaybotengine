@@ -3,12 +3,20 @@ from __future__ import annotations
 
 __all__ = ('HandlerManager',)
 
-from eventry.asyncio.handler_manager import HandlerManager as BaseHandlerManager
+from typing import TYPE_CHECKING, Any, Type
+
 from eventry.asyncio.default_types import FilterType, HandlerType, MiddlewareType
-from eventry.asyncio.handler_manager import MiddlewareManagerTypes
+from eventry.asyncio.handler_manager import (
+    HandlerManager as BaseHandlerManager,
+    MiddlewareManagerTypes,
+)
 from eventry.asyncio.middleware_manager import MiddlewareManager
+
 from funpaybotengine.dispatching.events.base import Event
-from typing import Type, Any
+
+
+if TYPE_CHECKING:
+    from funpaybotengine.dispatching.routers import Router
 
 
 class HandlerManager(BaseHandlerManager[FilterType, HandlerType, MiddlewareType, 'Router']):
@@ -16,7 +24,7 @@ class HandlerManager(BaseHandlerManager[FilterType, HandlerType, MiddlewareType,
         self,
         router: 'Router',
         handler_manager_id: str,
-        event_type_filter: Type[Event[Any]] | None
+        event_type_filter: Type[Event[Any]] | None,
     ):
         super().__init__(
             router=router,
@@ -33,4 +41,4 @@ class HandlerManager(BaseHandlerManager[FilterType, HandlerType, MiddlewareType,
 
     @property
     def outer_middleware(self) -> MiddlewareManager:
-        return self.middleware_manager(MiddlewareManagerTypes.OUTER) # type: ignore  # not None
+        return self.middleware_manager(MiddlewareManagerTypes.OUTER)  # type: ignore  # not None

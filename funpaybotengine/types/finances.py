@@ -9,11 +9,11 @@ from types import MappingProxyType
 from collections.abc import Mapping
 
 from pydantic import BaseModel, BeforeValidator
+from funpayparsers.parsers.utils import parse_date_string
 
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.enums import PaymentMethod, TransactionStatus
 from funpaybotengine.types.common import MoneyValue
-from funpayparsers.parsers.utils import parse_date_string
 
 
 class TransactionPreview(FunPayObject, BaseModel):

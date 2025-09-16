@@ -16,10 +16,10 @@ from funpaybotengine.types.common import UserBadge
 
 
 if TYPE_CHECKING:
+    from funpaybotengine.client.bot import Bot
     from funpaybotengine.types.chat import Chat
     from funpaybotengine.types.pages.chat_page import ChatPage
     from funpaybotengine.types.pages.profile_page import ProfilePage
-    from funpaybotengine.client.bot import Bot
 
 
 class MessageMeta(FunPayObject, BaseModel):

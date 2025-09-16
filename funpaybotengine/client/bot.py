@@ -64,7 +64,6 @@ from funpaybotengine.client.session.base import Response
 from funpaybotengine.client.categories_cache import CategoriesCache
 from funpaybotengine.storage.inmemory_storage import InMemoryStorage
 from funpaybotengine.client.session.aiohttp_session import AioHttpSession
-from asyncio import Lock
 
 
 if TYPE_CHECKING:
