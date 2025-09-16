@@ -24,39 +24,44 @@ if TYPE_CHECKING:
 
 class MessageTextFilter(Filter):
     def __init__(self, message_text: str, /):
+        super().__init__()
         self.message_text = message_text
 
-    async def __call__(self, event: Event[Message], *args: Any, **kwargs: Any) -> bool:
+    async def __call__(self, event: Event[Message]) -> bool:
         return self.message_text == event.object.text
 
 
 class MessageSenderUsernameFilter(Filter):
     def __init__(self, message_sender_username: str, /):
+        super().__init__()
         self.message_sender_username = message_sender_username
 
-    async def __call__(self, event: Event[Message], *args: Any, **kwargs: Any) -> bool:
+    async def __call__(self, event: Event[Message]) -> bool:
         return self.message_sender_username == event.object.sender_username
 
 
 class MessageSenderIDFilter(Filter):
     def __init__(self, sender_id: int, /):
+        super().__init__()
         self.sender_id = sender_id
 
-    async def __call__(self, event: Event[Message], *args: Any, **kwargs: Any) -> bool:
+    async def __call__(self, event: Event[Message]) -> bool:
         return self.sender_id == event.object.sender_id
 
 
 class MessageHasImageFilter(Filter):
     def __init__(self, has_image: bool, /):
+        super().__init__()
         self.has_image = has_image
 
-    async def __call__(self, event: Event[Message], *args: Any, **kwargs: Any) -> bool:
+    async def __call__(self, event: Event[Message]) -> bool:
         return bool(event.object.image_url)
 
 
 class MessageTypeFilter(Filter):
     def __init__(self, message_type: MessageType, /):
+        super().__init__()
         self.message_type = message_type
 
-    async def __call__(self, event: Event[Message], *args: Any, **kwargs: Any) -> bool:
+    async def __call__(self, event: Event[Message]) -> bool:
         return event.object.meta.type is self.message_type

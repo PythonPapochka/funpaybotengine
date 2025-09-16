@@ -28,6 +28,7 @@ _message_type_to_order_status_mapping = {
 
 class FinalOrderStatusFilter(Filter):
     def __init__(self, status: OrderStatus, /):
+        super().__init__()
         self.order_status = status
 
     async def __call__(self, event: OrderEvent, events_stack: list[Event[Any]]) -> bool:

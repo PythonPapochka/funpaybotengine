@@ -21,9 +21,19 @@ class Event(BindableObject, ExtendedEvent, Generic[EventObject]):
     }
     object: EventObject = Field(frozen=True)
 
+    @property
+    def workflow_injection(self) -> dict[str, Any]:
+        return {'object': self.object}
+
 
 class RunnerEvent(Event[EventObject]):
     tag: str = Field(frozen=True)
+
+    @property
+    def workflow_injection(self) -> dict[str, Any]:
+        injection = super().workflow_injection
+        injection['tag'] = self.tag
+        return injection
 
 
 
@@ -33,3 +43,10 @@ class BotEngineEvent(Event[EventObject]): ...
 class ExceptionEvent(BotEngineEvent[Exception]):
     event: Event[Any] = Field(frozen=True)
     exception: Exception = Field(frozen=True)
+
+    @property
+    def workflow_injection(self) -> dict[str, Any]:
+        return {
+            'on_event': self.event,
+            'exception': self.exception
+        }
