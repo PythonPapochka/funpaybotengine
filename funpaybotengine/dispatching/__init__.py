@@ -5,4 +5,3 @@ from .events import *
 from .filters import *
 from .routers import *
 from .handlers import *
-from .middlewares import *

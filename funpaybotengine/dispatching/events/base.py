@@ -42,11 +42,9 @@ class BotEngineEvent(Event[EventObject]): ...
 
 class ExceptionEvent(BotEngineEvent[Exception]):
     event: Event[Any] = Field(frozen=True)
-    exception: Exception = Field(frozen=True)
 
     @property
     def workflow_injection(self) -> dict[str, Any]:
-        return {
-            'on_event': self.event,
-            'exception': self.exception
-        }
+        injection = super().workflow_injection
+        injection.update({'on_event': self.event, 'exception': self.object})
+        return injection
