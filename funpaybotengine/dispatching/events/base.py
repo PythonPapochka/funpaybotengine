@@ -15,7 +15,7 @@ from funpaybotengine.base import BindableObject
 EventObject = TypeVar('EventObject')
 
 
-class Event(BindableObject, ExtendedEvent, Generic[EventObject]):
+class Event(ExtendedEvent, BindableObject, Generic[EventObject]):
     model_config = {
         'arbitrary_types_allowed': True,
     }
@@ -24,6 +24,9 @@ class Event(BindableObject, ExtendedEvent, Generic[EventObject]):
     @property
     def workflow_injection(self) -> dict[str, Any]:
         return {'object': self.object}
+
+    def __hash__(self) -> int:
+        return id(self)
 
 
 class RunnerEvent(Event[EventObject]):

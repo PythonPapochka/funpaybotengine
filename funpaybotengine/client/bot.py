@@ -526,6 +526,6 @@ class Bot:
             async with self.session:
                 listener = self._runner.listen(config=config, session_storage=session_storage)
                 async for event, stack in listener:
-                    await dp.propagate_event(event, stack)
+                    await dp.propagate_event(event, workflow_injection={'events_stack': stack})
         except KeyboardInterrupt:
             return
