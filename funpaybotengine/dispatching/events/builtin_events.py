@@ -106,6 +106,9 @@ class OrderEvent(RunnerEvent[Message]):
             'new_message_event': self.related_new_message_event,
         }
 
+    async def get_order_preview(self, update: bool = False) -> OrderPreview:
+        raise NotImplementedError
+
 
 class SaleEvent(OrderEvent):
     async def get_order_preview(self, update: bool = False) -> OrderPreview:

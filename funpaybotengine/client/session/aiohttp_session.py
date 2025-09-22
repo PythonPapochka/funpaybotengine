@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any
 
 from yarl import URL
 from aiohttp import TCPConnector, ClientSession, ClientTimeout
+from aiohttp_socks import ProxyConnector
 from aiohttp.hdrs import USER_AGENT
 from typing_extensions import Self
 
@@ -42,7 +43,7 @@ class AioHttpSession(BaseSession):
             }
         )
 
-        self._connector: TCPConnector | None = None
+        self._connector: TCPConnector | ProxyConnector | None = None
 
     async def __aenter__(self) -> Self:
         return self
@@ -52,9 +53,9 @@ class AioHttpSession(BaseSession):
 
     async def session(self) -> ClientSession:
         if self._connector is None or self._connector.closed:
-            self._connector = TCPConnector()
+            self._connector = ProxyConnector.from_url(self._proxy) if self._proxy else TCPConnector()
         return ClientSession(
-            proxy=self.proxy,
+            # proxy=self.proxy,
             base_url='https://funpay.com',
             connector=self._connector,
             connector_owner=False,
