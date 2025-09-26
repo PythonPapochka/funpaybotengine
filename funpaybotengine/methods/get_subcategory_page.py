@@ -27,7 +27,7 @@ class GetSubcategoryPage(FunPayMethod[SubcategoryPage], BaseModel):
     subcategory_id: int
     """Subcategory ID."""
 
-    __model__ = SubcategoryPage
+    __model_to_build__ = SubcategoryPage
 
     def __init__(self, type: SubcategoryType, subcategory_id: int, locale: Language | None = None):
         super().__init__(
@@ -38,5 +38,5 @@ class GetSubcategoryPage(FunPayMethod[SubcategoryPage], BaseModel):
             parser_cls=SubcategoryPageParser,
             locale=locale,
             type=type,
-            id=subcategory_id,
+            subcategory_id=subcategory_id,
         )
