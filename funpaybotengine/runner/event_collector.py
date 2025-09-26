@@ -33,6 +33,7 @@ from funpaybotengine.dispatching.events import (
 from funpaybotengine.types.requests.runner import NodeRequestObject, ChatBookmarksRequestObject
 from funpaybotengine.storage.inmemory_storage import InMemoryStorage
 from funpaybotengine.exceptions.session_exceptions import UnexpectedHTTPStatusError
+from funpaybotengine.loggers import runner_logger as logger
 
 
 if TYPE_CHECKING:
@@ -128,6 +129,7 @@ class EventCollector:
         self.session_storage = session_storage or InMemoryStorage()
 
     async def init_chats(self) -> None:
+        logger.debug('Initializing chats...')
         result = await self.get_chat_bookmarks()
         self.last_chats_request_timestamp = result.timestamp
 
@@ -135,6 +137,10 @@ class EventCollector:
             return
 
         for i in result.chat_bookmarks.data.chat_previews:
+            logger.debug(
+                f'Chat {i.id} ({i.username}) initialized. '
+                f'Last message ID: {i.last_message_id}'
+            )
             await self.session_storage.update_chat(i)
 
     @attempts()
@@ -170,6 +176,9 @@ class EventCollector:
     ) -> dict[int, RunnerResponseObject[ChatNode]]:
         """
         Fetches specified in ``chat_ids`` chat histories.
+
+        :param chat_ids: List of chat IDs.
+        :return: Dictionary in following format: `{node_id: runner response}`.
         """
         nodes = {}
         objs = [NodeRequestObject(chat_id=i, runner_tag=random_runner_tag()) for i in chat_ids]
@@ -201,6 +210,7 @@ class EventCollector:
 
         :return: A list of ``ChatChangedEvent`` objects.
         """
+        logger.debug('Getting changed chats...')
         if not runner_response.chat_bookmarks:
             return []
 
@@ -210,7 +220,18 @@ class EventCollector:
             cached_chat = await self.session_storage.get_chat(chat_preview.id)
 
             if cached_chat == chat_preview:
+                logger.debug(
+                    f'Chat {chat_preview.id} ({chat_preview.username}) '
+                    f'hasn\'t changed since last runner request.'
+                )
                 continue
+
+            logger.debug(
+                f'Chat {chat_preview.id} ({chat_preview.username}) '
+                f'has changed since last runner request: '
+                f'{cached_chat.last_message_id if cached_chat is not None else 0} -> '
+                f'{chat_preview.last_message_id}.'
+            )
 
             result.append(
                 ChatChangedEvent(
@@ -242,23 +263,33 @@ class EventCollector:
         :param events: A list of ``ChatChangedEvent`` objects.
         :return: A list of ``NewMessageEvent`` objects.
         """
+        logger.debug(f'Getting new messages for chats '
+                     f'{", ".join(str(i.object.id) for i in events)}.')
+
         chat_changed_events = {e.object.id: e for e in events}
-        nodes = await self.get_chat_histories([e.object.id for e in events])
+        nodes = await self.get_chat_histories(list(chat_changed_events.keys()))
 
         result: list[NewMessageEvent] = []
         for chat_id, event in chat_changed_events.items():
+            logger.debug(f'Processing chat {chat_id}...')
             node = nodes[chat_id]
             from_id = event.previous.last_message_id if event.previous else 0
             to_id = event.object.last_message_id
 
             for message in node.data.messages:
                 if from_id != 0 and from_id < message.id <= to_id:
+                    logger.debug(
+                        f'New message in chat {chat_id}: {message.id} '
+                        f'(from IDs difference).'
+                    )
                     result.append(NewMessageEvent(object=message, tag=node.tag))
-                elif (
-                    message.timestamp >= self.last_chats_request_timestamp and message.id <= to_id
-                ):
+                elif message.timestamp >= self.last_chats_request_timestamp and message.id <= to_id:
+                    logger.debug(
+                        f'New message in chat {chat_id}: {message.id} '
+                        f'(from timestamp difference: '
+                        f'{message.timestamp} >= {self.last_chats_request_timestamp}).'
+                    )
                     result.append(NewMessageEvent(object=message, tag=node.tag))
-
         return result
 
     async def get_order_related_messages(
@@ -469,11 +500,15 @@ class EventCollector:
 
         :return: A list of chat or order events to be handled by the bot.
         """
+        logger.debug('Getting events...')
+
         runner_response = await self.get_chat_bookmarks()
         chat_changed_events = await self.get_chat_changed_events(runner_response)
         new_message_events = await self.get_new_message_events(chat_changed_events)
         order_events = await self.get_order_events(new_message_events)
         total = self.merge_events(chat_changed_events, new_message_events, order_events)
+
+        logger.debug(f'Finished getting events. Total events: {len(total)}')
 
         for event in total:
             event.bind_to(self.bot)
