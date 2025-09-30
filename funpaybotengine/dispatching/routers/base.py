@@ -71,8 +71,8 @@ class Router(BaseRouter):
     on_purchase_reopened: HandlerManager
     on_event: HandlerManager
 
-    def __init__(self, router_id: str | None = None) -> None:
-        super().__init__(router_id=router_id or f'Router{id(self)}')
+    def __init__(self, name: str | None = None) -> None:
+        super().__init__(name=name or f'Router{id(self)}')
         self._default_handler_manager = HandlerManager(self, 'default', None)
 
         for name, event in _events.items():

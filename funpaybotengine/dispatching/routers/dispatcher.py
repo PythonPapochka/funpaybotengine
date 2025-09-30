@@ -28,4 +28,4 @@ class Dispatcher(BaseDispatcher, Router):
             ),
         )
 
-        Router.__init__(self, router_id='Dispatcher')
+        Router.__init__(self, name='Dispatcher')

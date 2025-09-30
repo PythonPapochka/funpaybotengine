@@ -6,12 +6,8 @@ __all__ = ('HandlerManager',)
 from typing import TYPE_CHECKING, Any, Type
 
 from eventry.asyncio.default_types import FilterType, HandlerType, MiddlewareType
-from eventry.asyncio.handler_manager import (
-    HandlerManager as BaseHandlerManager,
-    MiddlewareManagerTypes,
-)
-from eventry.asyncio.middleware_manager import MiddlewareManager
-
+from eventry.asyncio.handler_manager import HandlerManager as BaseHandlerManager
+from eventry.asyncio.middleware_manager import MiddlewareManager, MiddlewareManagerTypes
 from funpaybotengine.dispatching.events.base import Event
 
 
@@ -32,8 +28,9 @@ class HandlerManager(BaseHandlerManager[FilterType, HandlerType, MiddlewareType,
             event_type_filter=event_type_filter,
         )
 
-        self._add_middleware_manager(MiddlewareManagerTypes.OUTER, MiddlewareManager())
-        self._add_middleware_manager(MiddlewareManagerTypes.INNER, MiddlewareManager())
+        self._add_middleware_manager(MiddlewareManagerTypes.GLOBAL, MiddlewareManager())
+        self._add_middleware_manager(MiddlewareManagerTypes.OUTER_PER_HANDLER, MiddlewareManager())
+        self._add_middleware_manager(MiddlewareManagerTypes.INNER_PER_HANDLER, MiddlewareManager())
 
     @property
     def inner_middleware(self) -> MiddlewareManager:
@@ -42,3 +39,7 @@ class HandlerManager(BaseHandlerManager[FilterType, HandlerType, MiddlewareType,
     @property
     def outer_middleware(self) -> MiddlewareManager:
         return self.middleware_manager(MiddlewareManagerTypes.OUTER)  # type: ignore  # not None
+
+    @property
+    def global_middleware(self) -> MiddlewareManager:
+        return self.middleware_manager(MiddlewareManagerTypes.GLOBAL)  # type: ignore  # not None
