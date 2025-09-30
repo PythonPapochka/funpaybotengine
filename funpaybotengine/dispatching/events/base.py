@@ -22,7 +22,7 @@ class Event(ExtendedEvent, BindableObject, Generic[EventObject]):
     object: EventObject = Field(frozen=True)
 
     @property
-    def workflow_injection(self) -> dict[str, Any]:
+    def event_context_injection(self) -> dict[str, Any]:
         return {'object': self.object}
 
     def __hash__(self) -> int:
@@ -33,8 +33,8 @@ class RunnerEvent(Event[EventObject]):
     tag: str = Field(frozen=True)
 
     @property
-    def workflow_injection(self) -> dict[str, Any]:
-        injection = super().workflow_injection
+    def event_context_injection(self) -> dict[str, Any]:
+        injection = super().event_context_injection
         injection['tag'] = self.tag
         return injection
 
@@ -46,7 +46,7 @@ class ExceptionEvent(BotEngineEvent[Exception]):
     event: Event[Any] = Field(frozen=True)
 
     @property
-    def workflow_injection(self) -> dict[str, Any]:
-        injection = super().workflow_injection
+    def event_context_injection(self) -> dict[str, Any]:
+        injection = super().event_context_injection
         injection.update({'on_event': self.event, 'exception': self.object})
         return injection

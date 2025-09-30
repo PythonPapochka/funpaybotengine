@@ -528,7 +528,7 @@ class Bot:
                 async for event, stack in listener:
                     await dp.propagate_event(
                         event,
-                        workflow_injection={
+                        event_context_injection={
                             'events_stack': stack,
                             'bot': self,
                         }

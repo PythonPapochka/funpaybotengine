@@ -42,7 +42,7 @@ class ChatInitEvent(RunnerEvent[PrivateChatPreview]):
         return self.object
 
     @property
-    def workflow_injection(self) -> dict[str, Any]:
+    def event_context_injection(self) -> dict[str, Any]:
         return {
             'chat_preview': self.chat_preview,
         }
@@ -56,7 +56,7 @@ class ChatChangedEvent(RunnerEvent[PrivateChatPreview]):
         return self.object
 
     @property
-    def workflow_injection(self) -> dict[str, Any]:
+    def event_context_injection(self) -> dict[str, Any]:
         return {
             'chat_preview': self.chat_preview,
         }
@@ -68,7 +68,7 @@ class NewMessageEvent(RunnerEvent[Message]):
         return self.object
 
     @property
-    def workflow_injection(self) -> dict[str, Any]:
+    def event_context_injection(self) -> dict[str, Any]:
         return {
             'message': self.message,
         }
@@ -84,7 +84,7 @@ class CountersChangedEvent(RunnerEvent[tuple[int, int]]):
         return self.object[1]
 
     @property
-    def workflow_injection(self) -> dict[str, Any]:
+    def event_context_injection(self) -> dict[str, Any]:
         return {
             'sales_counter': self.sales_counters,
             'purchases_counter': self.purchases_counters,
@@ -100,7 +100,7 @@ class OrderEvent(RunnerEvent[Message]):
         return self.object
 
     @property
-    def workflow_injection(self) -> dict[str, Any]:
+    def event_context_injection(self) -> dict[str, Any]:
         return {
             'message': self.message,
             'new_message_event': self.related_new_message_event,
