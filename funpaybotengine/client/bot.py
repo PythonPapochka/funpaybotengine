@@ -83,6 +83,7 @@ class Bot:
         *,
         phpsessid: str | None = None,
         proxy: str | None = None,
+        default_headers: dict[str, Any] | None = None,
     ) -> None:
         self._golden_key = golden_key
         self._csrf_token: str | None = None
