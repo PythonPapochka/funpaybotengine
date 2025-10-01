@@ -34,11 +34,11 @@ class HandlerManager(BaseHandlerManager[FilterType, HandlerType, MiddlewareType,
 
     @property
     def inner_middleware(self) -> MiddlewareManager:
-        return self.middleware_manager(MiddlewareManagerTypes.INNER)  # type: ignore  # not None
+        return self.middleware_manager(MiddlewareManagerTypes.INNER_PER_HANDLER)  # type: ignore  # not None
 
     @property
     def outer_middleware(self) -> MiddlewareManager:
-        return self.middleware_manager(MiddlewareManagerTypes.OUTER)  # type: ignore  # not None
+        return self.middleware_manager(MiddlewareManagerTypes.OUTER_PER_HANDLER)  # type: ignore  # not None
 
     @property
     def global_middleware(self) -> MiddlewareManager:

@@ -59,9 +59,16 @@ class MessageHasImageFilter(Filter):
 
 
 class MessageTypeFilter(Filter):
-    def __init__(self, message_type: MessageType, /):
+    def __init__(self, message_type: MessageType | str, /):
         super().__init__()
-        self.message_type = message_type
+        print(f"Got value: {message_type!r}")
+        self.message_type = getattr(MessageType, message_type) if isinstance(message_type, str) \
+            else message_type
+        print(f'Resolved message type: {self.message_type}')
 
     async def __call__(self, event: Event[Message]) -> bool:
-        return event.object.meta.type is self.message_type
+        r = event.object.meta.type is self.message_type
+        print('-' * 50)
+        print(f'{event.object.meta.type} is {self.message_type}')
+        print('-' * 50)
+        return r

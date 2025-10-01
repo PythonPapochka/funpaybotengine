@@ -69,7 +69,7 @@ class Router(BaseRouter):
     on_purchase_refunded: HandlerManager
     on_purchase_partially_refunded: HandlerManager
     on_purchase_reopened: HandlerManager
-    on_event: HandlerManager
+
 
     def __init__(self, name: str | None = None) -> None:
         super().__init__(name=name or f'Router{id(self)}')
@@ -79,4 +79,7 @@ class Router(BaseRouter):
             manager = self._add_handler_manager(HandlerManager(self, name, event))  # type: ignore
             setattr(self, f'on_{name}', manager)
 
-        setattr(self, 'on_event', property(lambda s: s._default_handler_manager))
+
+    @property
+    def on_event(self) -> HandlerManager:
+        return self._default_handler_manager
