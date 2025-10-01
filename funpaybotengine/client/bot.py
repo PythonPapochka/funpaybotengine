@@ -17,6 +17,7 @@ from funpaybotengine.types import (
     Subcategory,
     RunnerResponse,
     OrderPreviewsBatch,
+    TransactionPreviewsBatch
 )
 from funpaybotengine.utils import (
     random_runner_tag,
@@ -41,7 +42,7 @@ from funpaybotengine.methods import (
     GetProfilePage,
     SaveOfferFields,
     MethodReturnType,
-    GetSubcategoryPage,
+    GetSubcategoryPage, GetTransactions,
 )
 from funpaybotengine.types.enums import OrderStatus, SubcategoryType
 from funpaybotengine.types.pages import (
@@ -451,6 +452,16 @@ class Bot:
             subcategory_type=t,
             subcategory_id=i,
             offer_id=offer_id,
+        ).execute(self)
+
+    async def get_transactions(
+        self,
+        from_transaction_id: int = 0,
+        filter: str = ""
+    ) -> TransactionPreviewsBatch:
+        return await GetTransactions(
+            filter=filter,
+            from_transaction_id=from_transaction_id
         ).execute(self)
 
     # ----- Page getters -----

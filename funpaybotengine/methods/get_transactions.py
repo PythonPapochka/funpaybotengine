@@ -1,0 +1,63 @@
+from __future__ import annotations
+
+__all__ = ('GetTransactions',)
+
+from pydantic import BaseModel
+from funpayparsers.parsers import TransactionPreviewsParser
+
+from funpaybotengine.types import TransactionPreviewsBatch
+from funpaybotengine.types.enums import Language
+from funpaybotengine.methods.base import FunPayMethod
+from funpaybotengine.client.session import HTTPMethod
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from funpaybotengine.client import Bot
+
+
+
+class GetTransactions(FunPayMethod[TransactionPreviewsBatch], BaseModel):
+    """
+    Get the main page method (``https://funpay.com/``).
+
+    Returns ``funpaybotengine.types.pages.MainPage`` obj.
+    """
+
+    change_locale: Language | None = None
+    """
+    Change locale to specified.
+
+    Defaults to ``None``.
+    """
+
+    filter: str = ""
+    from_transaction_id: int = 0
+
+    __model_to_build__ = TransactionPreviewsBatch
+
+    def __init__(
+        self,
+        locale: Language | None = None,
+        filter: str = "",
+        from_transaction_id: int | None = None,
+    ):
+        super().__init__(
+            url='users/transactions',
+            method=HTTPMethod.POST,
+            locale=locale,
+            parser_cls=TransactionPreviewsParser,
+            allow_anonymous=False,
+            allow_uninitialized=False,
+            data=make_data,
+
+            filter=filter,
+            from_transaction_id=from_transaction_id
+        )
+
+
+async def make_data(method: GetTransactions, bot: Bot) -> dict[str, Any]:
+    return {
+        'filter': method.filter,
+        'continue': str(method.from_transaction_id) if method.from_transaction_id > 0 else '',
+        'user_id': str(bot.userid)
+    }
