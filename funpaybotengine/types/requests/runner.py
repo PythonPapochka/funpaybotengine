@@ -234,7 +234,7 @@ class SendingMessageData(BaseModel):
     """Chat ID or name where the message should be sent."""
 
     after_message_id: int = Field(
-        default=99999999999,
+        default=-1,
         serialization_alias='last_message',
         validation_alias=AliasChoices('after_message_id', 'last_message'),
     )

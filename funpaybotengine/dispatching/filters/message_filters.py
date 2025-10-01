@@ -58,7 +58,7 @@ class MessageHasImageFilter(Filter):
         return bool(event.object.image_url)
 
 
-class MessageTypeFilter(Filter):
+class _MessageTypeFilter(Filter):
     def __init__(self, message_type: MessageType | str, /):
         super().__init__()
         self.message_type = getattr(MessageType, message_type) if isinstance(message_type, str) \
@@ -66,7 +66,21 @@ class MessageTypeFilter(Filter):
 
     async def __call__(self, event: Event[Message]) -> bool:
         r = event.object.meta.type is self.message_type
-        print('-' * 50)
-        print(f'{event.object.meta.type} is {self.message_type}')
-        print('-' * 50)
         return r
+
+
+class MessageTypeFilter(_MessageTypeFilter):
+    NON_SYSTEM = _MessageTypeFilter(MessageType.NON_SYSTEM)
+    UNKNOWN_SYSTEM = _MessageTypeFilter(MessageType.UNKNOWN_SYSTEM)
+    NEW_ORDER = _MessageTypeFilter(MessageType.NEW_ORDER)
+    ORDER_CLOSED = _MessageTypeFilter(MessageType.ORDER_CLOSED)
+    ORDER_CLOSED_BY_ADMIN = _MessageTypeFilter(MessageType.ORDER_CLOSED_BY_ADMIN)
+    ORDER_REOPENED = _MessageTypeFilter(MessageType.ORDER_REOPENED)
+    ORDER_REFUNDED = _MessageTypeFilter(MessageType.ORDER_REFUNDED)
+    ORDER_PARTIALLY_REFUNDED = _MessageTypeFilter(MessageType.ORDER_PARTIALLY_REFUNDED)
+    NEW_FEEDBACK = _MessageTypeFilter(MessageType.NEW_FEEDBACK)
+    FEEDBACK_CHANGED = _MessageTypeFilter(MessageType.FEEDBACK_CHANGED)
+    FEEDBACK_DELETED = _MessageTypeFilter(MessageType.FEEDBACK_DELETED)
+    NEW_FEEDBACK_REPLY = _MessageTypeFilter(MessageType.NEW_FEEDBACK_REPLY)
+    FEEDBACK_REPLY_CHANGED = _MessageTypeFilter(MessageType.FEEDBACK_REPLY_CHANGED)
+    FEEDBACK_REPLY_DELETED = _MessageTypeFilter(MessageType.FEEDBACK_REPLY_DELETED)
