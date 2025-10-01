@@ -19,3 +19,4 @@ class RunnerConfig:
 
     discover_sales: bool = True
     discover_purchases: bool = True
+    keep_unread: bool = False

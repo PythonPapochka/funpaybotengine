@@ -34,6 +34,7 @@ from funpaybotengine.types.requests.runner import NodeRequestObject, ChatBookmar
 from funpaybotengine.storage.inmemory_storage import InMemoryStorage
 from funpaybotengine.exceptions.session_exceptions import UnexpectedHTTPStatusError
 from funpaybotengine.loggers import runner_logger as logger
+from funpaybotengine.types.messages import Message
 
 
 if TYPE_CHECKING:
@@ -173,28 +174,37 @@ class EventCollector:
     async def get_chat_histories(
         self,
         chat_ids: list[int],
-    ) -> dict[int, RunnerResponseObject[ChatNode]]:
+    ) -> dict[int, list[Message]]:
         """
         Fetches specified in ``chat_ids`` chat histories.
 
         :param chat_ids: List of chat IDs.
         :return: Dictionary in following format: `{node_id: runner response}`.
         """
-        nodes = {}
-        objs = [NodeRequestObject(chat_id=i, runner_tag=random_runner_tag()) for i in chat_ids]
+        messages = {}
 
-        for i in range(0, len(objs), 10):
-            result = await self._get_node(objs[i : i + 10])
+        if not self.config.keep_unread:
+            objs = [NodeRequestObject(chat_id=i, runner_tag=random_runner_tag()) for i in chat_ids]
+            for i in range(0, len(objs), 10):
+                result = await self._get_node(objs[i : i + 10])
+                if not result.nodes:
+                    return {}
+                messages.update({i.data.node.id: i.data.messages for i in result.nodes})
+            return messages
 
-            if not result.nodes:
-                return {}
-
-            nodes.update({i.data.node.id: i for i in result.nodes})
-        return nodes
+        else:
+            for i in chat_ids:
+                r = await self._get_chat_history(i)
+                messages.update({i: r})
+            return messages
 
     @attempts()
     async def _get_node(self, objs: list[NodeRequestObject]) -> RunnerResponse:
         return await self.bot.runner_request(objects_to_request=objs)
+
+    @attempts()
+    async def _get_chat_history(self, chat_id: int) -> list[Message]:
+        return await self.bot.get_chat_history(chat_id=chat_id)
 
     async def get_chat_changed_events(
         self,
@@ -267,29 +277,29 @@ class EventCollector:
                      f'{", ".join(str(i.object.id) for i in events)}.')
 
         chat_changed_events = {e.object.id: e for e in events}
-        nodes = await self.get_chat_histories(list(chat_changed_events.keys()))
+        chat_histories = await self.get_chat_histories(list(chat_changed_events.keys()))
 
         result: list[NewMessageEvent] = []
         for chat_id, event in chat_changed_events.items():
             logger.debug(f'Processing chat {chat_id}...')
-            node = nodes[chat_id]
+            messages = chat_histories[chat_id]
             from_id = event.previous.last_message_id if event.previous else 0
             to_id = event.object.last_message_id
 
-            for message in node.data.messages:
+            for message in messages:
                 if from_id != 0 and from_id < message.id <= to_id:
                     logger.debug(
                         f'New message in chat {chat_id}: {message.id} '
                         f'(from IDs difference).'
                     )
-                    result.append(NewMessageEvent(object=message, tag=node.tag))
+                    result.append(NewMessageEvent(object=message, tag=None))
                 elif message.timestamp >= self.last_chats_request_timestamp and message.id <= to_id:
                     logger.debug(
                         f'New message in chat {chat_id}: {message.id} '
                         f'(from timestamp difference: '
                         f'{message.timestamp} >= {self.last_chats_request_timestamp}).'
                     )
-                    result.append(NewMessageEvent(object=message, tag=node.tag))
+                    result.append(NewMessageEvent(object=message, tag=None))
         return result
 
     async def get_order_related_messages(

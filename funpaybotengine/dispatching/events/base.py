@@ -30,7 +30,7 @@ class Event(ExtendedEvent, BindableObject, Generic[EventObject]):
 
 
 class RunnerEvent(Event[EventObject]):
-    tag: str = Field(frozen=True)
+    tag: str | None = Field(frozen=True)
 
     @property
     def event_context_injection(self) -> dict[str, Any]:
