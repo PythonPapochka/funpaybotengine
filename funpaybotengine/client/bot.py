@@ -88,7 +88,7 @@ class Bot:
         self._golden_key = golden_key
         self._csrf_token: str | None = None
         self._phpsessid: str | None = phpsessid
-        self._session = session or AioHttpSession(proxy=proxy)
+        self._session = session or AioHttpSession(proxy=proxy, default_headers=default_headers)
         self._storage = storage or InMemoryStorage()
         self._runner = Runner(self)
 
