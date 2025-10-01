@@ -2,7 +2,7 @@
 name = "funpaybotengine"
 version = "0.1.0dev1"
 description = "Framework for creating FunPay bots."
-requires-python = ">=3.13"
+requires-python = ">=3.10"
 
 dependencies = [
     "aiohttp>=3.12.14",
