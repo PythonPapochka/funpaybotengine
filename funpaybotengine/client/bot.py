@@ -499,7 +499,11 @@ class Bot:
         ):
             await self.update()
 
-        return await self.session.make_request(method, self)
+        result = await self.session.make_request(method, self)
+        if 'PHPSESSID' in result.cookies:
+            self._phpsessid = result.cookies['PHPSESSID']
+            self._last_update_timestamp = int(time.time())
+        return result
 
     async def update(self, change_locale: Language | None = None) -> Self:
         result = await self.make_request(
