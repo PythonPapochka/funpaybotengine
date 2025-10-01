@@ -306,7 +306,7 @@ class Bot:
         before_message_id: int = 999999999999,
     ) -> list[Message]:
         """
-        Retrieves the 50 most recent messages in a chat,
+        Retrieves the 100 most recent messages in a chat,
         sent before the specified message ID.
 
         Also marks the chat as read.
@@ -318,7 +318,7 @@ class Bot:
             Defaults to a large number (``999999999999``)
             to fetch the most recent messages.
 
-        :return: A list of up to 50 ``Message`` objects, sorted from oldest to newest.
+        :return: A list of up to 100 ``Message`` objects, sorted from oldest to newest.
         """
         return await GetChatHistory(chat_id=chat_id, before_message_id=before_message_id).execute(
             self,
