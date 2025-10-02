@@ -119,33 +119,17 @@ class EventCollector:
         self,
         bot: Bot,
         config: RunnerConfig,
-        storage: Storage,
         *,
         session_storage: Storage | None = None,
     ) -> None:
         self.bot = bot
         self.config = config
         self.last_chats_request_timestamp: int | float = time.time()
-        self.storage = storage
+        self.storage = self.bot.storage
         self.session_storage = session_storage or InMemoryStorage()
 
-    async def init_chats(self) -> None:
-        logger.debug('Initializing chats...')
-        result = await self.get_chat_bookmarks()
-        self.last_chats_request_timestamp = result.timestamp
-
-        if not result.chat_bookmarks:
-            return
-
-        for i in result.chat_bookmarks.data.chat_previews:
-            logger.debug(
-                f'Chat {i.id} ({i.username}) initialized. '
-                f'Last message ID: {i.last_message_id}'
-            )
-            await self.session_storage.update_chat(i)
-
     @attempts()
-    async def get_chat_bookmarks(self) -> RunnerResponse:
+    async def _get_chat_bookmarks(self) -> RunnerResponse:
         """
         Fetches chat bookmarks using runner.
 
@@ -154,7 +138,7 @@ class EventCollector:
         return await self.bot.runner_request(objects_to_request=[ChatBookmarksRequestObject()])
 
     @attempts()
-    async def get_sales(self, order_id: str | None = None) -> tuple[OrderPreview, ...]:
+    async def _get_sales(self, order_id: str | None = None) -> tuple[OrderPreview, ...]:
         """
         Fetches last 100 sales.
 
@@ -163,13 +147,21 @@ class EventCollector:
         return (await self.bot.get_sales(order_id_filter=order_id)).orders
 
     @attempts()
-    async def get_purchases(self, order_id: str | None = None) -> tuple[OrderPreview, ...]:
+    async def _get_purchases(self, order_id: str | None = None) -> tuple[OrderPreview, ...]:
         """
         Fetches last 100 purchases.
 
         If an order ID is provided, only the matching purchase is returned.
         """
         return (await self.bot.get_purchases(order_id_filter=order_id)).orders
+
+    @attempts()
+    async def _get_node(self, objs: list[NodeRequestObject]) -> RunnerResponse:
+        return await self.bot.runner_request(objects_to_request=objs)
+
+    @attempts()
+    async def _get_chat_history(self, chat_id: int) -> list[Message]:
+        return await self.bot.get_chat_history(chat_id=chat_id)
 
     async def get_chat_histories(
         self,
@@ -181,30 +173,35 @@ class EventCollector:
         :param chat_ids: List of chat IDs.
         :return: Dictionary in following format: `{node_id: runner response}`.
         """
-        messages = {}
+        messages: dict[int, list[Message]] = {}
 
-        if not self.config.keep_unread:
-            objs = [NodeRequestObject(chat_id=i, runner_tag=random_runner_tag()) for i in chat_ids]
-            for i in range(0, len(objs), 10):
-                result = await self._get_node(objs[i : i + 10])
-                if not result.nodes:
-                    return {}
-                messages.update({i.data.node.id: i.data.messages for i in result.nodes})
-            return messages
-
-        else:
+        if self.config.keep_unread:
             for i in chat_ids:
-                r = await self._get_chat_history(i)
-                messages.update({i: r})
+                messages |= {i: await self._get_chat_history(i)}
             return messages
 
-    @attempts()
-    async def _get_node(self, objs: list[NodeRequestObject]) -> RunnerResponse:
-        return await self.bot.runner_request(objects_to_request=objs)
+        objs = [NodeRequestObject(chat_id=i, runner_tag=random_runner_tag()) for i in chat_ids]
+        for i in range(0, len(objs), 10):
+            result = await self._get_node(objs[i: i + 10])
+            if not result.nodes:
+                return {}
+            messages.update({i.data.node.id: i.data.messages for i in result.nodes})
+        return messages
 
-    @attempts()
-    async def _get_chat_history(self, chat_id: int) -> list[Message]:
-        return await self.bot.get_chat_history(chat_id=chat_id)
+    async def init_chats(self) -> None:
+        logger.debug('Initializing chats...')
+        result = await self._get_chat_bookmarks()
+        self.last_chats_request_timestamp = result.timestamp
+
+        if not result.chat_bookmarks:
+            return
+
+        for i in result.chat_bookmarks.data.chat_previews:
+            logger.debug(
+                f'Chat {i.id} ({i.username}) initialized. '
+                f'Last message ID: {i.last_message_id}'
+            )
+            await self.session_storage.update_chat(i)
 
     async def get_chat_changed_events(
         self,
@@ -392,7 +389,7 @@ class EventCollector:
             return
 
         if self.config.discover_sales:
-            order_preview = await self.get_sales(order_id=message.object.meta.order_id)
+            order_preview = await self._get_sales(order_id=message.object.meta.order_id)
             if order_preview:
                 messages.sales.append(message)
                 sales[order_preview[0].id] = order_preview[0]
@@ -400,7 +397,7 @@ class EventCollector:
                 return
 
         if self.config.discover_purchases:
-            order_preview = await self.get_purchases(order_id=message.object.meta.order_id)
+            order_preview = await self._get_purchases(order_id=message.object.meta.order_id)
             if order_preview:
                 messages.purchases.append(message)
                 purchases[order_preview[0].id] = order_preview[0]
@@ -415,10 +412,10 @@ class EventCollector:
         total_events: list[OrderEvent] = []
 
         if (messages.purchases or messages.unknown) and self.config.discover_purchases:
-            purchases = {i.id: i for i in await self.get_purchases()}
+            purchases = {i.id: i for i in await self._get_purchases()}
 
         if (messages.sales or messages.unknown) and self.config.discover_sales:
-            sales = {i.id: i for i in await self.get_sales()}
+            sales = {i.id: i for i in await self._get_sales()}
 
         for e in messages.unknown:
             await self.resolve_unknown_message(e, messages, sales, purchases)
@@ -512,7 +509,7 @@ class EventCollector:
         """
         logger.debug('Getting events...')
 
-        runner_response = await self.get_chat_bookmarks()
+        runner_response = await self._get_chat_bookmarks()
         chat_changed_events = await self.get_chat_changed_events(runner_response)
         new_message_events = await self.get_new_message_events(chat_changed_events)
         order_events = await self.get_order_events(new_message_events)

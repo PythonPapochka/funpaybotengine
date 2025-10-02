@@ -36,7 +36,6 @@ class Runner:
         collector = EventCollector(
             self.bot,
             config,
-            self.bot.storage,
             session_storage=session_storage,
         )
 
