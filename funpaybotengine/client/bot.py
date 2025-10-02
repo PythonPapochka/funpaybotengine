@@ -206,24 +206,6 @@ class Bot:
         """
         return await UploadImage(file=file).execute(self)
 
-    @overload
-    async def send_message(
-        self,
-        chat_id: int | str,
-        text: str = ...,
-        image: None = ...,
-        enforce_whitespaces: bool = ...,
-    ) -> Message: ...
-
-    @overload
-    async def send_message(
-        self,
-        chat_id: int | str,
-        text: None = ...,
-        image: str | BytesIO | int = ...,
-        enforce_whitespaces: bool = ...,
-    ) -> Message: ...
-
     async def send_message(
         self,
         chat_id: int | str,
@@ -261,6 +243,8 @@ class Bot:
             f"either provide message text ('text') (got {text=}), "
             f"or provide image ID / path to image / image file stream ('image') (got {image=})."
         )
+
+        # todo: assert not (text and image)
 
         image_id = None
         if image is not None:
