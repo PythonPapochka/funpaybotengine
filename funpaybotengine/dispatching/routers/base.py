@@ -16,7 +16,6 @@ from funpaybotengine.dispatching.events.builtin_events import (
     SaleRefundedEvent,
     SaleReopenedEvent,
     PurchaseClosedEvent,
-    CountersChangedEvent,
     PurchaseRefundedEvent,
     PurchaseReopenedEvent,
     SaleClosedByAdminEvent,
@@ -32,7 +31,6 @@ from funpaybotengine.dispatching.handlers.handler_manager import HandlerManager
 _events = {
     'chat_changed': ChatChangedEvent,
     'new_message': NewMessageEvent,
-    'counters_changed': CountersChangedEvent,
     'new_sale': NewSaleEvent,
     'sale_closed_by_admin': SaleClosedByAdminEvent,
     'sale_closed': SaleClosedEvent,

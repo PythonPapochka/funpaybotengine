@@ -5,7 +5,6 @@ __all__ = (
     'ChatInitEvent',
     'ChatChangedEvent',
     'NewMessageEvent',
-    'CountersChangedEvent',
     'OrderEvent',
     'NewSaleEvent',
     'SaleStatusChangedEvent',
@@ -74,37 +73,18 @@ class NewMessageEvent(RunnerEvent[Message]):
         }
 
 
-class CountersChangedEvent(RunnerEvent[tuple[int, int]]):
-    @property
-    def sales_counters(self) -> int:
-        return self.object[0]
-
-    @property
-    def purchases_counters(self) -> int:
-        return self.object[1]
+class FromMessageEvent(NewMessageEvent):
+    related_new_message_event: NewMessageEvent
 
     @property
     def event_context_injection(self) -> dict[str, Any]:
-        return {
-            'sales_counter': self.sales_counters,
-            'purchases_counter': self.purchases_counters,
-        }
+        val = super().event_context_injection
+        val.update({'new_message_event': self.related_new_message_event})
+        return val
 
 
 class OrderEvent(RunnerEvent[Message]):
-    related_new_message_event: NewMessageEvent
     _order_preview: OrderPreview | None = PrivateAttr(default=None)
-
-    @property
-    def message(self) -> Message:
-        return self.object
-
-    @property
-    def event_context_injection(self) -> dict[str, Any]:
-        return {
-            'message': self.message,
-            'new_message_event': self.related_new_message_event,
-        }
 
     async def get_order_preview(self, update: bool = False) -> OrderPreview:
         raise NotImplementedError
@@ -174,3 +154,21 @@ class PurchasePartiallyRefundedEvent(PurchaseRefundedEvent): ...
 
 
 class PurchaseReopenedEvent(PurchaseStatusChangedEvent): ...
+
+
+class NewReviewEvent(NewMessageEvent): ...
+
+
+class ReviewChangedEvent(NewMessageEvent): ...
+
+
+class ReviewDeletedEvent(NewMessageEvent): ...
+
+
+class NewReviewResponseEvent(NewMessageEvent): ...
+
+
+class ReviewResponseChangedEvent(NewMessageEvent): ...
+
+
+class ReviewResponseDeletedEvent(NewMessageEvent): ...

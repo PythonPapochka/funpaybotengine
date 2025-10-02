@@ -35,6 +35,7 @@ from funpaybotengine.storage.inmemory_storage import InMemoryStorage
 from funpaybotengine.exceptions.session_exceptions import UnexpectedHTTPStatusError
 from funpaybotengine.loggers import runner_logger as logger
 from funpaybotengine.types.messages import Message
+from typing import Literal
 
 
 if TYPE_CHECKING:
@@ -42,7 +43,7 @@ if TYPE_CHECKING:
     from funpaybotengine.storage.base import Storage
     from funpaybotengine.types.orders import OrderPreview
     from funpaybotengine.types.updates import ChatNode, RunnerResponse, RunnerResponseObject
-
+from collections import ChainMap
 
 CHAT_EVENTS = ChatChangedEvent | NewMessageEvent
 
@@ -65,15 +66,23 @@ _UNKNOWN_ORDER_RELATED: dict[MessageType, tuple[Type[SaleEvent], Type[PurchaseEv
 _ORDER_RELATED = _KNOWN_ORDER_RELATED | _UNKNOWN_ORDER_RELATED
 
 
-def resolve_order_event(message: Message) -> Type[OrderEvent] | None:
-    if message.meta.type not in _KNOWN_ORDER_RELATED:
-        return None
+def resolve_order_event(event: NewMessageEvent, total: TotalEvents) -> None:
+    meta = event.message.meta
+    if meta.type not in _ORDER_RELATED:
+        return
 
-    if message.meta.type == MessageType.NEW_ORDER:
-        seller = message.meta.buyer_id != message.bot.userid
+    if meta.buyer_id:
+        if meta.buyer_id == event.bot.userid:
+            total.purchases_related.append(event)
+        else:
+            total.sales_related.append(event)
+    elif meta.seller_id:
+        if meta.seller_id == event.bot.userid:
+            total.sales_related.append(event)
+        else:
+            total.purchases_related.append(event)
     else:
-        seller = message.meta.seller_id == message.bot.userid
-    return _KNOWN_ORDER_RELATED[message.meta.type][0 if seller else 1]
+        total.unknown_order_related.append(event)
 
 
 F = TypeVar('F', bound=Callable[..., Any])
@@ -94,7 +103,18 @@ def attempts(amount: int = 0) -> Callable[[F], F]:
     return decorator
 
 
-EVENTS_DICT: TypeAlias = dict[ChatChangedEvent, dict[NewMessageEvent, list[OrderEvent]]]
+class TotalEvents:
+    def __init__(self) -> None:
+        self.tree: dict[ChatChangedEvent, dict[NewMessageEvent, OrderEvent | None]] = {}
+        self.sales_related: list[NewMessageEvent] = []
+        self.purchases_related: list[NewMessageEvent] = []
+        self.unknown_order_related: list[NewMessageEvent] = []
+        self.review_related: list[NewMessageEvent] = []
+
+    @property
+    def chainmap(self) -> ChainMap[NewMessageEvent, OrderEvent | None]:
+        return ChainMap(*self.tree.values())
+
 
 class EventCollector:
     """
@@ -118,29 +138,14 @@ class EventCollector:
 
     @attempts()
     async def _get_chat_bookmarks(self) -> RunnerResponse:
-        """
-        Fetches chat bookmarks using runner.
-
-        :return: ``RunnerResponse`` object with chat bookmarks.
-        """
         return await self.bot.runner_request(objects_to_request=[ChatBookmarksRequestObject()])
 
     @attempts()
     async def _get_sales(self, order_id: str | None = None) -> tuple[OrderPreview, ...]:
-        """
-        Fetches last 100 sales.
-
-        If an order ID is provided, only the matching sale is returned.
-        """
         return (await self.bot.get_sales(order_id_filter=order_id)).orders
 
     @attempts()
     async def _get_purchases(self, order_id: str | None = None) -> tuple[OrderPreview, ...]:
-        """
-        Fetches last 100 purchases.
-
-        If an order ID is provided, only the matching purchase is returned.
-        """
         return (await self.bot.get_purchases(order_id_filter=order_id)).orders
 
     @attempts()
@@ -155,12 +160,6 @@ class EventCollector:
         self,
         chat_ids: list[int],
     ) -> dict[int, list[Message]]:
-        """
-        Fetches specified in ``chat_ids`` chat histories.
-
-        :param chat_ids: List of chat IDs.
-        :return: Dictionary in following format: `{node_id: runner response}`.
-        """
         messages: dict[int, list[Message]] = {}
 
         if self.config.keep_unread:
@@ -191,18 +190,8 @@ class EventCollector:
             )
             await self.session_storage.update_chat(i)
 
-    async def get_chat_changed_events(self, runner_response: RunnerResponse) -> EVENTS_DICT:
-        """
-        Iterates over chat bookmarks in the runner response, compares each chat
-        with the cached version in session storage, and generates ``ChatChangedEvent`` objects.
-
-        A chat is considered changed if its ``ChatPreview.last_message_id`` differs between
-        the runner response and the session storage, or if the chat is missing from
-        the session storage entirely.
-
-        :return: A list of ``ChatChangedEvent`` objects.
-        """
-        result: EVENTS_DICT = {}
+    async def get_chat_changed_events(self, runner_response: RunnerResponse) -> TotalEvents:
+        result = TotalEvents()
 
         logger.debug('Getting changed chats...')
         if not runner_response.chat_bookmarks:
@@ -230,50 +219,103 @@ class EventCollector:
                 tag=runner_response.chat_bookmarks.tag,
             ).as_(self.bot)
 
-            result[event] = {}
+            result.tree[event] = {}
         return result
 
-    async def get_new_message_events(self, events: EVENTS_DICT) -> EVENTS_DICT:
-        """
-        Fetches chat histories for each ``ChatChangedEvent`` in the ``events`` list, identifies
-        new messages and generates ``NewMessageEvent`` objects.
+    async def get_new_message_events(self, total: TotalEvents) -> None:
+        ids = [i.object.id for i in total.tree]
+        logger.debug(f'Getting new messages for chats {", ".join(str(i) for i in ids)}.')
+        chat_histories = await self.get_chat_histories(ids)
 
-        If ``ChatChangedEvent.previous`` is ``None`` (i.e., the session storage did not contain
-        a ``PrivateChatPreview`` object for the chat), messages are considered new if their
-        timestamp is later than the previous chat bookmarks request
-        and their ID is less than or equal to ``ChatChangedEvent.object.last_message_id``.
+        for chat_event, dict_ in total.tree.items():
+            logger.debug(f'Processing chat {chat_event.chat_preview.id}...')
+            from_id = chat_event.previous.last_message_id if chat_event.previous else 0
+            to_id = chat_event.object.last_message_id
 
-        Otherwise, messages are considered new if their IDs are greater than
-        ``ChatChangedEvent.previous.last_message_id`` and less than or equal to
-        ``ChatChangedEvent.object.last_message_id``.
-
-        :param events: A list of ``ChatChangedEvent`` objects.
-        :return: A list of ``NewMessageEvent`` objects.
-        """
-        chat_changed_events = {e.object.id: e for e in events.keys()}
-        logger.debug(f'Getting new messages for chats '
-                     f'{", ".join(str(i) for i in chat_changed_events)}.')
-        chat_histories = await self.get_chat_histories(list(chat_changed_events.keys()))
-
-        for event, dict_ in events.items():
-            logger.debug(f'Processing chat {event.chat_preview.id}...')
-            from_id = event.previous.last_message_id if event.previous else 0
-            to_id = event.object.last_message_id
-
-            for message in chat_histories[chat_id]:
+            for message in chat_histories[chat_event.chat_preview.id]:
                 if from_id != 0 and from_id < message.id <= to_id:
                     logger.debug(
-                        f'New message in chat {chat_id}: {message.id} '
+                        f'New message in chat {chat_event.chat_preview.id}: {message.id} '
                         f'(from IDs difference).'
                     )
-                    events.total.insert(insert, NewMessageEvent(object=message, tag=None))
-                    offset += 1
                 elif message.timestamp >= self.last_chats_request_timestamp and message.id <= to_id:
                     logger.debug(
-                        f'New message in chat {chat_id}: {message.id} '
+                        f'New message in chat {chat_event.chat_preview.id}: {message.id} '
                         f'(from timestamp difference: '
                         f'{message.timestamp} >= {self.last_chats_request_timestamp}).'
                     )
-                    events.total.insert(insert, NewMessageEvent(object=message, tag=None))
-                    offset += 1
-        return result
+                else:
+                    continue
+
+                message_event = NewMessageEvent(object=message, tag=None).as_(self.bot)
+                total.tree[chat_event][message_event] = None
+                resolve_order_event(message_event, total)
+
+    async def resolve_unknown_order_related_event(
+        self,
+        total: TotalEvents,
+        unknown: NewMessageEvent,
+        sales: dict[str, OrderPreview],
+        purchases: dict[str, OrderPreview],
+    ) -> None:
+        if unknown.object.meta.order_id in purchases:
+            total.purchases_related.append(unknown)
+            return
+        if unknown.object.meta.order_id in sales:
+            total.sales_related.append(unknown)
+            return
+
+        saved_order = await self.storage.get_order(unknown.object.meta.order_id)  # type: ignore[arg-type]
+        if saved_order and saved_order.type is not OrderPreviewType.UNKNOWN:
+            if saved_order.type is OrderPreviewType.PURCHASE:
+                total.purchases_related.append(unknown)
+                purchases[saved_order.id] = saved_order
+            elif saved_order.type is OrderPreviewType.SALE:
+                total.sales_related.append(unknown)
+                sales[saved_order.id] = saved_order
+            return
+
+        if self.config.discover_sales:
+            order_preview = await self._get_sales(order_id=unknown.object.meta.order_id)
+            if order_preview:
+                total.sales_related.append(unknown)
+                sales[order_preview[0].id] = order_preview[0]
+                await self.storage.update_order(order_preview[0])
+                return
+
+        if self.config.discover_purchases:
+            order_preview = await self._get_purchases(order_id=unknown.object.meta.order_id)
+            if order_preview:
+                total.purchases_related.append(unknown)
+                purchases[order_preview[0].id] = order_preview[0]
+                await self.storage.update_order(order_preview[0])
+                return
+
+    async def make_order_events(self, total: TotalEvents):
+        sales, purchases = {}, {}
+
+        if (total.purchases_related or total.unknown_order_related) and self.config.discover_purchases:
+            purchases = {i.id: i for i in await self._get_purchases()}
+
+        if (total.sales_related or total.unknown_order_related) and self.config.discover_sales:
+            sales = {i.id: i for i in await self._get_sales()}
+
+        for e in total.unknown_order_related:
+            await self.resolve_unknown_order_related_event(total, e, sales, purchases)
+
+    async def _make_order_events(
+        self,
+        total: TotalEvents,
+        order_previews: dict[str, OrderPreview],
+        mode: Literal['sales', 'purchases'] = 'sales'
+    ) -> None:
+
+        for e in total.purchases_related:
+            cls = _ORDER_RELATED[e.object.meta.type][0 if mode == 'sales' else 1]
+            event = cls(object=e.object)
+
+        # for e in messages:
+        #     cls = _ORDER_RELATED_MESSAGE_TYPES[e.object.meta.type][0 if sales else 1]
+        #     event: OrderEvent = cls(object=e.object, related_new_message_event=e, tag=e.tag)
+        #     event._order_preview = orders.get(e.object.meta.order_id)  # type: ignore[arg-type]
+        #     result.append(event)
