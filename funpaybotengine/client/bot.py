@@ -548,7 +548,9 @@ class Bot:
         *,
         config: RunnerConfig | None = None,
         session_storage: Storage | None = None,
+        workflow_injection: dict[str, Any] | None = None,
     ) -> None:
+        workflow_injection = workflow_injection if workflow_injection is not None else {}
         try:
             async with self.session:
                 listener = self._runner.listen(config=config, session_storage=session_storage)
@@ -556,6 +558,7 @@ class Bot:
                     await dp.propagate_event(
                         event,
                         event_context_injection={
+                            **workflow_injection,
                             'events_stack': stack,
                             'bot': self,
                         },
