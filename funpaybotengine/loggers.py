@@ -7,7 +7,7 @@ __all__ = ('session_logger', 'router_logger', 'dispatcher_logger', 'runner_logge
 from logging import getLogger
 
 
-session_logger = getLogger('funpaybotengine.session_logger')
-router_logger = getLogger('funpaybotengine.router_logger')
-dispatcher_logger = getLogger('funpaybotengine.dispatcher_logger')
-runner_logger = getLogger('funpaybotengine.runner_logger')
+session_logger = getLogger('funpaybotengine.session')
+router_logger = getLogger('funpaybotengine.router')
+dispatcher_logger = getLogger('funpaybotengine.dispatcher')
+runner_logger = getLogger('funpaybotengine.runner')
