@@ -20,11 +20,19 @@ class InMemoryStorage(Storage):
     async def update_chat(self, chat: PrivateChatPreview) -> None:
         self._chats[chat.id] = chat
 
+    async def update_chats(self, *chats: PrivateChatPreview) -> None:
+        for chat in chats:
+            await self.update_chat(chat)
+
     async def get_order(self, order_id: str) -> OrderPreview | None:
         return self._orders.get(order_id, None)
 
     async def update_order(self, order: OrderPreview) -> None:
         self._orders[order.id] = order
+
+    async def update_orders(self, *orders: OrderPreview) -> None:
+        for order in orders:
+            await self.update_order(order)
 
     async def mark_message_as_sent_by_bot(self, message_id: int, by_bot: bool = True) -> None:
         if by_bot:
