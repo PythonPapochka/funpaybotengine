@@ -209,13 +209,34 @@ class Bot:
         """
         return await UploadImage(file=file).execute(self)
 
+    @overload
     async def send_message(
         self,
         chat_id: int | str,
         text: str | None = None,
         image: str | BytesIO | int | None = None,
         enforce_whitespaces: bool = True,
-    ) -> Message:
+        keep_chat_unread: Literal[False] = False
+    ) -> Message: ...
+
+    @overload
+    async def send_message(
+        self,
+        chat_id: int | str,
+        text: str | None = None,
+        image: str | BytesIO | int | None = None,
+        enforce_whitespaces: bool = True,
+        keep_chat_unread: Literal[True] = True
+    ) -> None: ...
+
+    async def send_message(
+        self,
+        chat_id: int | str,
+        text: str | None = None,
+        image: str | BytesIO | int | None = None,
+        enforce_whitespaces: bool = True,
+        keep_chat_unread: bool = False
+    ) -> Message | None:
         """
         Send a message to a chat.
 
@@ -251,30 +272,28 @@ class Bot:
 
         image_id = None
         if image is not None:
-            if isinstance(image, str | BytesIO):
-                image_id = await UploadImage(image).execute(self)
-            else:
-                image_id = image
+            image_id = image if isinstance(image, int) else await UploadImage(image).execute(self)
         elif text is not None:
             if enforce_whitespaces:
                 text = enforce_message_text_whitespaces(text)
             check_message_text(text)
 
         msg_data = SendingMessageData(chat_id=chat_id, message_text=text or '', image_id=image_id)
+        objects: Literal[False] | list[Any] = False if keep_chat_unread else [
+            NodeRequestObject(chat_id=chat_id, runner_tag=random_runner_tag())
+        ]
 
         async with self._messages_lock:
             result = await RunnerRequest(
-                objects_to_request=[
-                    NodeRequestObject(chat_id=chat_id, runner_tag=random_runner_tag()),
-                ],
+                objects_to_request=objects,
                 action=SendMessageAction(message_data=msg_data),
             ).execute(self)
 
-            if result.response and result.response.error:
-                raise Exception(result.response.error)  # todo
-            msg = result.nodes[0].data.messages[-1]  # type: ignore[index] # will have nodes
-            await self.storage.mark_message_as_sent_by_bot(message_id=msg.id)
-            return msg
+            if not keep_chat_unread:
+                msg = result.nodes[0].data.messages[-1]  # type: ignore[index] # will have nodes
+                await self.storage.mark_message_as_sent_by_bot(message_id=msg.id)
+                return msg
+        return None
 
     async def refund(self, order_id: str) -> bool:
         return await Refund(order_id=order_id).execute(self)
