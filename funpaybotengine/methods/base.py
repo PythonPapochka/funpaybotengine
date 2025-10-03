@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from funpaybotengine.types.enums import Language
     from funpaybotengine.client.session.base import RawResponse
 
+
 R = TypeVar('R')
 MethodReturnType = TypeVar('MethodReturnType', bound=Any)
 
