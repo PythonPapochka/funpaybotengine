@@ -268,17 +268,19 @@ class Bot:
             f"or provide image ID / path to image / image file stream ('image') (got {image=})."
         )
 
-        # todo: assert not (text and image)
+        assert not (text and image), (
+            f'Invalid arguments: you must provide either \'text\' or \'image\', not both '
+            f'(got {text=!r} and {image=!r}).'
+        )
 
-        image_id = None
         if image is not None:
-            image_id = image if isinstance(image, int) else await UploadImage(image).execute(self)
+            image = image if isinstance(image, int) else await UploadImage(image).execute(self)
         elif text is not None:
             if enforce_whitespaces:
                 text = enforce_message_text_whitespaces(text)
             check_message_text(text)
 
-        msg_data = SendingMessageData(chat_id=chat_id, message_text=text or '', image_id=image_id)
+        msg_data = SendingMessageData(chat_id=chat_id, message_text=text or '', image_id=image)
         objects: Literal[False] | list[Any] = False if keep_chat_unread else [
             NodeRequestObject(chat_id=chat_id, runner_tag=random_runner_tag())
         ]
@@ -308,10 +310,9 @@ class Bot:
         return await SaveOfferFields(offer_fields=offer_fields).execute(self)
 
     # ----- Getters -----
-    async def get_chat_history(
-        self,
+    async def get_chat_history(self,
         chat_id: int | str,
-        before_message_id: int = 999999999999,
+        before_message_id: int = -1,
     ) -> list[Message]:
         """
         Retrieves the 100 most recent messages in a chat,
@@ -323,7 +324,7 @@ class Bot:
         :param before_message_id:
             Message ID to paginate from —
             only messages sent **before** this ID will be returned.
-            Defaults to a large number (``999999999999``)
+            Defaults to ``-1``
             to fetch the most recent messages.
 
         :return: A list of up to 100 ``Message`` objects, sorted from oldest to newest.
