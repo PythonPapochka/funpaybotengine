@@ -10,8 +10,8 @@ from typing import TYPE_CHECKING, Any
 
 from yarl import URL
 from aiohttp import TCPConnector, ClientSession, ClientTimeout
-from aiohttp_socks import ProxyConnector
 from aiohttp.hdrs import USER_AGENT
+from aiohttp_socks import ProxyConnector
 from typing_extensions import Self
 
 from funpaybotengine.loggers import session_logger
@@ -53,7 +53,9 @@ class AioHttpSession(BaseSession):
 
     async def session(self) -> ClientSession:
         if self._connector is None or self._connector.closed:
-            self._connector = ProxyConnector.from_url(self._proxy) if self._proxy else TCPConnector()
+            self._connector = (
+                ProxyConnector.from_url(self._proxy) if self._proxy else TCPConnector()
+            )
         return ClientSession(
             # proxy=self.proxy,
             base_url='https://funpay.com',

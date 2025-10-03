@@ -61,8 +61,9 @@ class MessageHasImageFilter(Filter):
 class _MessageTypeFilter(Filter):
     def __init__(self, message_type: MessageType | str, /):
         super().__init__()
-        self.message_type = getattr(MessageType, message_type) if isinstance(message_type, str) \
-            else message_type
+        self.message_type = (
+            getattr(MessageType, message_type) if isinstance(message_type, str) else message_type
+        )
 
     async def __call__(self, event: Event[Message]) -> bool:
         r = event.object.meta.type is self.message_type

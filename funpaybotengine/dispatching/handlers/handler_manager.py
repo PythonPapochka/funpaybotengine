@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Type
 from eventry.asyncio.default_types import FilterType, HandlerType, MiddlewareType
 from eventry.asyncio.handler_manager import HandlerManager as BaseHandlerManager
 from eventry.asyncio.middleware_manager import MiddlewareManager, MiddlewareManagerTypes
+
 from funpaybotengine.dispatching.events.base import Event
 
 

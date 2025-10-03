@@ -43,13 +43,7 @@ class Runner:
 
         while True:
             start = time.time()
-            try:
-                result = await collector.get_events()
-            except Exception:
-                import traceback
-
-                print(traceback.format_exc())  # todo: yield exception event
-                continue
+            result = await collector.get_events()
 
             events_stack = tuple(result)
             for i in events_stack:

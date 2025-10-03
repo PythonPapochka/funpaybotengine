@@ -37,8 +37,8 @@ from pydantic import Field, PrivateAttr
 
 from funpaybotengine.types.chat import PrivateChatPreview
 from funpaybotengine.types.orders import OrderPreview
-from funpaybotengine.types.messages import Message
 from funpaybotengine.types.reviews import Review
+from funpaybotengine.types.messages import Message
 
 from .base import RunnerEvent
 from ...types.pages import OrderPage

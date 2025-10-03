@@ -1,46 +1,44 @@
 from __future__ import annotations
 
-
 import time
-from typing import TYPE_CHECKING, Any, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Type, Literal, TypeVar
 from collections.abc import Callable
 
-from funpaybotengine.dispatching import RunnerEvent
 from funpaybotengine.utils import random_runner_tag
+from funpaybotengine.loggers import runner_logger as logger
+from funpaybotengine.dispatching import RunnerEvent
 from funpaybotengine.types.enums import MessageType, OrderPreviewType
 from funpaybotengine.runner.config import RunnerConfig
+from funpaybotengine.types.messages import Message
+from funpaybotengine.types.requests.runner import NodeRequestObject, ChatBookmarksRequestObject
+from funpaybotengine.storage.inmemory_storage import InMemoryStorage
+from funpaybotengine.exceptions.session_exceptions import UnexpectedHTTPStatusError
 from funpaybotengine.dispatching.events.builtin_events import (
+    SaleEvent,
     OrderEvent,
+    ReviewEvent,
     NewSaleEvent,
+    PurchaseEvent,
+    NewReviewEvent,
     NewMessageEvent,
     SaleClosedEvent,
     ChatChangedEvent,
     NewPurchaseEvent,
     SaleRefundedEvent,
     SaleReopenedEvent,
+    ReviewChangedEvent,
+    ReviewDeletedEvent,
     PurchaseClosedEvent,
     PurchaseRefundedEvent,
     PurchaseReopenedEvent,
+    NewReviewResponseEvent,
     SaleClosedByAdminEvent,
     PurchaseClosedByAdminEvent,
+    ReviewResponseChangedEvent,
+    ReviewResponseDeletedEvent,
     SalePartiallyRefundedEvent,
     PurchasePartiallyRefundedEvent,
-    SaleEvent,
-    PurchaseEvent,
-    ReviewEvent,
-    NewReviewEvent,
-    NewReviewResponseEvent,
-    ReviewChangedEvent,
-    ReviewResponseChangedEvent,
-    ReviewDeletedEvent,
-    ReviewResponseDeletedEvent,
 )
-from funpaybotengine.types.requests.runner import NodeRequestObject, ChatBookmarksRequestObject
-from funpaybotengine.storage.inmemory_storage import InMemoryStorage
-from funpaybotengine.exceptions.session_exceptions import UnexpectedHTTPStatusError
-from funpaybotengine.loggers import runner_logger as logger
-from funpaybotengine.types.messages import Message
-from typing import Literal
 
 
 if TYPE_CHECKING:
@@ -49,6 +47,7 @@ if TYPE_CHECKING:
     from funpaybotengine.types.orders import OrderPreview
     from funpaybotengine.types.updates import RunnerResponse
 from collections import ChainMap
+
 
 CHAT_EVENTS = ChatChangedEvent | NewMessageEvent
 
@@ -95,13 +94,17 @@ def attempts(amount: int = 0) -> Callable[[F], F]:
                 except UnexpectedHTTPStatusError:
                     if not attempts:
                         raise
+
         return inner  # type: ignore
+
     return decorator
 
 
 class TotalEvents:
     def __init__(self, timestamp: int | float) -> None:
-        self.tree: dict[ChatChangedEvent, dict[NewMessageEvent, OrderEvent | ReviewEvent | None]] = {}
+        self.tree: dict[
+            ChatChangedEvent, dict[NewMessageEvent, OrderEvent | ReviewEvent | None]
+        ] = {}
         self.sales_related: list[NewMessageEvent] = []
         self.purchases_related: list[NewMessageEvent] = []
         self.unknown_order_related: list[NewMessageEvent] = []
@@ -170,7 +173,8 @@ class EventCollector:
 
     @attempts()
     async def _get_chat_bookmarks(self) -> RunnerResponse:
-        return await self.bot.runner_request(objects_to_request=[ChatBookmarksRequestObject()])
+        async with self.bot._messages_lock:
+            return await self.bot.runner_request(objects_to_request=[ChatBookmarksRequestObject()])
 
     @attempts()
     async def _get_sales(self, order_id: str | None = None) -> tuple[OrderPreview, ...]:
@@ -214,8 +218,7 @@ class EventCollector:
 
         for i in result.chat_bookmarks.data.chat_previews:
             logger.debug(
-                f'Chat {i.id} ({i.username}) initialized. '
-                f'Last message ID: {i.last_message_id}'
+                f'Chat {i.id} ({i.username}) initialized. Last message ID: {i.last_message_id}',
             )
             await self.session_storage.update_chat(i)
 
@@ -233,7 +236,7 @@ class EventCollector:
             if cached_chat and cached_chat.last_message_id == chat_preview.last_message_id:
                 logger.debug(
                     f'Chat {chat_preview.id} ({chat_preview.username}) '
-                    f'hasn\'t changed since last runner request.'
+                    f"hasn't changed since last runner request.",
                 )
                 continue
 
@@ -241,7 +244,7 @@ class EventCollector:
                 f'Chat {chat_preview.id} ({chat_preview.username}) '
                 f'has changed since last runner request: '
                 f'{cached_chat.last_message_id if cached_chat is not None else 0} -> '
-                f'{chat_preview.last_message_id}.'
+                f'{chat_preview.last_message_id}.',
             )
             event = ChatChangedEvent(
                 previous=cached_chat,
@@ -266,13 +269,15 @@ class EventCollector:
                 if from_id != 0 and from_id < message.id <= to_id:
                     logger.debug(
                         f'New message in chat {chat_event.chat_preview.id}: {message.id} '
-                        f'(from IDs difference).'
+                        f'(from IDs difference).',
                     )
-                elif message.timestamp >= self.last_chats_request_timestamp and message.id <= to_id:
+                elif (
+                    message.timestamp >= self.last_chats_request_timestamp and message.id <= to_id
+                ):
                     logger.debug(
                         f'New message in chat {chat_event.chat_preview.id}: {message.id} '
                         f'(from timestamp difference: '
-                        f'{message.timestamp} >= {self.last_chats_request_timestamp}).'
+                        f'{message.timestamp} >= {self.last_chats_request_timestamp}).',
                     )
                 else:
                     continue
@@ -324,10 +329,10 @@ class EventCollector:
         self,
         total: TotalEvents,
         order_previews: dict[str, OrderPreview],
-        mode: Literal['sales', 'purchases'] = 'sales'
+        mode: Literal['sales', 'purchases'] = 'sales',
     ) -> None:
         cm = total.chainmap
-        for e in (total.sales_related if mode =='sales' else total.purchases_related):
+        for e in total.sales_related if mode == 'sales' else total.purchases_related:
             cls = _ORDER_RELATED[e.object.meta.type][0 if mode == 'sales' else 1]
             order_event: OrderEvent = cls(object=e.object, tag=e.tag).as_(self.bot)
             order_event._order_preview = order_previews.get(e.object.meta.order_id)
@@ -336,7 +341,9 @@ class EventCollector:
     async def make_order_events(self, total: TotalEvents) -> None:
         sales, purchases = {}, {}
 
-        if (total.purchases_related or total.unknown_order_related) and self.config.discover_purchases:
+        if (
+            total.purchases_related or total.unknown_order_related
+        ) and self.config.discover_purchases:
             purchases = {i.id: i for i in await self._get_purchases()}
 
         if (total.sales_related or total.unknown_order_related) and self.config.discover_sales:
@@ -376,4 +383,3 @@ class EventCollector:
 
         self.last_chats_request_timestamp = total.timestamp
         return events
-

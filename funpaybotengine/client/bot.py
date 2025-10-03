@@ -6,6 +6,7 @@ __all__ = ('Bot',)
 import time
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 from io import BytesIO
+from asyncio import Lock
 from collections.abc import Callable, Sequence
 
 from typing_extensions import Self
@@ -17,7 +18,7 @@ from funpaybotengine.types import (
     Subcategory,
     RunnerResponse,
     OrderPreviewsBatch,
-    TransactionPreviewsBatch
+    TransactionPreviewsBatch,
 )
 from funpaybotengine.utils import (
     random_runner_tag,
@@ -40,9 +41,10 @@ from funpaybotengine.methods import (
     GetChatHistory,
     GetOfferFields,
     GetProfilePage,
+    GetTransactions,
     SaveOfferFields,
     MethodReturnType,
-    GetSubcategoryPage, GetTransactions,
+    GetSubcategoryPage,
 )
 from funpaybotengine.types.enums import OrderStatus, SubcategoryType
 from funpaybotengine.types.pages import (
@@ -100,6 +102,7 @@ class Bot:
         self._categories_cache: CategoriesCache | None = None
 
         self._last_update_timestamp = 0
+        self._messages_lock = Lock()
 
     @property
     def anonymous(self) -> bool:
@@ -259,18 +262,19 @@ class Bot:
 
         msg_data = SendingMessageData(chat_id=chat_id, message_text=text or '', image_id=image_id)
 
-        result = await RunnerRequest(
-            objects_to_request=[
-                NodeRequestObject(chat_id=chat_id, runner_tag=random_runner_tag()),
-            ],
-            action=SendMessageAction(message_data=msg_data),
-        ).execute(self)
+        async with self._messages_lock:
+            result = await RunnerRequest(
+                objects_to_request=[
+                    NodeRequestObject(chat_id=chat_id, runner_tag=random_runner_tag()),
+                ],
+                action=SendMessageAction(message_data=msg_data),
+            ).execute(self)
 
-        if result.response and result.response.error:
-            raise Exception(result.response.error)  # todo
-        msg = result.nodes[0].data.messages[-1]  # type: ignore[index] # will have nodes
-        await self.storage.mark_message_as_sent_by_bot(message_id=msg.id)
-        return msg
+            if result.response and result.response.error:
+                raise Exception(result.response.error)  # todo
+            msg = result.nodes[0].data.messages[-1]  # type: ignore[index] # will have nodes
+            await self.storage.mark_message_as_sent_by_bot(message_id=msg.id)
+            return msg
 
     async def refund(self, order_id: str) -> bool:
         return await Refund(order_id=order_id).execute(self)
@@ -441,11 +445,11 @@ class Bot:
     async def get_transactions(
         self,
         from_transaction_id: int = 0,
-        filter: str = ""
+        filter: str = '',
     ) -> TransactionPreviewsBatch:
         return await GetTransactions(
             filter=filter,
-            from_transaction_id=from_transaction_id
+            from_transaction_id=from_transaction_id,
         ).execute(self)
 
     # ----- Page getters -----
@@ -534,7 +538,7 @@ class Bot:
                         event_context_injection={
                             'events_stack': stack,
                             'bot': self,
-                        }
+                        },
                     )
         except KeyboardInterrupt:
             return

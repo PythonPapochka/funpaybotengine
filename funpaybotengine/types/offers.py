@@ -251,7 +251,10 @@ class OfferFields(FunPayMutableObject, BaseModel):
 
     @chips_only
     def set_currency_amount(
-        self, server_id: int, side_id: int, amount: int | float | None
+        self,
+        server_id: int,
+        side_id: int,
+        amount: int | float | None,
     ) -> None:
         """
         Sets the currency amount.
