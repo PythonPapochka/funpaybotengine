@@ -6,7 +6,9 @@ __all__ = ('Bot',)
 import time
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 from io import BytesIO
-from asyncio import Lock
+import asyncio
+from contextlib import suppress
+from asyncio import Lock, Event
 from collections.abc import Callable, Sequence
 
 from typing_extensions import Self
@@ -63,6 +65,7 @@ from funpaybotengine.types.requests import (
     SendMessageAction,
     SendingMessageData,
 )
+
 from funpaybotengine.client.session.base import Response
 from funpaybotengine.client.categories_cache import CategoriesCache
 from funpaybotengine.storage.inmemory_storage import InMemoryStorage
@@ -103,6 +106,7 @@ class Bot:
 
         self._last_update_timestamp = 0
         self._messages_lock = Lock()
+        self._listening_event = Event()
 
     @property
     def anonymous(self) -> bool:
@@ -541,7 +545,7 @@ class Bot:
         self._last_update_timestamp = int(time.time())
         return self
 
-    async def listen_events(
+    async def _listen_events(
         self,
         dp: Dispatcher,
         /,
@@ -565,3 +569,37 @@ class Bot:
                     )
         except KeyboardInterrupt:
             return
+
+    async def listen_events(
+        self,
+        dp: Dispatcher,
+        /,
+        *,
+        config: RunnerConfig | None = None,
+        session_storage: Storage | None = None,
+        workflow_injection: dict[str, Any] | None = None,
+    ) -> None:
+        self._listening_event.clear()
+
+        tasks = [
+            asyncio.create_task(
+                self._listen_events(
+                dp,
+                config=config,
+                session_storage=session_storage,
+                workflow_injection=workflow_injection
+                )
+            ),
+            asyncio.create_task(self._listening_event.wait()),
+        ]
+
+        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+
+        for task in pending:
+            task.cancel()
+            with suppress(asyncio.CancelledError):
+                await task
+        await asyncio.gather(*done)
+
+    async def stop_listening(self) -> None:
+        self._listening_event.set()

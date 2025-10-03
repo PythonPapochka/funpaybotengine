@@ -5,7 +5,6 @@ __all__ = ('Runner',)
 
 
 import time
-import asyncio
 from typing import TYPE_CHECKING, Any
 from collections.abc import AsyncGenerator
 
@@ -13,6 +12,7 @@ from funpaybotengine.storage.base import Storage
 from funpaybotengine.runner.config import RunnerConfig
 from funpaybotengine.runner.event_collector import EventCollector
 from funpaybotengine.dispatching.events.base import RunnerEvent
+import asyncio
 
 
 if TYPE_CHECKING:
