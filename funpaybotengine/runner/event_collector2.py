@@ -2,12 +2,9 @@ from __future__ import annotations
 
 
 import time
-from typing import TYPE_CHECKING, Any, Type, TypeVar, TypeAlias
-from dataclasses import field, dataclass
-from collections import defaultdict
+from typing import TYPE_CHECKING, Any, Type, TypeVar
 from collections.abc import Callable
 
-from funpaybotengine.dispatching import RunnerEvent
 from funpaybotengine.utils import random_runner_tag
 from funpaybotengine.types.enums import MessageType, OrderPreviewType
 from funpaybotengine.runner.config import RunnerConfig
@@ -29,6 +26,13 @@ from funpaybotengine.dispatching.events.builtin_events import (
     PurchasePartiallyRefundedEvent,
     SaleEvent,
     PurchaseEvent,
+    ReviewEvent,
+    NewReviewEvent,
+    NewReviewResponseEvent,
+    ReviewChangedEvent,
+    ReviewResponseChangedEvent,
+    ReviewDeletedEvent,
+    ReviewResponseDeletedEvent,
 )
 from funpaybotengine.types.requests.runner import NodeRequestObject, ChatBookmarksRequestObject
 from funpaybotengine.storage.inmemory_storage import InMemoryStorage
@@ -42,7 +46,7 @@ if TYPE_CHECKING:
     from funpaybotengine.client.bot import Bot
     from funpaybotengine.storage.base import Storage
     from funpaybotengine.types.orders import OrderPreview
-    from funpaybotengine.types.updates import ChatNode, RunnerResponse, RunnerResponseObject
+    from funpaybotengine.types.updates import RunnerResponse
 from collections import ChainMap
 
 CHAT_EVENTS = ChatChangedEvent | NewMessageEvent
@@ -63,26 +67,17 @@ _UNKNOWN_ORDER_RELATED: dict[MessageType, tuple[Type[SaleEvent], Type[PurchaseEv
     MessageType.ORDER_REOPENED: (SaleReopenedEvent, PurchaseReopenedEvent),
 }
 
+_REVIEW_RELATED: dict[MessageType, Type[ReviewEvent]] = {
+    MessageType.NEW_FEEDBACK: NewReviewEvent,
+    MessageType.NEW_FEEDBACK_REPLY: NewReviewResponseEvent,
+    MessageType.FEEDBACK_CHANGED: ReviewChangedEvent,
+    MessageType.FEEDBACK_REPLY_CHANGED: ReviewResponseChangedEvent,
+    MessageType.FEEDBACK_DELETED: ReviewDeletedEvent,
+    MessageType.FEEDBACK_REPLY_DELETED: ReviewDeletedEvent,
+}
+
 _ORDER_RELATED = _KNOWN_ORDER_RELATED | _UNKNOWN_ORDER_RELATED
-
-
-def resolve_order_event(event: NewMessageEvent, total: TotalEvents) -> None:
-    meta = event.message.meta
-    if meta.type not in _ORDER_RELATED:
-        return
-
-    if meta.buyer_id:
-        if meta.buyer_id == event.bot.userid:
-            total.purchases_related.append(event)
-        else:
-            total.sales_related.append(event)
-    elif meta.seller_id:
-        if meta.seller_id == event.bot.userid:
-            total.sales_related.append(event)
-        else:
-            total.purchases_related.append(event)
-    else:
-        total.unknown_order_related.append(event)
+_RELATED = _REVIEW_RELATED | _ORDER_RELATED
 
 
 F = TypeVar('F', bound=Callable[..., Any])
@@ -105,7 +100,7 @@ def attempts(amount: int = 0) -> Callable[[F], F]:
 
 class TotalEvents:
     def __init__(self) -> None:
-        self.tree: dict[ChatChangedEvent, dict[NewMessageEvent, OrderEvent | None]] = {}
+        self.tree: dict[ChatChangedEvent, dict[NewMessageEvent, OrderEvent | ReviewEvent | None]] = {}
         self.sales_related: list[NewMessageEvent] = []
         self.purchases_related: list[NewMessageEvent] = []
         self.unknown_order_related: list[NewMessageEvent] = []
@@ -114,6 +109,30 @@ class TotalEvents:
     @property
     def chainmap(self) -> ChainMap[NewMessageEvent, OrderEvent | None]:
         return ChainMap(*self.tree.values())
+
+    def add_chat_event(self, event: ChatChangedEvent) -> None:
+        self.tree[event] = {}
+
+    def add_message_event(self, c: ChatChangedEvent, e: NewMessageEvent, /) -> None:
+        meta = e.message.meta
+        if meta.type not in _RELATED:
+            self.tree[c][e] = None
+            return
+
+        if meta.type in _REVIEW_RELATED:
+            cls = _REVIEW_RELATED[meta.type]
+            review_event = cls(object=e.message, tag=e.tag, related_new_message_event=e)
+            self.tree[c][e] = review_event
+            return
+
+        # if in order_related
+        buyer_id, seller_id, uid = meta.buyer_id, meta.seller_id, e.bot.userid
+        if buyer_id:
+            self.purchases_related.append(e) if buyer_id == uid else self.sales_related.append(e)
+        elif meta.seller_id:
+            self.sales_related.append(e) if seller_id == uid else self.purchases_related.append(e)
+        else:
+            self.unknown_order_related.append(e)
 
 
 class EventCollector:
@@ -219,7 +238,7 @@ class EventCollector:
                 tag=runner_response.chat_bookmarks.tag,
             ).as_(self.bot)
 
-            result.tree[event] = {}
+            result.add_chat_event(event)
         return result
 
     async def get_new_message_events(self, total: TotalEvents) -> None:
@@ -248,8 +267,7 @@ class EventCollector:
                     continue
 
                 message_event = NewMessageEvent(object=message, tag=None).as_(self.bot)
-                total.tree[chat_event][message_event] = None
-                resolve_order_event(message_event, total)
+                total.add_message_event(chat_event, message_event)
 
     async def resolve_unknown_order_related_event(
         self,

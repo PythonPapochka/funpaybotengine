@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 
-__all__ = (
+__all__ = [
     'ChatInitEvent',
     'ChatChangedEvent',
     'NewMessageEvent',
@@ -21,7 +21,14 @@ __all__ = (
     'PurchaseRefundedEvent',
     'PurchasePartiallyRefundedEvent',
     'PurchaseReopenedEvent',
-)
+    'ReviewEvent',
+    'NewReviewEvent',
+    'NewReviewResponseEvent',
+    'ReviewChangedEvent',
+    'ReviewResponseChangedEvent',
+    'ReviewDeletedEvent',
+    'ReviewResponseDeletedEvent',
+]
 
 
 from typing import Any
@@ -31,8 +38,10 @@ from pydantic import Field, PrivateAttr
 from funpaybotengine.types.chat import PrivateChatPreview
 from funpaybotengine.types.orders import OrderPreview
 from funpaybotengine.types.messages import Message
+from funpaybotengine.types.reviews import Review
 
 from .base import RunnerEvent
+from ...types.pages import OrderPage
 
 
 class ChatInitEvent(RunnerEvent[PrivateChatPreview]):
@@ -156,19 +165,33 @@ class PurchasePartiallyRefundedEvent(PurchaseRefundedEvent): ...
 class PurchaseReopenedEvent(PurchaseStatusChangedEvent): ...
 
 
-class NewReviewEvent(NewMessageEvent): ...
+class ReviewEvent(FromMessageEvent):
+    _order_page: OrderPage | None = PrivateAttr(default=None)
+
+    async def get_order_page(self, update: bool = False) -> OrderPage:
+        if self._order_page is None or update:
+            self._order_page = await self.get_bound_bot().get_order_page(self.object.meta.order_id)
+        return self._order_page
+
+    async def get_review(self, update: bool = False) -> Review:
+        if self._order_page is None or update:
+            await self.get_order_page()
+        return self._order_page.review
 
 
-class ReviewChangedEvent(NewMessageEvent): ...
+class NewReviewEvent(ReviewEvent): ...
 
 
-class ReviewDeletedEvent(NewMessageEvent): ...
+class ReviewChangedEvent(ReviewEvent): ...
 
 
-class NewReviewResponseEvent(NewMessageEvent): ...
+class ReviewDeletedEvent(ReviewEvent): ...
 
 
-class ReviewResponseChangedEvent(NewMessageEvent): ...
+class NewReviewResponseEvent(ReviewEvent): ...
 
 
-class ReviewResponseDeletedEvent(NewMessageEvent): ...
+class ReviewResponseChangedEvent(ReviewEvent): ...
+
+
+class ReviewResponseDeletedEvent(ReviewEvent): ...
