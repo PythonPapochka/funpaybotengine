@@ -594,12 +594,12 @@ class Bot:
         ]
 
         done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+        print('DONE')
 
         for task in pending:
-            task.cancel()
             with suppress(asyncio.CancelledError):
+                task.cancel()
                 await task
-        await asyncio.gather(*done)
 
     async def stop_listening(self) -> None:
         self._listening_event.set()

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 __all__ = ('GetTransactions',)
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel
 from funpayparsers.parsers import TransactionPreviewsParser
@@ -25,23 +25,16 @@ class GetTransactions(FunPayMethod[TransactionPreviewsBatch], BaseModel):
     Returns ``funpaybotengine.types.pages.MainPage`` obj.
     """
 
-    change_locale: Language | None = None
-    """
-    Change locale to specified.
-
-    Defaults to ``None``.
-    """
-
-    filter: str = ''
+    filter: Literal['payment', 'withdraw', 'order', 'other', ''] = ''
     from_transaction_id: int = 0
 
     __model_to_build__ = TransactionPreviewsBatch
 
     def __init__(
         self,
-        locale: Language | None = None,
         filter: str = '',
         from_transaction_id: int | None = None,
+        locale: Language | None = None,
     ):
         super().__init__(
             url='users/transactions',
@@ -51,6 +44,7 @@ class GetTransactions(FunPayMethod[TransactionPreviewsBatch], BaseModel):
             allow_anonymous=False,
             allow_uninitialized=False,
             data=make_data,
+
             filter=filter,
             from_transaction_id=from_transaction_id,
         )
