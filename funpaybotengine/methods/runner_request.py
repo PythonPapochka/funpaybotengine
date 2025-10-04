@@ -63,6 +63,7 @@ class RunnerRequest(FunPayMethod[RunnerResponse], BaseModel):
             raise RunnerRequestError(result)
         return result
 
+
 async def make_data(method: RunnerRequest, bot: Bot) -> dict[str, str]:
     return {
         'objects': json.dumps(

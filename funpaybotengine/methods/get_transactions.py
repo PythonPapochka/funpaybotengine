@@ -44,7 +44,6 @@ class GetTransactions(FunPayMethod[TransactionPreviewsBatch], BaseModel):
             allow_anonymous=False,
             allow_uninitialized=False,
             data=make_data,
-
             filter=filter,
             from_transaction_id=from_transaction_id,
         )

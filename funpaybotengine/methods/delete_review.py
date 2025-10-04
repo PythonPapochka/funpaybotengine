@@ -30,8 +30,8 @@ class DeleteReview(FunPayMethod[bool], BaseModel):
 
     def __init__(self, order_id: str, locale: Language | None = None):
         super().__init__(
-            method=HTTPMethod.POST,
             url='orders/review',
+            method=HTTPMethod.POST,
             locale=locale,
             data=make_data,
             headers={'X-Requested-With': 'XMLHttpRequest'},

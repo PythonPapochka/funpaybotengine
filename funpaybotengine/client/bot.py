@@ -220,7 +220,7 @@ class Bot:
         text: str | None = None,
         image: str | BytesIO | int | None = None,
         enforce_whitespaces: bool = True,
-        keep_chat_unread: Literal[False] = False
+        keep_chat_unread: Literal[False] = False,
     ) -> Message: ...
 
     @overload
@@ -230,7 +230,7 @@ class Bot:
         text: str | None = None,
         image: str | BytesIO | int | None = None,
         enforce_whitespaces: bool = True,
-        keep_chat_unread: Literal[True] = True
+        keep_chat_unread: Literal[True] = True,
     ) -> None: ...
 
     async def send_message(
@@ -239,7 +239,7 @@ class Bot:
         text: str | None = None,
         image: str | BytesIO | int | None = None,
         enforce_whitespaces: bool = True,
-        keep_chat_unread: bool = False
+        keep_chat_unread: bool = False,
     ) -> Message | None:
         """
         Send a message to a chat.
@@ -273,7 +273,7 @@ class Bot:
         )
 
         assert not (text and image), (
-            f'Invalid arguments: you must provide either \'text\' or \'image\', not both '
+            f"Invalid arguments: you must provide either 'text' or 'image', not both "
             f'(got {text=!r} and {image=!r}).'
         )
 
@@ -285,9 +285,11 @@ class Bot:
             check_message_text(text)
 
         msg_data = SendingMessageData(chat_id=chat_id, message_text=text or '', image_id=image)
-        objects: Literal[False] | list[Any] = False if keep_chat_unread else [
-            NodeRequestObject(chat_id=chat_id, runner_tag=random_runner_tag())
-        ]
+        objects: Literal[False] | list[Any] = (
+            False
+            if keep_chat_unread
+            else [NodeRequestObject(chat_id=chat_id, runner_tag=random_runner_tag())]
+        )
 
         async with self._messages_lock:
             result = await RunnerRequest(
@@ -314,7 +316,8 @@ class Bot:
         return await SaveOfferFields(offer_fields=offer_fields).execute(self)
 
     # ----- Getters -----
-    async def get_chat_history(self,
+    async def get_chat_history(
+        self,
         chat_id: int | str,
         before_message_id: int = -1,
     ) -> list[Message]:
@@ -584,10 +587,10 @@ class Bot:
         tasks = [
             asyncio.create_task(
                 self._listen_events(
-                dp,
-                config=config,
-                session_storage=session_storage,
-                workflow_injection=workflow_injection
+                    dp,
+                    config=config,
+                    session_storage=session_storage,
+                    workflow_injection=workflow_injection,
                 )
             ),
             asyncio.create_task(self._listening_event.wait()),
