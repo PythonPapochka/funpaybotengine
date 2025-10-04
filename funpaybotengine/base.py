@@ -21,7 +21,7 @@ F = TypeVar('F', bound=Callable[..., Any])
 
 
 class BindableObject(BaseModel):
-    _bot: Bot | None = PrivateAttr()
+    _bot: Bot | None = PrivateAttr(None)
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(**kwargs)

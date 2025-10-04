@@ -3,7 +3,6 @@ from __future__ import annotations
 
 __all__ = ('GetSales',)
 
-
 from pydantic import BaseModel
 from funpayparsers.types import Language
 from funpayparsers.parsers import OrderPreviewsParser
@@ -61,7 +60,14 @@ class GetSales(FunPayMethod[OrderPreviewsBatch], BaseModel):
             parser_cls=OrderPreviewsParser,
             data={'continue': from_order_id} if from_order_id is not None else {},
             locale=locale,
-            context={'order_preview_type': OrderPreviewType.SALE},
+            context={
+                'order_preview_type': OrderPreviewType.SALE,
+                'order_id_filter': order_id_filter,
+                'buyer_username_filter': buyer_username_filter,
+                'status_filter': status_filter,
+                'game_id_filter': game_id_filter,
+                'other_filters': other_filters
+            },
             from_order_id=from_order_id,
             order_id_filter=order_id_filter,
             buyer_username_filter=buyer_username_filter,

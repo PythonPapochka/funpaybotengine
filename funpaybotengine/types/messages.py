@@ -185,8 +185,8 @@ class Message(FunPayObject, BaseModel):
 
         return await self.get_bound_bot().send_message(
             chat_id=self.chat_identifier,
-            text=text,  # type: ignore
-            image=image,  # type: ignore
+            text=text,
+            image=image,
             enforce_whitespaces=enforce_whitespaces,
         )
 

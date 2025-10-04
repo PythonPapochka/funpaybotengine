@@ -17,6 +17,7 @@ class OrderPreview(FunPayObject, BaseModel):
     """Represents an order preview."""
 
     def model_post_init(self, context: dict[Any, Any]) -> None:
+        super().model_post_init(context)
         if context and context.get('order_preview_type') is not None:
             self._type = context['order_preview_type']
 
@@ -49,7 +50,7 @@ class OrderPreview(FunPayObject, BaseModel):
         return self._type
 
 
-class OrderPreviewsBatch(FunPayObject, BaseModel):
+class OrderPreviewsBatch(FunPayObject):
     """
     Represents a single batch of order previews.
 
@@ -69,3 +70,69 @@ class OrderPreviewsBatch(FunPayObject, BaseModel):
 
     If ``None``, there are no more orders to load.
     """
+
+    _type: OrderPreviewType = PrivateAttr(OrderPreviewType.UNKNOWN)
+    _order_id_filter: str | None = PrivateAttr(None)
+    _buyer_username_filter: str | None = PrivateAttr(None)
+    _status_filter: OrderStatus | str | None = PrivateAttr(None)
+    _game_id_filter: int | None = PrivateAttr(None)
+    _other_filters: dict[str, str] | None = PrivateAttr(None)
+
+    def model_post_init(self, context: dict[Any, Any]) -> None:
+        super().model_post_init(context)
+        self._order_id_filter = context.get('order_id_filter')
+        self._buyer_username_filter = context.get('buyer_username_filter')
+        self._status_filter = context.get('status_filter')
+        self._game_id_filter = context.get('game_id_filter')
+        self._other_filters = context.get('other_filters')
+        self._type = context.get('order_preview_type', OrderPreviewType.UNKNOWN)
+
+    async def next_batch(self) -> OrderPreviewsBatch:
+        if not self.next_order_id:
+            raise ValueError('Last batch.')
+        if self.type is OrderPreviewType.UNKNOWN:
+            raise ValueError('Unknown type')
+
+        if self.type == OrderPreviewType.SALE:
+            method = self.get_bound_bot().get_sales
+        else:
+            method = self.get_bound_bot().get_purchases
+
+        return await method(
+            from_order_id=self.next_order_id,
+            order_id_filter=self.order_id_filter,
+            buyer_username_filter=self.buyer_username_filter,
+            status_filter=self.status_filter,
+            game_id_filter=self.game_id_filter,
+            other_filters=self.other_filters
+        )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def order_id_filter(self) -> str | None:
+        return self._order_id_filter
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def buyer_username_filter(self) -> str | None:
+        return self._buyer_username_filter
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def status_filter(self) -> OrderStatus | str | None:
+        return self._status_filter
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def game_id_filter(self) -> int | None:
+        return self._game_id_filter
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def other_filters(self) -> dict[str, str] | None:
+        return self._other_filters
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def type(self) -> OrderPreviewType:
+        return self._type

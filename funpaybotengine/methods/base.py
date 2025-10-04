@@ -131,6 +131,7 @@ class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
     __model_to_build__: Type[MethodReturnType] | None = None
 
     def model_post_init(self, context: Any, /) -> None:
+        super().model_post_init(context)
         if self.parser_cls and self.parser_options is None:
             self.parser_options = self.parser_cls.get_options_cls()()
 

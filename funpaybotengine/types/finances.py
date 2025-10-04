@@ -102,3 +102,12 @@ class TransactionPreviewsBatch(FunPayObject, BaseModel):
 
     If ``None``, there are no more transactions to load.
     """
+
+    async def next_batch(self) -> TransactionPreviewsBatch:
+        if not self.next_transaction_id:
+            raise ValueError('Last batch.')
+
+        return await self.get_bound_bot().get_transactions(
+            from_transaction_id=self.next_transaction_id,
+            filter=self.filter or ''
+        )
