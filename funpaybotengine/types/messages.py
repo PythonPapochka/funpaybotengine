@@ -4,7 +4,7 @@ from __future__ import annotations
 __all__ = ('Message',)
 
 
-from typing import TYPE_CHECKING, Any, overload
+from typing import TYPE_CHECKING, Any, overload, Literal
 from io import BytesIO
 
 from pydantic import BaseModel, PrivateAttr, ValidationInfo, field_validator
@@ -129,20 +129,6 @@ class Message(FunPayObject, BaseModel):
     _chat_page: ChatPage | None = PrivateAttr(default=None)
     _sender_profile: ProfilePage | None = PrivateAttr(default=None)
 
-    @field_validator('chat_id', mode='before')
-    @classmethod
-    def get_chat_id_from_context(cls, value: Any, info: ValidationInfo) -> Any:
-        if info.context:
-            return info.context.get('chat_id') if value is None else value
-        return None
-
-    @field_validator('chat_name', mode='before')
-    @classmethod
-    def get_chat_name_from_context(cls, value: Any, info: ValidationInfo) -> Any:
-        if info.context:
-            return info.context.get('chat_name') if value is None else value
-        return None
-
     @property
     def chat_identifier(self) -> int | str | None:
         return self.chat_id or self.chat_name
@@ -162,25 +148,30 @@ class Message(FunPayObject, BaseModel):
     @overload
     async def reply(
         self,
-        text: str = ...,
-        image: None = ...,
-        enforce_whitespaces: bool = ...,
-    ) -> Message: ...
+        text: str | None = None,
+        image: str | BytesIO | int | None = None,
+        enforce_whitespaces: bool = True,
+        keep_chat_unread: Literal[False] = False,
+    ) -> Message:
+        ...
 
     @overload
     async def reply(
         self,
-        text: None = ...,
-        image: str | BytesIO | int = ...,
-        enforce_whitespaces: bool = ...,
-    ) -> Message: ...
+        text: str | None = None,
+        image: str | BytesIO | int | None = None,
+        enforce_whitespaces: bool = True,
+        keep_chat_unread: Literal[True] = True,
+    ) -> None:
+        ...
 
     async def reply(
         self,
         text: str | None = None,
         image: str | BytesIO | int | None = None,
         enforce_whitespaces: bool = True,
-    ) -> Message:
+        keep_chat_unread: Literal[True] | Literal[False] = False,
+    ) -> Message | None:
         assert self.chat_identifier is not None, 'Unable to resolve chat identifier.'
 
         return await self.get_bound_bot().send_message(
@@ -188,6 +179,7 @@ class Message(FunPayObject, BaseModel):
             text=text,
             image=image,
             enforce_whitespaces=enforce_whitespaces,
+            keep_chat_unread=keep_chat_unread,
         )
 
     async def chat(self, update: bool = False) -> Chat:
@@ -217,3 +209,17 @@ class Message(FunPayObject, BaseModel):
     async def mark_as_sent_by_bot(self, bot: Bot | None = None, by_bot: bool = True) -> None:
         bot = bot or self.get_bound_bot()
         await bot.storage.mark_message_as_sent_by_bot(self.id, by_bot=by_bot)
+
+    @field_validator('chat_id', mode='before')
+    @classmethod
+    def _get_chat_id_from_context(cls, value: Any, info: ValidationInfo) -> Any:
+        if info.context:
+            return info.context.get('chat_id') if value is None else value
+        return None
+
+    @field_validator('chat_name', mode='before')
+    @classmethod
+    def _get_chat_name_from_context(cls, value: Any, info: ValidationInfo) -> Any:
+        if info.context:
+            return info.context.get('chat_name') if value is None else value
+        return None
