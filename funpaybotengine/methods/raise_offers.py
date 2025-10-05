@@ -70,7 +70,6 @@ class RaiseOffers(FunPayMethod[Literal[True]]):
                     wait = None
                 raise RaiseOffersError(response.raw_response, self.category_id, msg, wait)
             raise RaiseOffersError(response.raw_response, self.category_id, msg, None)
-
         return True
 
     async def transform_result(

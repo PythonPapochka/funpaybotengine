@@ -106,7 +106,11 @@ class Bot:
 
         self._last_update_timestamp = 0
         self._messages_lock = Lock()
-        self._listening_event = Event()
+
+        self._listening_lock = Lock()
+        self._stopping_lock = Lock()
+        self._stop_event = Event()
+        self._stopped_event = Event()
 
     @property
     def anonymous(self) -> bool:
@@ -582,27 +586,37 @@ class Bot:
         session_storage: Storage | None = None,
         workflow_injection: dict[str, Any] | None = None,
     ) -> None:
-        self._listening_event.clear()
+        if self._listening_lock.locked():
+            raise RuntimeError('Already listening')
 
-        tasks = [
-            asyncio.create_task(
-                self._listen_events(
-                    dp,
-                    config=config,
-                    session_storage=session_storage,
-                    workflow_injection=workflow_injection,
-                )
-            ),
-            asyncio.create_task(self._listening_event.wait()),
-        ]
+        async with self._listening_lock:
+            self._stop_event.clear()
+            self._stopped_event.clear()
 
-        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        print('DONE')
+            tasks = [
+                asyncio.create_task(
+                    self._listen_events(
+                        dp,
+                        config=config,
+                        session_storage=session_storage,
+                        workflow_injection=workflow_injection,
+                    )
+                ),
+                asyncio.create_task(self._stop_event.wait()),
+            ]
 
-        for task in pending:
-            with suppress(asyncio.CancelledError):
-                task.cancel()
-                await task
+            _, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+            for task in pending:
+                with suppress(asyncio.CancelledError):
+                    task.cancel()
+            self._stopped_event.set()
 
     async def stop_listening(self) -> None:
-        self._listening_event.set()
+        if self._stopped_event.is_set():
+            raise RuntimeError('Listening is already stopped.')
+        if self._stopping_lock.locked():
+            raise RuntimeError('Listening stopping already in progress.')
+
+        async with self._stopping_lock:
+            self._stop_event.set()
+            await self._stopped_event.wait()
