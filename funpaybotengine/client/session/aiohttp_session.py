@@ -18,6 +18,7 @@ from funpaybotengine.loggers import session_logger
 from funpaybotengine.types.enums import Language
 from funpaybotengine.client.session.base import Response, BaseSession, RawResponse
 from funpaybotengine.client.session.http_methods import HTTPMethod
+from funpaybotengine.exceptions.session_exceptions import BannedError
 
 
 if TYPE_CHECKING:
@@ -112,6 +113,9 @@ class AioHttpSession(BaseSession):
         session_logger.debug(
             f'Requesting {url} took {time.time() - start_time}s. Status: {response.status}.',
         )
+
+        if response.url.parts[-1] == 'blocked' and response.status == 200:
+            raise BannedError(method=method)
 
         self.check_status_code(method, response.status)
 

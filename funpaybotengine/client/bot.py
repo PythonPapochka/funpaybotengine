@@ -47,6 +47,7 @@ from funpaybotengine.methods import (
     SaveOfferFields,
     MethodReturnType,
     GetSubcategoryPage,
+    CheckBanned,
 )
 from funpaybotengine.types.enums import OrderStatus, SubcategoryType
 from funpaybotengine.types.pages import (
@@ -513,6 +514,9 @@ class Bot:
 
     async def get_order_page(self, order_id: str) -> OrderPage:
         return await GetOrderPage(order_id=order_id).execute(self)
+
+    async def check_banned(self) -> bool:
+        return await CheckBanned().execute(self)
 
     async def make_request(
         self,

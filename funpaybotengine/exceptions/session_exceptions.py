@@ -24,13 +24,16 @@ if TYPE_CHECKING:
 class FunPayRequestError(FunPayBotEngineError):
     def __init__(self, method: FunPayMethod[Any]) -> None:
         super().__init__(
-            f'An unexpected error occurred while processing a request to {method.url}',
+            f'An unexpected error occurred while processing a request to {method.url!r}.',
             method,
         )
         self.method = method
 
     def __str__(self) -> str:
         return str(self.args[0])
+
+
+class BannedError(FunPayRequestError): ...
 
 
 class UnexpectedHTTPStatusError(FunPayRequestError):
