@@ -137,7 +137,7 @@ class TotalEvents:
 
         if meta.type in _REVIEW_RELATED:
             cls = _REVIEW_RELATED[meta.type]
-            review_event = cls(object=e.message, tag=e.tag, related_new_message_event=e)
+            review_event = cls(object=e.message, tag=e.tag, related_new_message_event=e).as_(e.bot)
             self.tree[c][e] = review_event
             return
 
