@@ -112,6 +112,7 @@ class Bot:
         self._stopping_lock = Lock()
         self._stop_event = Event()
         self._stopped_event = Event()
+        self._stopped_event.set()
 
     @property
     def anonymous(self) -> bool:
