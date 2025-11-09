@@ -34,7 +34,7 @@ _events = {
     'new_review_response': events.NewReviewResponseEvent,
     'review_response_changed': events.ReviewResponseChangedEvent,
     'review_response_deleted': events.ReviewResponseDeletedEvent,
-    'exception': ExceptionEvent,
+    'error': ExceptionEvent,
 }
 
 
