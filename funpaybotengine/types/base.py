@@ -3,9 +3,10 @@ from __future__ import annotations
 
 __all__ = ('FunPayObject', 'FunPayMutableObject')
 
+import json
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, PrivateAttr
+from pydantic import BaseModel, ConfigDict, PrivateAttr, model_validator
 
 from funpaybotengine.base import BindableObject
 
@@ -29,6 +30,13 @@ class FunPayObject(BindableObject, BaseModel):
     """
 
     _cache_: dict[str, Any] = PrivateAttr(default_factory=dict)
+
+    @model_validator(mode='before')
+    @classmethod
+    def _add_raw_source(cls, data: Any) -> Any:
+        if isinstance(data, dict) and 'raw_source' not in data:
+            data['raw_source'] = json.dumps(data)
+        return data
 
 
 class FunPayMutableObject(FunPayObject, BaseModel):
