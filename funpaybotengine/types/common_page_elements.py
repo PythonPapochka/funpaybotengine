@@ -76,3 +76,6 @@ class PageHeader(FunPayObject, BaseModel):
 
     balance: MoneyValue | None
     """Current user balance."""
+
+    sales_available: bool
+    """Whether sales available or not."""
