@@ -62,6 +62,10 @@ class Response(RawResponse[ResponseObject], Generic[ResponseObject]):
 
 
 class BaseSession(ABC):
+    """
+    Base session.
+    """
+
     @abstractmethod
     async def close(self) -> None: ...
 
@@ -74,6 +78,22 @@ class BaseSession(ABC):
     ) -> Response[MethodReturnType]: ...
 
     def check_status_code(self, method: FunPayMethod[Any], status_code: int | HTTPStatus) -> None:
+        """
+        Checks the response's status code and raises an exception if it is not in the
+        list of methods expected status codes.
+
+        :param method: Method obj.
+        :param status_code: Status code to check.
+
+        :raises BadRequestError: if `status_code` is 400.
+        :raises UnauthorizedError: if `status_code` is 401.
+        :raises ForbiddenError: if `status_code` is 403.
+        :raises NotFoundError: if `status_code` is 404.
+        :raises RateLimitExceededError: if `status_code` is 429.
+        :raises FunPayServerError: if `status_code` >= 500.
+        :raises UnexpectedHTTPStatusError: in any other cases.
+        """
+
         if status_code in method.expected_status_codes:
             return
 
