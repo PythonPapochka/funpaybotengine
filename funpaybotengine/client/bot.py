@@ -71,7 +71,6 @@ from funpaybotengine.types.requests import (
     SendingMessageData,
 )
 from funpaybotengine.client.session.base import Response
-from funpaybotengine.client.categories_cache import CategoriesCache
 from funpaybotengine.storage.inmemory_storage import InMemoryStorage
 from funpaybotengine.client.session.aiohttp_session import AioHttpSession
 
@@ -99,14 +98,13 @@ class Bot:
         self._csrf_token: str | None = None
         self._phpsessid: str | None = phpsessid
 
-        self._locale: Language = None
-        self._currency: Currency = None
+        self._locale: Language | None = None
+        self._currency: Currency | None = None
 
         self._session = session or AioHttpSession(proxy=proxy, default_headers=default_headers)
         self._runner = Runner(self)
 
         self._storage = storage or InMemoryStorage()
-        self._categories_cache: CategoriesCache | None = None
 
         self._userid: int | None = None
         self._username: str | None = None
@@ -139,7 +137,6 @@ class Bot:
             self.phpsessid,
             self.locale,
             self.currency,
-            self.categories_cache,
         ]
         if not self.anonymous:
             to_check.extend(
@@ -180,14 +177,14 @@ class Bot:
         return self._username
 
     @property
-    def locale(self) -> Language:
+    def locale(self) -> Language | None:
         """
         Bot locale. Available only after initialization (``Bot.update`` method).
         """
         return self._locale
 
     @property
-    def currency(self) -> Currency:
+    def currency(self) -> Currency | None:
         """
         Bot currency. Available only after initialization (``Bot.update`` method).
         """
@@ -203,10 +200,6 @@ class Bot:
     @property
     def storage(self) -> Storage:
         return self._storage
-
-    @property
-    def categories_cache(self) -> CategoriesCache | None:
-        return self._categories_cache
 
     @property
     def session_updated_at(self) -> int:
@@ -578,8 +571,6 @@ class Bot:
 
         self._locale = result.response_obj.app_data.locale
         self._currency = result.response_obj.header.currency
-
-        self._categories_cache = CategoriesCache(result.response_obj.categories)
 
         self._userid = result.response_obj.header.user_id
         self._username = result.response_obj.header.username
