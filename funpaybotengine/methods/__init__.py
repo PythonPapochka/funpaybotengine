@@ -14,6 +14,7 @@ from .delete_review import *
 from .get_chat_page import *
 from .get_main_page import *
 from .get_purchases import *
+from .upload_avatar import *
 from .get_2fa_status import *
 from .get_order_page import *
 from .runner_request import *
@@ -21,5 +22,9 @@ from .get_chat_history import *
 from .get_offer_fields import *
 from .get_profile_page import *
 from .get_transactions import *
+from .get_settings_page import *
 from .save_offer_fields import *
+from .set_offers_hidden import *
 from .get_subcategory_page import *
+from .update_notice_channel import *
+from .get_telegram_connect_url import *

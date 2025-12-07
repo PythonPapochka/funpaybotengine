@@ -38,7 +38,6 @@ class Logout(FunPayMethod[bool]):
 
     async def parse_result(self, response: RawResponse[Any]) -> bool:
         return response.cookies.get('golden_key') == 'deleted'
-    
-    async def transform_result(self, parsing_result, response):
+
+    async def transform_result(self, parsing_result: bool, response: RawResponse[Any]) -> bool:
         return parsing_result
-            

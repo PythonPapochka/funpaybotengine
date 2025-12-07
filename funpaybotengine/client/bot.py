@@ -17,6 +17,7 @@ from funpaybotengine.types import (
     Message,
     Currency,
     Language,
+    Settings,
     CalcResult,
     OfferFields,
     Subcategory,
@@ -46,21 +47,27 @@ from funpaybotengine.methods import (
     Get2faStatus,
     GetOrderPage,
     GetPurchases,
+    UploadAvatar,
     RunnerRequest,
     GetChatHistory,
     GetOfferFields,
     GetProfilePage,
+    GetSettingPage,
     GetTransactions,
     SaveOfferFields,
+    SetOffersHidden,
     MethodReturnType,
     GetSubcategoryPage,
+    UpdateNoticeChannel,
+    GetTelegramConnectURL,
 )
-from funpaybotengine.types.enums import OrderStatus, SubcategoryType
+from funpaybotengine.types.enums import OrderStatus, NoticeChannel, SubcategoryType
 from funpaybotengine.types.pages import (
     ChatPage,
     MainPage,
     OrderPage,
     ProfilePage,
+    SettingsPage,
     SubcategoryPage,
 )
 from funpaybotengine.storage.base import Storage
@@ -170,7 +177,7 @@ class Bot:
         PHPSESSID. Available only after initialization (``Bot.update`` method).
         """
         return self._phpsessid
-    
+
     @property
     def logout_token(self) -> str | None:
         """
@@ -242,6 +249,9 @@ class Bot:
         :return: Unique FunPay image ID assigned to the uploaded image.
         """
         return await UploadImage(file=file).execute(self)
+
+    async def upload_avatar(self, file: str | BytesIO) -> bool:
+        return await UploadAvatar(file=file).execute(self)
 
     @overload
     async def send_message(
@@ -344,20 +354,42 @@ class Bot:
 
     async def save_offer_fields(self, offer_fields: OfferFields) -> bool:
         return await SaveOfferFields(offer_fields=offer_fields).execute(self)
-    
+
     async def calc_chips(self, game_id: int, price: float) -> CalcResult:
         return await CalcChips(game_id=game_id, price=price).execute(self)
 
     async def calc_lots(self, subcategory_id: int, price: float) -> CalcResult:
         return await CalcLots(subcategory_id=subcategory_id, price=price).execute(self)
-    
+
     async def logout(self) -> bool:
         if self.logout_token is None:
             await self.update()
 
-        return await Logout(logout_token=self.logout_token).execute(self) # type: ignore # will raise UnauthorizedError after self.update
+        return await Logout(logout_token=self.logout_token).execute(self)  # type: ignore # will raise UnauthorizedError after self.update
+
+    async def set_notification_status(self, enabled: bool, channel: NoticeChannel) -> bool:
+        return await UpdateNoticeChannel(enabled=enabled, channel=channel).execute(self)
+
+    async def set_telegram_notification_status(self, enabled: bool) -> bool:
+        return await UpdateNoticeChannel(enabled=enabled, channel=NoticeChannel.TELEGRAM).execute(
+            self,
+        )
+
+    async def set_push_notification_status(self, enabled: bool) -> bool:
+        return await UpdateNoticeChannel(enabled=enabled, channel=NoticeChannel.PUSH).execute(self)
+
+    async def set_email_notification_status(self, enabled: bool) -> bool:
+        return await UpdateNoticeChannel(enabled=enabled, channel=NoticeChannel.EMAIL).execute(
+            self,
+        )
+
+    async def set_offers_hidden(self, hidden: bool) -> bool:
+        return await SetOffersHidden(hidden=hidden).execute(self)
 
     # ----- Getters -----
+    async def get_telegram_connect_url(self) -> str:
+        return await GetTelegramConnectURL().execute(self)
+
     async def get_chat_history(
         self,
         chat_id: int | str,
@@ -552,11 +584,17 @@ class Bot:
     async def get_order_page(self, order_id: str) -> OrderPage:
         return await GetOrderPage(order_id=order_id).execute(self)
 
-    async def check_banned(self) -> bool:
-        return await CheckBanned().execute(self)
+    async def get_settings_page(self) -> SettingsPage:
+        return await GetSettingPage().execute(self)
+
+    async def get_settings(self) -> Settings:
+        return (await self.get_settings_page()).settings
 
     async def get_2fa_status(self) -> bool:
         return await Get2faStatus().execute(self)
+
+    async def check_banned(self) -> bool:
+        return await CheckBanned().execute(self)
 
     async def make_request(
         self,
@@ -592,7 +630,7 @@ class Bot:
         self._logout_token = page_obj.header.logout_token
 
         self._locale = page_obj.app_data.locale
-        
+
         self._currency = page_obj.header.currency
         self._userid = page_obj.header.user_id
         self._username = page_obj.header.username
