@@ -652,7 +652,7 @@ class Bot:
             async with self.session:
                 listener = self._runner.listen(config=config, session_storage=session_storage)
                 async for event, stack in listener:
-                    await dp.propagate_event(
+                    await dp.event_entry(
                         event,
                         event_context_injection={
                             **workflow_injection,
