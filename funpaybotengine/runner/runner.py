@@ -9,7 +9,8 @@ import asyncio
 from typing import TYPE_CHECKING, Any
 from collections.abc import AsyncGenerator
 
-from funpaybotengine.exceptions import UnauthorizedError
+from funpaybotengine.exceptions import UnauthorizedError, BotUnauthenticatedError
+from funpaybotengine.loggers import runner_logger
 from funpaybotengine.storage.base import Storage
 from funpaybotengine.runner.config import RunnerConfig
 from funpaybotengine.runner.event_collector import EventCollector
@@ -47,7 +48,12 @@ class Runner:
 
             try:
                 result = await collector.get_events()
-            except UnauthorizedError:
+            except (BotUnauthenticatedError, UnauthorizedError) as e:
+                runner_logger.warning(
+                    'Bot is unauthenticated (%s). Executing current policy %r.',
+                    e.__class__.__name__,
+                    config.on_unauthenticated_error_policy
+                )
                 if config.on_unauthenticated_error_policy == 'event':
                     ...
                 elif config.on_unauthenticated_error_policy == 'stop':

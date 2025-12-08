@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import logging
 import time
 from typing import TYPE_CHECKING, Any, Type, Literal, TypeVar
 from collections.abc import Callable
 
 from funpaybotengine.utils import random_runner_tag
 from funpaybotengine.loggers import runner_logger as logger
-from funpaybotengine.exceptions import BotUnauthenticatedError
+from funpaybotengine.exceptions import BotUnauthenticatedError, UnauthorizedError
 from funpaybotengine.dispatching import RunnerEvent
 from funpaybotengine.types.enums import MessageType, OrderPreviewType
 from funpaybotengine.runner.config import RunnerConfig
@@ -96,6 +97,8 @@ def attempts(amount: int = 0) -> Callable[[F], F]:
                 attempts -= 1
                 try:
                     return await func(*args, **kwargs)
+                except UnauthorizedError:
+                    raise
                 except UnexpectedHTTPStatusError:
                     if not attempts:
                         raise
@@ -274,27 +277,28 @@ class EventCollector:
 
     async def get_new_message_events(self, total: TotalEvents) -> None:
         ids = [i.object.id for i in total.tree]
-        logger.debug(f'Getting new messages for chats {", ".join(str(i) for i in ids)}.')
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug('Getting new messages for chats %s', ', '.join(str(i) for i in ids))
         chat_histories = await self.get_chat_histories(ids)
 
         for chat_event, dict_ in total.tree.items():
-            logger.debug(f'Processing chat {chat_event.chat_preview.id}...')
+            logger.debug('Processing chat %s...', chat_event.chat_preview.id)
             from_id = chat_event.previous.last_message_id if chat_event.previous else 0
             to_id = chat_event.object.last_message_id
 
             for message in chat_histories[chat_event.chat_preview.id]:
                 if from_id != 0 and from_id < message.id <= to_id:
                     logger.debug(
-                        f'New message in chat {chat_event.chat_preview.id}: {message.id} '
-                        f'(from IDs difference).',
+                        'New message in chat %s: %s (from IDs difference).',
+                        chat_event.chat_preview.id, message.id,
                     )
                 elif (
                     message.timestamp >= self.last_chats_request_timestamp and message.id <= to_id
                 ):
                     logger.debug(
-                        f'New message in chat {chat_event.chat_preview.id}: {message.id} '
-                        f'(from timestamp difference: '
-                        f'{message.timestamp} >= {self.last_chats_request_timestamp}).',
+                        'New message in chat %s: %s (from timestamp difference: %s >= %s).',
+                        chat_event.chat_preview.id, message.id, message.timestamp,
+                        self.last_chats_request_timestamp
                     )
                 else:
                     continue
@@ -384,7 +388,7 @@ class EventCollector:
         await self.make_order_events(total)
         events = total.total_events
 
-        logger.debug(f'Finished getting events. Total events: {len(events)}')
+        logger.debug('Finished getting events. Total events: %s', len(events))
 
         for i in total.tree:  # todo: update all chats with 1 method only (storage.update_chats)
             await self.session_storage.save_chat_previews(i.object)
@@ -392,7 +396,7 @@ class EventCollector:
         order_events_mapping = {}
         cm = total.chainmap
         for order_related in total.sales_related + total.purchases_related:
-            order_event: OrderEvent = cm[order_related]  # type: ignore  # always not None
+            order_event: OrderEvent = cm[order_related]  # type: ignore # always not None
             if order_event._order_preview is not None:
                 order_events_mapping[order_event._order_preview.id] = order_event._order_preview
 

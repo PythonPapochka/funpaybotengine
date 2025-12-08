@@ -92,7 +92,7 @@ class AioHttpSession(BaseSession):
         csrf_token = bot.csrf_token if bot.csrf_token else ''
         timeout_obj = ClientTimeout(total=timeout if timeout is not None else method.timeout)
         url = await self.resolve_url(method, bot, session)
-        session_logger.info(f'Making {method.method.name} request to {url}')
+        session_logger.info('Making %s request to %s', method.method.name, url)
 
         start_time = time.time()
         async with session:
@@ -144,7 +144,8 @@ class AioHttpSession(BaseSession):
         start_time = time.time()
         response_obj = await method.to_obj(raw_response)
         result = Response.from_raw_response(raw_response, response_obj)
-        session_logger.debug(f'Parsing response of {url} took {time.time() - start_time}s.')
+
+        session_logger.debug('Parsing response of %s took %.10fs.', url, time.time() - start_time)
         return result
 
     @staticmethod
