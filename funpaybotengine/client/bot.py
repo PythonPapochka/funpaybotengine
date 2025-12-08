@@ -23,7 +23,9 @@ from funpaybotengine.types import (
     Subcategory,
     RunnerResponse,
     OrderPreviewsBatch,
+    PrivateChatPreview,
     TransactionPreviewsBatch,
+    CurrentlyViewingOfferInfo,
 )
 from funpaybotengine.utils import (
     random_runner_tag,
@@ -61,30 +63,38 @@ from funpaybotengine.methods import (
     UpdateNoticeChannel,
     GetTelegramConnectURL,
 )
+from funpaybotengine.exceptions import (
+    UserBannedError,
+    BotUnauthenticatedError,
+)
 from funpaybotengine.types.enums import OrderStatus, NoticeChannel, SubcategoryType
 from funpaybotengine.types.pages import (
     ChatPage,
     MainPage,
     OrderPage,
+    FunPayPage,
     ProfilePage,
     SettingsPage,
     SubcategoryPage,
-    FunPayPage
 )
 from funpaybotengine.storage.base import Storage
 from funpaybotengine.runner.config import RunnerConfig
 from funpaybotengine.types.requests import (
     Action,
+    RequestNodeInfo,
+    CPURequestObject,
     NodeRequestObject,
     RequestableObject,
     SendMessageAction,
     SendingMessageData,
+    ChatCounterRequestObject,
+    ChatBookmarksRequestObject,
+    OrdersCountersRequestObject,
 )
 from funpaybotengine.client.session.base import Response
 from funpaybotengine.storage.inmemory_storage import InMemoryStorage
 from funpaybotengine.client.session.aiohttp_session import AioHttpSession
 
-from funpaybotengine.exceptions import BotUnauthenticatedError, UserBannedError
 
 if TYPE_CHECKING:
     from funpaybotengine.client.session.base import BaseSession
@@ -388,6 +398,145 @@ class Bot:
     async def set_offers_hidden(self, hidden: bool) -> bool:
         return await SetOffersHidden(hidden=hidden).execute(self)
 
+    # ----- Runner shortcuts -----
+    @overload
+    async def get_currently_viewing_offer(
+        self,
+        *user_ids: int,
+        user_id: None = None,
+    ) -> dict[int, CurrentlyViewingOfferInfo | bool]: ...
+
+    @overload
+    async def get_currently_viewing_offer(
+        self, *, user_id: int
+    ) -> CurrentlyViewingOfferInfo | bool: ...
+
+    async def get_currently_viewing_offer(
+        self,
+        *user_ids: int,
+        user_id: int | None = None,
+    ) -> dict[int, CurrentlyViewingOfferInfo | bool] | CurrentlyViewingOfferInfo | bool:
+        """
+        Returns the last offer that the user has seen recently
+        """
+        if not user_ids and user_id is None:
+            raise ValueError('Either `user_ids` or `user_id` must be provided.')
+        
+        if len(user_ids) > 10:
+            raise ValueError('Too many user_ids provided (`user_ids` must contain no more than 10 items).')
+
+        if user_ids:
+            objects = [CPURequestObject(id=user_id) for user_id in user_ids]
+        else:
+            objects = [CPURequestObject(id=user_id)]
+
+        response = await self.runner_request(objects_to_request=objects)
+
+        if not response.cpu:
+            return {} if user_ids else False
+
+        if user_ids:
+            return {cpu.id: cpu.data for cpu in response.cpu}  # type: ignore # todo
+        return response.cpu[0].data
+
+    async def get_unread_chats_amount(self) -> int:
+        """
+        Returns the amount of unread chats
+        """
+        response = await self.runner_request(objects_to_request=[ChatCounterRequestObject()])
+
+        if not response.chat_counter:
+            return 0
+
+        return response.chat_counter.data.counter  # type: ignore # will have data
+
+    async def get_active_orders_amount(self) -> tuple[int, int]:
+        """
+        Returns the amount of active orders (purchases, sales)
+        """
+        response = await self.runner_request(objects_to_request=[OrdersCountersRequestObject()])
+
+        if not response.orders_counters:
+            return (0, 0)
+
+        return response.orders_counters.data.purchases, response.orders_counters.data.sales  # type: ignore # will have data
+
+    async def get_recent_chat_previews(self) -> list[PrivateChatPreview]:
+        """
+        Returns the list of recent chat previews
+        """
+        response = await self.runner_request(objects_to_request=[ChatBookmarksRequestObject()])
+
+        if not response.chat_bookmarks:
+            return []
+
+        return response.chat_bookmarks.data.chat_previews  # type: ignore # will have data
+
+    @overload
+    async def get_chat_messages(
+        self,
+        *,
+        chat_id: int | str,
+        after_message_id: int | None = None,
+    ) -> list[Message]: ...
+
+    @overload
+    async def get_chat_messages(
+        self,
+        *args: tuple[int | str, int | None],
+        chat_id: None = None,
+        after_message_id: None = None,
+    ) -> dict[int, list[Message]]: ...
+
+    async def get_chat_messages(
+        self,
+        *args: tuple[int | str, int | None],
+        chat_id: int | str | None = None,
+        after_message_id: int | None = None,
+    ) -> list[Message] | dict[int, list[Message]]:
+        """
+        Retrieves the 100 most recent messages in a chat,
+        sent after the specified message ID.
+
+        :param chat_id: Chat ID.
+        :param after_message_id: Message ID to paginate history **forwards from** (exclusive).
+            Messages with IDs **greater than** this one will be returned,
+            i.e. history will be fetched in forward order *after* this message.
+
+        :param args: Tuple of (chat_id, after_message_id)
+
+        :returns: A dictionary [chat_id, list] or a list of up to 100 ``Message`` objects, sorted from oldest to newest.
+        """
+        if not args and chat_id is None:
+            raise ValueError('Either `chat_id` or `args` must be provided.')
+        
+        if len(args) > 10:
+            raise ValueError('Too many arguments provided (`args` must contain no more than 10 tuples).')
+
+        if args:
+            objects = [
+                NodeRequestObject(
+                    chat_id=arg[0],
+                    data=RequestNodeInfo(chat_id=arg[0], after_message_id=arg[1] or 0),
+                )
+                for arg in args
+            ]
+        else:
+            objects = [
+                NodeRequestObject(
+                    chat_id=chat_id,
+                    data=RequestNodeInfo(chat_id=chat_id, after_message_id=after_message_id or 0),
+                ),
+            ]
+
+        response = await self.runner_request(objects_to_request=objects)
+        if not response.nodes:
+            return {} if args else []
+
+        if args:
+            return {obj.data.node.id: obj.data.messages for obj in response.nodes}  # type: ignore # todo
+        return response.nodes[0].data.messages  # type: ignore # todo
+
     # ----- Getters -----
     async def get_telegram_connect_url(self) -> str:
         return await GetTelegramConnectURL().execute(self)
@@ -401,16 +550,12 @@ class Bot:
         Retrieves the 100 most recent messages in a chat,
         sent before the specified message ID.
 
-        Also marks the chat as read.
+        :param chat_id: Chat ID.
+        :param before_message_id: Message ID to paginate history **backwards from** (exclusive).
+            Messages with IDs **lower than** this one will be returned,
+            i.e. history will be fetched in reverse order *before* this message.
 
-        :param chat_id: Chat ID or name.
-        :param before_message_id:
-            Message ID to paginate from —
-            only messages sent **before** this ID will be returned.
-            Defaults to ``-1``
-            to fetch the most recent messages.
-
-        :return: A list of up to 100 ``Message`` objects, sorted from oldest to newest.
+        :returns: A list of up to 100 ``Message`` objects, sorted from newest to oldest.
         """
         return await GetChatHistory(chat_id=chat_id, before_message_id=before_message_id).execute(
             self,
