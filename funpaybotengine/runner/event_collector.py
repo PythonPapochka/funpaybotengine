@@ -233,7 +233,10 @@ class EventCollector:
         if not result.chat_bookmarks:
             return
 
-        for i in result.chat_bookmarks.data.chat_previews:
+        for i in result.chat_bookmarks.data.chat_previews:  # type: ignore # ->
+            # -> chat_bookmarks will not be `False`. If chat_bookmarks is `False`
+            # UnauthorizedError should be already raised.
+
             logger.debug(
                 f'Chat {i.id} ({i.username}) initialized. Last message ID: {i.last_message_id}',
             )
@@ -242,7 +245,7 @@ class EventCollector:
     async def get_chat_changed_events(self) -> TotalEvents | None:
         logger.debug('Getting changed chats...')
         runner_response = await self._get_chat_bookmarks()
-        if not runner_response.chat_bookmarks:
+        if not runner_response.chat_bookmarks or not runner_response.chat_bookmarks.data:
             return None
 
         result = TotalEvents(timestamp=runner_response.timestamp)
@@ -393,8 +396,7 @@ class EventCollector:
 
         logger.debug('Finished getting events. Total events: %s', len(events))
 
-        for i in total.tree:  # todo: update all chats with 1 method only (storage.update_chats)
-            await self.session_storage.save_chat_previews(i.object)
+        await self.session_storage.save_chat_previews(*(i.object for i in total.tree))
 
         order_events_mapping = {}
         cm = total.chainmap
