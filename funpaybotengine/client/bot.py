@@ -52,9 +52,11 @@ from funpaybotengine.methods import (
     UploadAvatar,
     RunnerRequest,
     GetChatHistory,
+    GetMyChipsPage,
     GetOfferFields,
     GetProfilePage,
     GetSettingPage,
+    GetMyOffersPage,
     GetTransactions,
     SaveOfferFields,
     SetOffersHidden,
@@ -74,7 +76,9 @@ from funpaybotengine.types.pages import (
     MainPage,
     OrderPage,
     FunPayPage,
+    MyChipsPage,
     ProfilePage,
+    MyOffersPage,
     SettingsPage,
     SubcategoryPage,
     TransactionsPage,
@@ -339,16 +343,19 @@ class Bot:
         :returns: The resulting message object.
         """
 
-        assert isinstance(text, str) or isinstance(image, str | BytesIO | int), (
-            f'Invalid message text or image input: '
-            f"either provide message text ('text') (got {text=}), "
-            f"or provide image ID / path to image / image file stream ('image') (got {image=})."
-        )
+        if not (isinstance(text, str) or isinstance(image, str | BytesIO | int)):
+            raise ValueError(
+                'Invalid message text or image input: '
+                f"either provide message text ('text') (got {text=}), "
+                "or provide image ID / path to image / image file stream ('image') "
+                f'(got {image=}).',
+            )
 
-        assert not (text and image), (
-            f"Invalid arguments: you must provide either 'text' or 'image', not both "
-            f'(got {text=!r} and {image=!r}).'
-        )
+        if text and image:
+            raise ValueError(
+                "Invalid arguments: you must provide either 'text' or 'image', not both "
+                f'(got {text=!r} and {image=!r}).',
+            )
 
         if image is not None:
             image = image if isinstance(image, int) else await UploadImage(image).execute(self)
@@ -764,6 +771,12 @@ class Bot:
                 subcategory_id=subcategory_id,
             ).execute(self)
         ).response_obj
+
+    async def get_my_offers_page(self, subcategory_id: int) -> MyOffersPage:
+        return await GetMyOffersPage(subcategory_id=subcategory_id).execute(self)
+
+    async def get_my_chips_page(self, subcategory_id: int) -> MyChipsPage:
+        return await GetMyChipsPage(subcategory_id=subcategory_id).execute(self)
 
     async def get_order_page(self, order_id: str) -> OrderPage:
         return (await GetOrderPage(order_id=order_id).execute(self)).response_obj
