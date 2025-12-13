@@ -6,14 +6,14 @@ __all__ = ('Dispatcher',)
 
 from typing import Any
 
-from eventry.asyncio.dispatcher import Dispatcher as BaseDispatcher, ErrorContext
+from eventry.asyncio.dispatcher import Dispatcher as BaseDispatcher
 
-from funpaybotengine.dispatching.events import ExceptionEvent
+from funpaybotengine.dispatching.events import Event, ExceptionEvent
 from funpaybotengine.dispatching.routers import Router
 
 
-def error_event_factory(context: ErrorContext) -> ExceptionEvent:
-    return ExceptionEvent(object=context.exception, event=context.event)
+def error_event_factory(event: Event[Any], exception: Exception) -> ExceptionEvent:
+    return ExceptionEvent(object=exception, event=event)
 
 
 class Dispatcher(BaseDispatcher, Router):
