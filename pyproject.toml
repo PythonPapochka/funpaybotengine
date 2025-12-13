@@ -1,6 +1,6 @@
 [project]
 name = "funpaybotengine"
-version = "0.1.0dev2"
+version = "0.1.1dev1"
 description = "Framework for creating FunPay bots."
 requires-python = ">=3.10"
 
