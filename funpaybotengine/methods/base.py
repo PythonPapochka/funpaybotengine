@@ -19,7 +19,7 @@ from funpaybotengine.client.session.http_methods import HTTPMethod
 
 if TYPE_CHECKING:
     from funpaybotengine.client.bot import Bot
-    from funpaybotengine.client.session.base import RawResponse
+    from funpaybotengine.client.session.base import Response, RawResponse
 
 
 R = TypeVar('R')
@@ -220,11 +220,10 @@ class FunPayMethod(BaseModel, Generic[MethodReturnType], ABC):
     async def get_context(self, bot: Bot) -> dict[str, Any]:
         return await self._resolve_callable_field_value(self.context, bot)
 
-    async def execute(self, as_: Bot) -> MethodReturnType:
+    async def execute(self, as_: Bot) -> Response[MethodReturnType]:
         """
         Execute method as bot and return result.
 
         :param as_: Bot instance to execute.
         """
-        result = await as_.make_request(self)
-        return result.response_obj
+        return await as_.make_request(self)

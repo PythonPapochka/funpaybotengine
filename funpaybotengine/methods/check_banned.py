@@ -12,7 +12,7 @@ from funpaybotengine.client.session import HTTPMethod
 
 
 if TYPE_CHECKING:
-    from funpaybotengine.client import Bot, RawResponse
+    from funpaybotengine.client import Bot, Response, RawResponse
 
 
 class CheckBanned(FunPayMethod[bool], BaseModel):
@@ -33,6 +33,5 @@ class CheckBanned(FunPayMethod[bool], BaseModel):
     async def transform_result(self, parsing_result: bool, response: RawResponse[bool]) -> bool:
         return parsing_result
 
-    async def execute(self, as_: Bot) -> bool:
-        result = await as_.make_request(self, skip_initialization=True)
-        return result.response_obj
+    async def execute(self, as_: Bot) -> Response[bool]:
+        return await as_.make_request(self, skip_initialization=True)
