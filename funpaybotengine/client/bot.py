@@ -56,11 +56,11 @@ from funpaybotengine.methods import (
     GetProfilePage,
     GetSettingPage,
     GetTransactions,
-    GetTransactionsPage,
     SaveOfferFields,
     SetOffersHidden,
     MethodReturnType,
     GetSubcategoryPage,
+    GetTransactionsPage,
     UpdateNoticeChannel,
     GetTelegramConnectURL,
 )
@@ -772,7 +772,7 @@ class Bot:
         return (await GetSettingPage().execute(self)).response_obj
 
     async def get_transactions_page(self) -> TransactionsPage:
-        return await GetTransactionsPage().execute(self)
+        return (await GetTransactionsPage().execute(self)).response_obj
 
     async def get_settings(self) -> Settings:
         return (await self.get_settings_page()).settings
