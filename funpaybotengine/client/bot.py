@@ -60,6 +60,7 @@ from funpaybotengine.methods import (
     SetOffersHidden,
     MethodReturnType,
     GetSubcategoryPage,
+    GetTransactionsPage,
     UpdateNoticeChannel,
     GetTelegramConnectURL,
 )
@@ -76,6 +77,7 @@ from funpaybotengine.types.pages import (
     ProfilePage,
     SettingsPage,
     SubcategoryPage,
+    TransactionsPage,
 )
 from funpaybotengine.storage.base import Storage
 from funpaybotengine.runner.config import RunnerConfig
@@ -768,6 +770,9 @@ class Bot:
 
     async def get_settings_page(self) -> SettingsPage:
         return (await GetSettingPage().execute(self)).response_obj
+
+    async def get_transactions_page(self) -> TransactionsPage:
+        return (await GetTransactionsPage().execute(self)).response_obj
 
     async def get_settings(self) -> Settings:
         return (await self.get_settings_page()).settings
