@@ -773,10 +773,10 @@ class Bot:
         ).response_obj
 
     async def get_my_offers_page(self, subcategory_id: int) -> MyOffersPage:
-        return await GetMyOffersPage(subcategory_id=subcategory_id).execute(self)
+        return (await GetMyOffersPage(subcategory_id=subcategory_id).execute(self)).response_obj
 
     async def get_my_chips_page(self, subcategory_id: int) -> MyChipsPage:
-        return await GetMyChipsPage(subcategory_id=subcategory_id).execute(self)
+        return (await GetMyChipsPage(subcategory_id=subcategory_id).execute(self)).response_obj
 
     async def get_order_page(self, order_id: str) -> OrderPage:
         return (await GetOrderPage(order_id=order_id).execute(self)).response_obj
