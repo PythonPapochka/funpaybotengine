@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 
-__all__ = ('Runner',)
+__all__ = ('Runner', 'EventsStack')
 
 import time
 import random
