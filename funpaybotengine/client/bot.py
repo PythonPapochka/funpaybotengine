@@ -358,7 +358,8 @@ class Bot:
             )
 
         if image is not None:
-            image = image if isinstance(image, int) else await UploadImage(image).execute(self)
+            image = image if isinstance(image, int) \
+                else (await UploadImage(image).execute(self)).response_obj
         elif text is not None:
             if enforce_whitespaces:
                 text = enforce_message_text_whitespaces(text)
