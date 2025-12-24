@@ -43,6 +43,7 @@ from funpaybotengine.methods import (
     CheckBanned,
     GetChatPage,
     GetMainPage,
+    RaiseOffers,
     UploadImage,
     DeleteReview,
     FunPayMethod,
@@ -274,6 +275,21 @@ class Bot:
         ).response_obj
 
     # ----- Actions -----
+    async def raise_offers(self, category_id: int, *subcategory_ids: int) -> bool:
+        if not subcategory_ids:
+            category = await self.storage.get_category(category_id)
+            if category is None:
+                raise ValueError(f'Category with ID {category_id} not found.')
+            subcategory_ids = [
+                i.id for i in category.subcategories if i.type is SubcategoryType.COMMON
+            ]
+        return (
+            await RaiseOffers(
+                category_id=category_id,
+                subcategory_ids=list(subcategory_ids),
+            ).execute(self)
+        ).response_obj
+
     async def upload_chat_image(self, file: str | BytesIO) -> int:
         """
         Uploads an image to FunPay servers for use in chat messages.
@@ -358,8 +374,11 @@ class Bot:
             )
 
         if image is not None:
-            image = image if isinstance(image, int) \
+            image = (
+                image
+                if isinstance(image, int)
                 else (await UploadImage(image).execute(self)).response_obj
+            )
         elif text is not None:
             if enforce_whitespaces:
                 text = enforce_message_text_whitespaces(text)
