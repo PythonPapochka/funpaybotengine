@@ -372,13 +372,15 @@ class Bot:
         )
 
         async with self._messages_lock:
-            result = await RunnerRequest(
-                objects_to_request=objects,
-                action=SendMessageAction(message_data=msg_data),
-            ).execute(self)
+            result = (
+                await RunnerRequest(
+                    objects_to_request=objects,
+                    action=SendMessageAction(message_data=msg_data),
+                ).execute(self)
+            ).response_obj
 
             if not keep_chat_unread:
-                msg = result.nodes[0].data.messages[-1]  # type: ignore # will have nodes
+                msg = result.nodes[0].data.messages[-1]
                 await self.storage.mark_message_as_sent_by_bot(message_id=msg.id)
                 return msg
         return None
