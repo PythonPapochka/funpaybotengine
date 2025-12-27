@@ -863,6 +863,8 @@ class Bot:
 
         page_obj = result.response_obj
 
+        await self.storage.remove_categories()
+        await self.storage.save_categories(*page_obj.categories)
         self._csrf_token = page_obj.app_data.csrf_token
         self._phpsessid = result.cookies.get('PHPSESSID')
         self._logout_token = page_obj.header.logout_token
