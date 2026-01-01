@@ -18,3 +18,7 @@ uv.lock
 
 *.log
 *.tmp
+
+.*
+!.gitignore
+!.github/
