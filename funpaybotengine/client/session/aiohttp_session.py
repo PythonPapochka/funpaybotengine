@@ -94,7 +94,7 @@ class AioHttpSession(BaseSession):
     ) -> Response[MethodReturnType]:
         session = await self.session()
 
-        self.prepare_cookies(session, bot)
+        self.prepare_cookies(session, bot, skip_session_cookies=skip_session_cookies)
         csrf_token = bot.csrf_token if (bot.csrf_token and not skip_session_cookies) else ''
         timeout_obj = ClientTimeout(total=timeout if timeout is not None else method.timeout)
         url = await self.resolve_url(method, bot, session)
