@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import time
-import logging
 from typing import TYPE_CHECKING, Any, Type, Literal, TypeVar
 from collections.abc import Callable
 
@@ -110,6 +109,12 @@ def attempts(amount: int = 0) -> Callable[[F], F]:
 
 class TotalEvents:
     def __init__(self, timestamp: int | float) -> None:
+        # {
+        #   ChatChangedEvent: {
+        #    NewMessageEvent: Related order/review event or None,
+        #    NewMessageEvent2: Related order/review event or None,
+        #   },
+        #   ChatChangedEvent2: { ... }
         self.tree: dict[
             ChatChangedEvent,
             dict[NewMessageEvent, OrderEvent | ReviewEvent | None],
@@ -243,31 +248,37 @@ class EventCollector:
         await self.session_storage.save_chat_previews(*result.chat_bookmarks.data.chat_previews)
 
     async def get_chat_changed_events(self) -> TotalEvents | None:
-        logger.debug('Getting changed chats...')
+        logger.debug('Fetching chat previews...')
         runner_response = await self._get_chat_bookmarks()
         if not runner_response.chat_bookmarks or not runner_response.chat_bookmarks.data:
+            logger.debug('No chats fetched.')
             return None
 
+        logger.debug('Fetched %r chats.', len(runner_response.chat_bookmarks.data.chat_previews))
         result = TotalEvents(timestamp=runner_response.timestamp)
         cached_chat_previews = await self.session_storage.get_chat_previews(
             *(i.id for i in runner_response.chat_bookmarks.data.chat_previews),
         )
+        logger.debug('Fetched %r cached chats.', len(cached_chat_previews))
+
         for cached_chat, chat_preview in zip(
             reversed(cached_chat_previews),
             reversed(runner_response.chat_bookmarks.data.chat_previews),
         ):
             if cached_chat and cached_chat.last_message_id == chat_preview.last_message_id:
                 logger.debug(
-                    f'Chat {chat_preview.id} ({chat_preview.username}) '
-                    f"hasn't changed since last runner request.",
+                    "Chat %r (%r) hasn't changed since last runner request.",
+                    chat_preview.id,
+                    chat_preview.username,
                 )
                 continue
 
             logger.debug(
-                f'Chat {chat_preview.id} ({chat_preview.username}) '
-                f'has changed since last runner request: '
-                f'{cached_chat.last_message_id if cached_chat is not None else 0} -> '
-                f'{chat_preview.last_message_id}.',
+                'Chat %r (%r) has changed since last runner request: %r -> %r',
+                chat_preview.id,
+                chat_preview.username,
+                cached_chat.last_message_id if cached_chat else -1,
+                chat_preview.last_message_id,
             )
             event = ChatChangedEvent(
                 previous=cached_chat,
@@ -276,29 +287,54 @@ class EventCollector:
             ).as_(self.bot)
 
             result.add_chat_event(event)
+
+        logger.debug('Total chat changed events: %r', len(result.tree))
+        logger.debug(
+            'Total changed chats: %r.',
+            ', '.join(i.chat_preview.username for i in result.tree.keys()),
+        )
         return result
 
     async def get_new_message_events(self, total: TotalEvents) -> None:
         ids = [i.object.id for i in total.tree]
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug('Getting new messages for chats %s', ', '.join(str(i) for i in ids))
+        logger.debug('Getting new messages for chats %s', ', '.join(str(i) for i in ids))
         chat_histories = await self.get_chat_histories(ids)
 
         for chat_event, dict_ in total.tree.items():
-            logger.debug('Processing chat %s...', chat_event.chat_preview.id)
+            logger.debug('Processing chat %r...', chat_event.chat_preview.id)
             from_id = chat_event.previous.last_message_id if chat_event.previous else 0
             to_id = chat_event.object.last_message_id
+            logger.debug(
+                'IDs range for chat %r: %r-%r', chat_event.chat_preview.id, from_id, to_id
+            )
 
             for message in chat_histories[chat_event.chat_preview.id]:
-                if from_id != 0 and from_id < message.id <= to_id:
-                    logger.debug(
-                        'New message in chat %s: %s (from IDs difference).',
-                        chat_event.chat_preview.id,
-                        message.id,
-                    )
+                if from_id != 0:
+                    if from_id < message.id <= to_id:
+                        logger.debug(
+                            'New message in chat %r (%r): %r (from IDs difference: %r < %r <= %r).',
+                            chat_event.chat_preview.username,
+                            chat_event.chat_preview.id,
+                            message.id,
+                            from_id,
+                            message.id,
+                            to_id,
+                        )
+                    else:
+                        logger.debug(
+                            'Message %r from chat %r (%r) is not new (from IDs difference: '
+                            'not (%r < %r <= %r).',
+                            message.id,
+                            chat_event.chat_preview.username,
+                            chat_event.chat_preview.id,
+                            from_id,
+                            message.id,
+                            to_id,
+                        )
                 elif (
                     message.timestamp >= self.last_chats_request_timestamp and message.id <= to_id
                 ):
+                    logger.debug('There is no cached cha')
                     logger.debug(
                         'New message in chat %s: %s (from timestamp difference: %s >= %s).',
                         chat_event.chat_preview.id,
@@ -358,13 +394,15 @@ class EventCollector:
         order_previews: dict[str, OrderPreview],
         mode: Literal['sales', 'purchases'] = 'sales',
     ) -> None:
-        cm = total.chainmap
         for e in total.sales_related if mode == 'sales' else total.purchases_related:
             cls = _ORDER_RELATED[e.object.meta.type][0 if mode == 'sales' else 1]
             order_event: OrderEvent = cls(object=e.object, tag=e.tag).as_(self.bot)
 
             order_event._order_preview = order_previews.get(e.object.meta.order_id or '')
-            cm[e] = order_event
+            for i in total.tree.values():
+                if e in i:
+                    i[e] = order_event
+                    break
 
     async def make_order_events(self, total: TotalEvents) -> None:
         sales, purchases = {}, {}
