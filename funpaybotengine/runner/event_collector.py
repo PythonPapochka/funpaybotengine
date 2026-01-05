@@ -305,7 +305,10 @@ class EventCollector:
             from_id = chat_event.previous.last_message_id if chat_event.previous else 0
             to_id = chat_event.object.last_message_id
             logger.debug(
-                'IDs range for chat %r: %r-%r', chat_event.chat_preview.id, from_id, to_id
+                'IDs range for chat %r: %r-%r',
+                chat_event.chat_preview.id,
+                from_id,
+                to_id,
             )
 
             for message in chat_histories[chat_event.chat_preview.id]:
@@ -331,6 +334,7 @@ class EventCollector:
                             message.id,
                             to_id,
                         )
+                        continue
                 elif (
                     message.timestamp >= self.last_chats_request_timestamp and message.id <= to_id
                 ):
