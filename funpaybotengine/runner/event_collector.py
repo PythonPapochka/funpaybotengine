@@ -3,6 +3,7 @@ from __future__ import annotations
 import time
 from typing import TYPE_CHECKING, Any, Type, Literal, TypeVar
 from collections.abc import Callable
+from itertools import chain
 
 from funpaybotengine.utils import random_runner_tag
 from funpaybotengine.loggers import runner_logger as logger
@@ -107,7 +108,7 @@ def attempts(amount: int = 0) -> Callable[[F], F]:
     return decorator
 
 
-class TotalEvents:
+class EventsPack:
     def __init__(self, timestamp: int | float) -> None:
         # {
         #   ChatChangedEvent: {
@@ -163,6 +164,7 @@ class TotalEvents:
             self.sales_related.append(e) if seller_id == uid else self.purchases_related.append(e)
         else:
             self.unknown_order_related.append(e)
+        self.tree[c][e] = None
 
 
 class EventCollector:
@@ -247,7 +249,7 @@ class EventCollector:
             )
         await self.session_storage.save_chat_previews(*result.chat_bookmarks.data.chat_previews)
 
-    async def get_chat_changed_events(self) -> TotalEvents | None:
+    async def get_chat_changed_events(self) -> EventsPack | None:
         logger.debug('Fetching chat previews...')
         runner_response = await self._get_chat_bookmarks()
         if not runner_response.chat_bookmarks or not runner_response.chat_bookmarks.data:
@@ -255,7 +257,7 @@ class EventCollector:
             return None
 
         logger.debug('Fetched %r chats.', len(runner_response.chat_bookmarks.data.chat_previews))
-        result = TotalEvents(timestamp=runner_response.timestamp)
+        result = EventsPack(timestamp=runner_response.timestamp)
         cached_chat_previews = await self.session_storage.get_chat_previews(
             *(i.id for i in runner_response.chat_bookmarks.data.chat_previews),
         )
@@ -295,7 +297,7 @@ class EventCollector:
         )
         return result
 
-    async def get_new_message_events(self, total: TotalEvents) -> None:
+    async def get_new_message_events(self, total: EventsPack) -> None:
         ids = [i.object.id for i in total.tree]
         logger.debug('Getting new messages for chats %s', ', '.join(str(i) for i in ids))
         chat_histories = await self.get_chat_histories(ids)
@@ -354,15 +356,15 @@ class EventCollector:
 
     async def resolve_unknown_order_related_event(
         self,
-        total: TotalEvents,
+        total: EventsPack,
         unknown: NewMessageEvent,
-        sales: dict[str, OrderPreview],
-        purchases: dict[str, OrderPreview],
+        sale_previews: dict[str, OrderPreview],
+        purchase_previews: dict[str, OrderPreview],
     ) -> None:
-        if unknown.object.meta.order_id in purchases:
+        if unknown.object.meta.order_id in purchase_previews:
             total.purchases_related.append(unknown)
             return
-        if unknown.object.meta.order_id in sales:
+        if unknown.object.meta.order_id in sale_previews:
             total.sales_related.append(unknown)
             return
 
@@ -370,17 +372,17 @@ class EventCollector:
         if saved_order and saved_order.type is not OrderPreviewType.UNKNOWN:
             if saved_order.type is OrderPreviewType.PURCHASE:
                 total.purchases_related.append(unknown)
-                purchases[saved_order.id] = saved_order
+                purchase_previews[saved_order.id] = saved_order
             elif saved_order.type is OrderPreviewType.SALE:
                 total.sales_related.append(unknown)
-                sales[saved_order.id] = saved_order
+                sale_previews[saved_order.id] = saved_order
             return
 
         if self.config.discover_sales:
             order_preview = await self._get_sales(order_id=unknown.object.meta.order_id)
             if order_preview:
                 total.sales_related.append(unknown)
-                sales[order_preview[0].id] = order_preview[0]
+                sale_previews[order_preview[0].id] = order_preview[0]
                 await self.storage.save_order_previews(order_preview[0])
                 return
 
@@ -388,13 +390,13 @@ class EventCollector:
             order_preview = await self._get_purchases(order_id=unknown.object.meta.order_id)
             if order_preview:
                 total.purchases_related.append(unknown)
-                purchases[order_preview[0].id] = order_preview[0]
+                purchase_previews[order_preview[0].id] = order_preview[0]
                 await self.storage.save_order_previews(order_preview[0])
                 return
 
     async def _make_order_events(
         self,
-        total: TotalEvents,
+        total: EventsPack,
         order_previews: dict[str, OrderPreview],
         mode: Literal['sales', 'purchases'] = 'sales',
     ) -> None:
@@ -408,7 +410,7 @@ class EventCollector:
                     i[e] = order_event
                     break
 
-    async def make_order_events(self, total: TotalEvents) -> None:
+    async def make_order_events(self, total: EventsPack) -> None:
         sales, purchases = {}, {}
 
         if (
@@ -438,13 +440,15 @@ class EventCollector:
 
         logger.debug('Finished getting events. Total events: %s', len(events))
 
+        # Caching current state (fetched chat and order preview)
+        # only after successful requests-bound job.
         await self.session_storage.save_chat_previews(*(i.object for i in total.tree))
 
         order_events_mapping = {}
         cm = total.chainmap
-        for order_related in total.sales_related + total.purchases_related:
-            order_event: OrderEvent = cm[order_related]  # type: ignore # always not None
-            if order_event._order_preview is not None:
+        for order_related in chain(total.sales_related, total.purchases_related):
+            order_event: OrderEvent | None = cm[order_related]
+            if order_event is not None and order_event._order_preview is not None:
                 order_events_mapping[order_event._order_preview.id] = order_event._order_preview
 
         for k in order_events_mapping.values():
