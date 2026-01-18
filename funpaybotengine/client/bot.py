@@ -49,6 +49,7 @@ from funpaybotengine.methods import (
     DeleteReview,
     FunPayMethod,
     Get2faStatus,
+    GetOfferPage,
     GetOrderPage,
     GetPurchases,
     UploadAvatar,
@@ -76,6 +77,7 @@ from funpaybotengine.types.enums import OrderStatus, NoticeChannel, SubcategoryT
 from funpaybotengine.types.pages import (
     ChatPage,
     MainPage,
+    OfferPage,
     OrderPage,
     FunPayPage,
     MyChipsPage,
@@ -798,6 +800,12 @@ class Bot:
             ).execute(self)
         ).response_obj
 
+    async def get_offer_page(
+        self,
+        offer_id: int | str,
+    ) -> OfferPage:
+        return (await GetOfferPage(offer_id=offer_id).execute(self)).response_obj
+
     async def get_my_offers_page(self, subcategory_id: int) -> MyOffersPage:
         return (await GetMyOffersPage(subcategory_id=subcategory_id).execute(self)).response_obj
 
@@ -867,7 +875,9 @@ class Bot:
 
     async def update(self, change_locale: Language | None = None) -> Self:
         result = await self.make_request(
-            GetMainPage(change_locale=change_locale), skip_update=True, skip_session_cookies=True
+            GetMainPage(change_locale=change_locale),
+            skip_update=True,
+            skip_session_cookies=True,
         )
 
         page_obj = result.response_obj
