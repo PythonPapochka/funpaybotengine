@@ -1,6 +1,6 @@
 [project]
 name = "funpaybotengine"
-version = "0.1.14"
+version = "0.2.0"
 description = "Framework for creating FunPay bots."
 requires-python = ">=3.10"
 readme = "README.md"
@@ -8,8 +8,8 @@ license = "MIT"
 dependencies = [
     "aiohttp~=3.12.14",
     "aiohttp-socks~=0.10.1",
-    "eventry>=0.2.5",
-    "funpayparsers~=0.5.8",
+    "eventry~=0.3.1",
+    "funpayparsers~=0.5.7",
     "pydantic~=2.11.7",
 ]
 authors = [

@@ -15,7 +15,7 @@ from funpaybotengine.base import BindableObject
 EventObject = TypeVar('EventObject')
 
 
-class Event(ExtendedEvent, BindableObject, Generic[EventObject]):
+class Event(ExtendedEvent, BindableObject, Generic[EventObject], name='event'):
     model_config = {
         'arbitrary_types_allowed': True,
     }
@@ -29,7 +29,7 @@ class Event(ExtendedEvent, BindableObject, Generic[EventObject]):
         return id(self)
 
 
-class RunnerEvent(Event[EventObject]):
+class RunnerEvent(Event[EventObject], name='runner'):
     tag: str | None = Field(frozen=True)
 
     @property
@@ -39,10 +39,10 @@ class RunnerEvent(Event[EventObject]):
         return injection
 
 
-class BotEngineEvent(Event[EventObject]): ...
+class BotEngineEvent(Event[EventObject], name='funpaybotengine'): ...
 
 
-class ExceptionEvent(BotEngineEvent[Exception]):
+class ExceptionEvent(BotEngineEvent[Exception], name='error'):
     event: Event[Any] = Field(frozen=True)
 
     @property

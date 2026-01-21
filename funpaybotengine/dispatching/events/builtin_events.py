@@ -2,7 +2,6 @@ from __future__ import annotations
 
 
 __all__ = [
-    'ChatInitEvent',
     'ChatChangedEvent',
     'NewMessageEvent',
     'OrderEvent',
@@ -32,7 +31,6 @@ __all__ = [
 
 
 from typing import Any
-
 from pydantic import Field, PrivateAttr
 
 from funpaybotengine.types.chat import PrivateChatPreview
@@ -44,19 +42,7 @@ from .base import RunnerEvent
 from ...types.pages import OrderPage
 
 
-class ChatInitEvent(RunnerEvent[PrivateChatPreview]):
-    @property
-    def chat_preview(self) -> PrivateChatPreview:
-        return self.object
-
-    @property
-    def event_context_injection(self) -> dict[str, Any]:
-        return {
-            'chat_preview': self.chat_preview,
-        }
-
-
-class ChatChangedEvent(RunnerEvent[PrivateChatPreview]):
+class ChatChangedEvent(RunnerEvent[PrivateChatPreview], name='chat_changed'):
     previous: PrivateChatPreview | None = None
 
     @property
@@ -70,7 +56,7 @@ class ChatChangedEvent(RunnerEvent[PrivateChatPreview]):
         }
 
 
-class NewMessageEvent(RunnerEvent[Message]):
+class NewMessageEvent(RunnerEvent[Message], name='new_message'):
     @property
     def message(self) -> Message:
         return self.object
@@ -82,7 +68,7 @@ class NewMessageEvent(RunnerEvent[Message]):
         }
 
 
-class FromMessageEvent(NewMessageEvent):
+class FromMessageEvent(NewMessageEvent, name='__from_message__'):
     related_new_message_event: NewMessageEvent
 
     @property
@@ -92,14 +78,14 @@ class FromMessageEvent(NewMessageEvent):
         return val
 
 
-class OrderEvent(RunnerEvent[Message]):
+class OrderEvent(RunnerEvent[Message], name='__order_event__'):
     _order_preview: OrderPreview | None = PrivateAttr(default=None)
 
     async def get_order_preview(self, update: bool = False) -> OrderPreview:
         raise NotImplementedError
 
 
-class SaleEvent(OrderEvent):
+class SaleEvent(OrderEvent, name='__sale_event__'):
     async def get_order_preview(self, update: bool = False) -> OrderPreview:
         if self._order_preview is not None and not update:
             return self._order_preview
@@ -108,7 +94,7 @@ class SaleEvent(OrderEvent):
         return orders.orders[0]
 
 
-class PurchaseEvent(OrderEvent):
+class PurchaseEvent(OrderEvent, name='__purchase_event__'):
     async def get_order_preview(self, update: bool = False) -> OrderPreview:
         if self._order_preview is not None and not update:
             return self._order_preview
@@ -119,53 +105,53 @@ class PurchaseEvent(OrderEvent):
         return orders.orders[0]
 
 
-class NewSaleEvent(SaleEvent):
+class NewSaleEvent(SaleEvent, name='new_sale'):
     related_auto_message_events: list[NewMessageEvent] = Field(default_factory=list)
 
 
-class SaleStatusChangedEvent(SaleEvent):
+class SaleStatusChangedEvent(SaleEvent, name='sale_status_changed'):
     previous: OrderPreview | None = None
 
 
-class SaleClosedEvent(SaleStatusChangedEvent): ...
+class SaleClosedEvent(SaleStatusChangedEvent, name='sale_closed'): ...
 
 
-class SaleClosedByAdminEvent(SaleClosedEvent): ...
+class SaleClosedByAdminEvent(SaleClosedEvent, name='sale_closed_by_admin'): ...
 
 
-class SaleRefundedEvent(SaleStatusChangedEvent): ...
+class SaleRefundedEvent(SaleStatusChangedEvent, name='sale_refunded'): ...
 
 
-class SalePartiallyRefundedEvent(SaleRefundedEvent): ...
+class SalePartiallyRefundedEvent(SaleRefundedEvent, name='sale_partially_refunded'): ...
 
 
-class SaleReopenedEvent(SaleStatusChangedEvent): ...
+class SaleReopenedEvent(SaleStatusChangedEvent, name='sale_reopened'): ...
 
 
-class NewPurchaseEvent(PurchaseEvent):
+class NewPurchaseEvent(PurchaseEvent, name='new_purchase'):
     related_auto_message_events: list[NewMessageEvent] = Field(default_factory=list)
 
 
-class PurchaseStatusChangedEvent(PurchaseEvent):
+class PurchaseStatusChangedEvent(PurchaseEvent, name='purchase_status_changed'):
     previous: OrderPreview | None = None
 
 
-class PurchaseClosedEvent(PurchaseStatusChangedEvent): ...
+class PurchaseClosedEvent(PurchaseStatusChangedEvent, name='purchase_closed'): ...
 
 
-class PurchaseClosedByAdminEvent(PurchaseClosedEvent): ...
+class PurchaseClosedByAdminEvent(PurchaseClosedEvent, name='purchase_closed_by_admin'): ...
 
 
-class PurchaseRefundedEvent(PurchaseStatusChangedEvent): ...
+class PurchaseRefundedEvent(PurchaseStatusChangedEvent, name='purchase_refunded'): ...
 
 
-class PurchasePartiallyRefundedEvent(PurchaseRefundedEvent): ...
+class PurchasePartiallyRefundedEvent(PurchaseRefundedEvent, name='purchase_partially_refunded'): ...
 
 
-class PurchaseReopenedEvent(PurchaseStatusChangedEvent): ...
+class PurchaseReopenedEvent(PurchaseStatusChangedEvent, name='purchase_reopened'): ...
 
 
-class ReviewEvent(FromMessageEvent):
+class ReviewEvent(FromMessageEvent, name='__review_event__'):
     _order_page: OrderPage | None = PrivateAttr(default=None)
 
     async def get_order_page(self, update: bool = False) -> OrderPage:
@@ -180,19 +166,19 @@ class ReviewEvent(FromMessageEvent):
         return order_page.review
 
 
-class NewReviewEvent(ReviewEvent): ...
+class NewReviewEvent(ReviewEvent, name='new_review'): ...
 
 
-class ReviewChangedEvent(ReviewEvent): ...
+class ReviewChangedEvent(ReviewEvent, name='review_changed'): ...
 
 
-class ReviewDeletedEvent(ReviewEvent): ...
+class ReviewDeletedEvent(ReviewEvent, name='review_deleted'): ...
 
 
-class NewReviewResponseEvent(ReviewEvent): ...
+class NewReviewResponseEvent(ReviewEvent, name='new_review_response'): ...
 
 
-class ReviewResponseChangedEvent(ReviewEvent): ...
+class ReviewResponseChangedEvent(ReviewEvent, name='review_response_changed'): ...
 
 
-class ReviewResponseDeletedEvent(ReviewEvent): ...
+class ReviewResponseDeletedEvent(ReviewEvent, name='review_response_deleted'): ...

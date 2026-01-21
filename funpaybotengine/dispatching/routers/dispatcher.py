@@ -7,12 +7,13 @@ __all__ = ('Dispatcher',)
 from typing import Any
 
 from eventry.asyncio.dispatcher import Dispatcher as BaseDispatcher
+from eventry.asyncio.event import Event as EventryEvent
 
-from funpaybotengine.dispatching.events import Event, ExceptionEvent
+from funpaybotengine.dispatching.events import ExceptionEvent
 from funpaybotengine.dispatching.routers import Router
 
 
-def error_event_factory(event: Event[Any], exception: Exception) -> ExceptionEvent:
+def error_event_factory(event: EventryEvent, exception: Exception) -> ExceptionEvent:
     return ExceptionEvent(object=exception, event=event)
 
 

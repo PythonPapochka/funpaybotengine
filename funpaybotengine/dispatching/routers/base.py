@@ -12,29 +12,29 @@ from funpaybotengine.dispatching.handlers.handler_manager import HandlerManager
 
 
 _events = {
-    'chat_changed': events.ChatChangedEvent,
-    'new_message': events.NewMessageEvent,
-    'new_sale': events.NewSaleEvent,
-    'sale_closed_by_admin': events.SaleClosedByAdminEvent,
-    'sale_closed': events.SaleClosedEvent,
-    'sale_partially_refunded': events.SalePartiallyRefundedEvent,
-    'sale_refunded': events.SaleRefundedEvent,
-    'sale_reopened': events.SaleReopenedEvent,
-    'sale_status_changed': events.SaleStatusChangedEvent,
-    'new_purchase': events.NewPurchaseEvent,
-    'purchase_closed_by_admin': events.PurchaseClosedByAdminEvent,
-    'purchase_closed': events.PurchaseClosedEvent,
-    'purchase_partially_refunded': events.PurchasePartiallyRefundedEvent,
-    'purchase_refunded': events.PurchaseRefundedEvent,
-    'purchase_reopened': events.PurchaseReopenedEvent,
-    'purchase_status_changed': events.PurchaseStatusChangedEvent,
-    'new_review': events.NewReviewEvent,
-    'review_changed': events.ReviewChangedEvent,
-    'review_deleted': events.ReviewDeletedEvent,
-    'new_review_response': events.NewReviewResponseEvent,
-    'review_response_changed': events.ReviewResponseChangedEvent,
-    'review_response_deleted': events.ReviewResponseDeletedEvent,
-    'error': ExceptionEvent,
+    'chat_changed',
+    'new_message',
+    'new_sale',
+    'sale_closed_by_admin',
+    'sale_closed',
+    'sale_partially_refunded',
+    'sale_refunded',
+    'sale_reopened',
+    'sale_status_changed',
+    'new_purchase',
+    'purchase_closed_by_admin',
+    'purchase_closed',
+    'purchase_partially_refunded',
+    'purchase_refunded',
+    'purchase_reopened',
+    'purchase_status_changed',
+    'new_review',
+    'review_changed',
+    'review_deleted',
+    'new_review_response',
+    'review_response_changed',
+    'review_response_deleted',
+    'error',
 }
 
 
@@ -65,10 +65,10 @@ class Router(BaseRouter):
 
     def __init__(self, name: str | None = None) -> None:
         super().__init__(name=name or f'Router{id(self)}')
-        self._default_handler_manager = HandlerManager(self, 'default', None)
+        self.set_default_handler_manager(HandlerManager(self, 'default', None))
 
-        for name, event in _events.items():
-            manager = self._add_handler_manager(HandlerManager(self, name, event))  # type: ignore
+        for name in _events:
+            manager = self._add_handler_manager(HandlerManager(self, f'on_{name}', name))
             setattr(self, f'on_{name}', manager)
 
     @property
