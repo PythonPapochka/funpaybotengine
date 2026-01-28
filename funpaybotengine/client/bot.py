@@ -130,33 +130,33 @@ class LocaleMismatchHookProto(Protocol):
 class Bot:
     def __init__(
         self,
-        golden_key: str,
+        golden_key: str = '',
         session: BaseSession | None = None,
         storage: Storage | None = None,
         *,
         phpsessid: str | None = None,
         proxy: str | None = None,
         default_headers: dict[str, Any] | None = None,
+        update_categories: bool = True,
     ) -> None:
         self._golden_key = golden_key
         self._csrf_token: str | None = None
         self._phpsessid: str | None = phpsessid
         self._logout_token: str | None = None
 
-        self._locale: Language | None = None
-        self._currency: Currency | None = None
-
-        self._session = session or AioHttpSession(proxy=proxy, default_headers=default_headers)
-        self._runner = Runner(self)
-
-        self._storage = storage or InMemoryStorage()
-
         self._userid: int | None = None
         self._username: str | None = None
 
+        self._locale: Language | None = None
+        self._currency: Currency | None = None
+
+        self._storage = storage or InMemoryStorage()
+        self._runner = Runner(self)
+        self._session = session or AioHttpSession(proxy=proxy, default_headers=default_headers)
         self._session_updated_at = 0
 
         self._on_locale_mismatch_hook: LocaleMismatchHookProto = force_locale_hook
+        self.update_categories: bool = update_categories
 
         self._messages_lock = Lock()
         self._listening_lock = Lock()
@@ -164,7 +164,6 @@ class Bot:
 
         self._stop_event = Event()
         self._stopped_event = Event()
-
         self._stopped_event.set()
 
     @property
@@ -904,8 +903,9 @@ class Bot:
 
         page_obj = result.response_obj
 
-        await self.storage.remove_categories()
-        await self.storage.save_categories(*page_obj.categories)
+        if self.update_categories:
+            await self.storage.remove_categories()
+            await self.storage.save_categories(*page_obj.categories)
         self._csrf_token = page_obj.app_data.csrf_token
         self._phpsessid = result.cookies.get('PHPSESSID')
         self._logout_token = page_obj.header.logout_token
