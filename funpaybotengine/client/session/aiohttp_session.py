@@ -7,6 +7,7 @@ __all__ = ('AioHttpSession',)
 import time
 import asyncio
 from typing import TYPE_CHECKING, Any
+from contextlib import suppress
 
 from yarl import URL
 from aiohttp import TCPConnector, ClientSession, ClientTimeout
@@ -17,6 +18,7 @@ from typing_extensions import Self
 from funpaybotengine.loggers import session_logger
 from funpaybotengine.types.enums import Language
 from funpaybotengine.client.session.base import Response, BaseSession, RawResponse
+from funpaybotengine.exceptions.bot_exceptions import BotNotInitializedError
 from funpaybotengine.client.session.http_methods import HTTPMethod
 from funpaybotengine.exceptions.session_exceptions import BannedError
 
@@ -79,11 +81,13 @@ class AioHttpSession(BaseSession):
     ) -> None:
         session.cookie_jar.update_cookies({'cookie_prefs': '1'})  # no 3rd-party cookies
 
-        if bot.golden_key:
-            session.cookie_jar.update_cookies({'golden_key': bot.golden_key})
+        with suppress(BotNotInitializedError):
+            if bot.golden_key:
+                session.cookie_jar.update_cookies({'golden_key': bot.golden_key})
 
-        if bot.phpsessid and not skip_session_cookies:
-            session.cookie_jar.update_cookies({'PHPSESSID': bot.phpsessid})
+        with suppress(BotNotInitializedError):
+            if bot.phpsessid and not skip_session_cookies:
+                session.cookie_jar.update_cookies({'PHPSESSID': bot.phpsessid})
 
     async def make_request(
         self,
@@ -95,7 +99,12 @@ class AioHttpSession(BaseSession):
         session = await self.session()
 
         self.prepare_cookies(session, bot, skip_session_cookies=skip_session_cookies)
-        csrf_token = bot.csrf_token if (bot.csrf_token and not skip_session_cookies) else ''
+
+        try:
+            csrf_token = bot.csrf_token if (bot.csrf_token and not skip_session_cookies) else ''
+        except BotNotInitializedError:
+            csrf_token = ''
+
         timeout_obj = ClientTimeout(total=timeout if timeout is not None else method.timeout)
         url = await self.resolve_url(method, bot, session)
         session_logger.info('Making %s request to %s', method.method.name, url)
@@ -164,7 +173,10 @@ class AioHttpSession(BaseSession):
         if URL(method_url).is_absolute():
             return method_url
 
-        locale = bot.locale
+        try:
+            locale = bot.locale
+        except BotNotInitializedError:
+            locale = Language.RU
 
         if method.ignore_locale or bot is None:
             locale = Language.RU

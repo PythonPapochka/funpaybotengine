@@ -179,16 +179,16 @@ class Bot:
         To initialize the bot instance, use ``Bot.update`` method.
         """
         to_check: list[Any] = [
-            self.csrf_token,
-            self.phpsessid,
-            self.locale,
-            self.currency,
+            self._csrf_token,
+            self._phpsessid,
+            self._locale,
+            self._currency,
         ]
         if not self.anonymous:
             to_check.extend(
                 [
-                    self.userid,
-                    self.username,
+                    self._userid,
+                    self._username,
                 ],
             )
         return all(bool(i) for i in to_check)
@@ -455,10 +455,10 @@ class Bot:
         ).response_obj
 
     async def logout(self) -> bool:
-        if self.logout_token is None:
+        if self._logout_token is None:
             await self.update()
 
-        return (await Logout(logout_token=self.logout_token).execute(self)).response_obj
+        return (await Logout(logout_token=self._logout_token).execute(self)).response_obj
 
     async def set_notification_status(self, enabled: bool, channel: NoticeChannel) -> bool:
         return (
@@ -906,6 +906,7 @@ class Bot:
         if self.update_categories:
             await self.storage.remove_categories()
             await self.storage.save_categories(*page_obj.categories)
+
         self._csrf_token = page_obj.app_data.csrf_token
         self._phpsessid = result.cookies.get('PHPSESSID')
         self._logout_token = page_obj.header.logout_token
