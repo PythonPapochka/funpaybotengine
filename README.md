@@ -7,8 +7,6 @@
 </p>
 
 
-
-
 FunpayBotEngine
 ===============
 
@@ -16,12 +14,15 @@ FunpayBotEngine
     <a href="https://github.com/funpayhub/funpaybotengine/commits"><img src="https://img.shields.io/github/commit-activity/w/funpayhub/funpaybotengine.svg?style=flat-square" alt="Commit activity" /></a>
 </p>
 
-A modern, easy to use, feature-rich, and async ready API wrapper for Funpay written in Python.
+Современная, удобная и функциональная асинхронная API-обёртка для FunPay на Python.
 
-Installing
+
+
+
+Установка
 ----------
 
-**Python 3.10 or higher is required.**
+**Необходим Python 3.10 или выше.**
 
 ``` shell
 # Using uv
@@ -31,8 +32,8 @@ uv add funpaybotengine
 pip install funpaybotengine
 ```
 
-Quick Example
--------------
+Пример использования
+--------------------
 ```python
 import sys
 import asyncio
@@ -45,9 +46,9 @@ bot: Bot = Bot(golden_key='token')
 dp: Dispatcher = Dispatcher()
 
 
-@dp.on_new_message()
+@dp.on_new_message(lambda message: message.text.lower() == 'привет')
 async def echo(message: Message):
-    await message.reply(text='echo')
+    await message.reply(text='пока')
 
 
 async def main():
@@ -58,3 +59,19 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     asyncio.run(main())
 ```
+
+
+Экосистема FunPayHub
+-------------------
+
+Если вам нужен **готовый, бесплатный и опенсорсный бот для FunPay** с расширяемой архитектурой, плагинами и богатым функционалом — обратите внимание на **[FunPayHub](https://github.com/funpayhub/funpayhub)**.
+
+FunPayHub — это полноценный бот, построенный с использованием **FunpayBotEngine**, **Aiogram** и **Eventry**, который имеет богатый функционал:
+- автоподнятие лотов;
+- автоответы на сообщения с форматтерами и хуками;
+- автовыдача товаров;
+- удобное расширение с помощью плагинов;
+- гибкие настройки;
+- многое другое. 
+
+👉 Репозиторий проекта: https://github.com/funpayhub/funpayhub
