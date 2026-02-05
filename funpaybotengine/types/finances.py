@@ -4,15 +4,14 @@ from __future__ import annotations
 __all__ = ('TransactionPreview', 'TransactionInfo', 'TransactionPreviewsBatch')
 
 
-from typing import Annotated
 from types import MappingProxyType
 from collections.abc import Mapping
 
-from pydantic import BaseModel, BeforeValidator
+from pydantic import BaseModel, field_validator
 from funpayparsers.parsers.utils import parse_date_string
 
 from funpaybotengine.types.base import FunPayObject
-from funpaybotengine.types.enums import PaymentMethod, TransactionStatus
+from funpaybotengine.types.enums import PaymentMethod, TransactionFilter, TransactionStatus
 from funpaybotengine.types.common import MoneyValue
 
 
@@ -59,12 +58,15 @@ class TransactionInfo(FunPayObject, BaseModel):
     status: TransactionStatus
     """Transaction status."""
 
-    data: Annotated[Mapping[str, str], BeforeValidator(TransactionInfo._convert_to_immutable)]
+    data: Mapping[str, str]
     """Transaction data."""
 
-    @staticmethod
-    def _convert_to_immutable(value: dict[str, str]) -> MappingProxyType[str, str]:
-        return MappingProxyType(value)
+    @field_validator('data', mode='before')
+    @classmethod
+    def _convert_to_immutable(cls, value: dict[str, str] | Mapping[str, str]) -> Mapping[str, str]:
+        if isinstance(value, MappingProxyType):
+            return value
+        return MappingProxyType(dict(value))
 
 
 class TransactionPreviewsBatch(FunPayObject, BaseModel):
@@ -81,24 +83,28 @@ class TransactionPreviewsBatch(FunPayObject, BaseModel):
     user_id: int | None
     """ID of the user to whom all transactions in this batch belong."""
 
-    filter: str | None
-    """
-    The current filter applied to the review list.
+    filter: TransactionFilter | None
+    """Transactions filter applied to the current batch."""
 
-    Known values:
-        - ``''`` (empty string): no filter applied
-        - ``'payment'``: payment transactions only
-        - ``'withdraw'``: withdrawal transactions only
-        - ``'order'``: order transactions only
-        - ``'other'``: other transactions only
-    """
+    @field_validator('filter', mode='before')
+    @classmethod
+    def _coerce_transaction_filter(
+        cls,
+        value: str | TransactionFilter | None,
+    ) -> TransactionFilter | None:
+        if value is None or isinstance(value, TransactionFilter):
+            return value
+        try:
+            return TransactionFilter(value)
+        except ValueError:
+            return None
 
     next_transaction_id: int | None
     """
     ID of the next transaction to use as a cursor for pagination.
 
     If present, this value should be included in the next request to fetch
-    the following batch of transaction previews. 
+    the following batch of transaction previews.
 
     If ``None``, there are no more transactions to load.
     """
