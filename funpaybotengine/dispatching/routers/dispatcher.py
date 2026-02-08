@@ -6,8 +6,8 @@ __all__ = ('Dispatcher',)
 
 from typing import Any
 
-from eventry.asyncio.dispatcher import Dispatcher as BaseDispatcher
 from eventry.asyncio.event import Event as EventryEvent
+from eventry.asyncio.dispatcher import Dispatcher as BaseDispatcher
 
 from funpaybotengine.dispatching.events import ExceptionEvent
 from funpaybotengine.dispatching.routers import Router

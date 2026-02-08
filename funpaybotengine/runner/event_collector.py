@@ -13,12 +13,12 @@ from funpaybotengine.dispatching import RunnerEvent
 from funpaybotengine.types.enums import MessageType, OrderPreviewType
 from funpaybotengine.runner.config import RunnerConfig
 from funpaybotengine.types.messages import Message
+from funpaybotengine.storage.inmemory import InMemoryStorage
 from funpaybotengine.types.requests.runner import (
     NodeRequestObject,
     ChatBookmarksRequestObject,
     OrdersCountersRequestObject,
 )
-from funpaybotengine.storage.inmemory import InMemoryStorage
 from funpaybotengine.exceptions.session_exceptions import UnexpectedHTTPStatusError
 from funpaybotengine.dispatching.events.builtin_events import (
     SaleEvent,
@@ -409,7 +409,9 @@ class EventCollector:
     ) -> None:
         for e in total.sales_related if mode == 'sales' else total.purchases_related:
             cls = _ORDER_RELATED[e.object.meta.type][0 if mode == 'sales' else 1]
-            order_event: OrderEvent = cls(object=e.object, tag=e.tag).as_(self.bot)
+            order_event: OrderEvent = cls(
+                related_new_message_event=e, object=e.object, tag=e.tag
+            ).as_(self.bot)
 
             order_event._order_preview = order_previews.get(e.object.meta.order_id or '')
             for i in total.tree.values():

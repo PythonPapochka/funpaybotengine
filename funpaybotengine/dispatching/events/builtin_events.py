@@ -31,6 +31,7 @@ __all__ = [
 
 
 from typing import Any
+
 from pydantic import Field, PrivateAttr
 
 from funpaybotengine.types.chat import PrivateChatPreview
@@ -78,7 +79,7 @@ class FromMessageEvent(NewMessageEvent, name='__from_message__'):
         return val
 
 
-class OrderEvent(RunnerEvent[Message], name='__order_event__'):
+class OrderEvent(FromMessageEvent, name='__order_event__'):
     _order_preview: OrderPreview | None = PrivateAttr(default=None)
 
     async def get_order_preview(self, update: bool = False) -> OrderPreview:
@@ -145,7 +146,9 @@ class PurchaseClosedByAdminEvent(PurchaseClosedEvent, name='purchase_closed_by_a
 class PurchaseRefundedEvent(PurchaseStatusChangedEvent, name='purchase_refunded'): ...
 
 
-class PurchasePartiallyRefundedEvent(PurchaseRefundedEvent, name='purchase_partially_refunded'): ...
+class PurchasePartiallyRefundedEvent(
+    PurchaseRefundedEvent, name='purchase_partially_refunded'
+): ...
 
 
 class PurchaseReopenedEvent(PurchaseStatusChangedEvent, name='purchase_reopened'): ...
