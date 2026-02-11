@@ -46,7 +46,7 @@ from contextlib import suppress
 from redis.asyncio import Redis
 from funpaybotengine import Bot, Dispatcher
 from funpaybotengine.types import Message
-from funpaybotengine.storage import RedisStorage
+from funpaybotengine.storage.redis import RedisStorage
 
 
 # It is recommended to use more reliable data storage means, some kind of relational databases

@@ -308,7 +308,7 @@ class Bot:
             if category is None:
                 raise ValueError(f'Category with ID {category_id} not found.')
             subcategory_ids = tuple(
-                i.id for i in category.subcategories if i.type is SubcategoryType.COMMON
+                i.id for i in category.subcategories if i.type is SubcategoryType.OFFERS
             )
         return (
             await RaiseOffers(
@@ -763,7 +763,7 @@ class Bot:
         elif isinstance(subcategory, Subcategory):
             t, i = subcategory.type, subcategory.id
         elif isinstance(offer_id, int):
-            t, i = SubcategoryType.COMMON, 1
+            t, i = SubcategoryType.OFFERS, 1
         else:
             raise ValueError(
                 f'Invalid subcategory input: '
