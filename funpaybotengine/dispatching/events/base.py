@@ -1,7 +1,14 @@
 from __future__ import annotations
 
 
-__all__ = ('Event', 'RunnerEvent', 'BotEngineEvent', 'ExceptionEvent')
+__all__ = (
+    'Event',
+    'RunnerEvent',
+    'BotEngineEvent',
+    'ExceptionEvent',
+    'BotUnauthenticatedEvent',
+    'BotAuthenticatedEvent'
+)
 
 from typing import Any, Generic, TypeVar
 from types import MappingProxyType
@@ -16,7 +23,7 @@ EventObject = TypeVar('EventObject')
 
 
 # Not inheriting from ExtendedEvent, cz __iter__ conflict is pydantic BaseModel.
-class Event(EventryEvent, BindableObject, Generic[EventObject], name='event'):
+class Event(EventryEvent, BindableObject, Generic[EventObject], event_name='event'):
     model_config = {
         'arbitrary_types_allowed': True,
     }
@@ -66,7 +73,7 @@ class Event(EventryEvent, BindableObject, Generic[EventObject], name='event'):
         return MappingProxyType(self._data)
 
 
-class RunnerEvent(Event[EventObject], name='runner'):
+class RunnerEvent(Event[EventObject], event_name='runner'):
     tag: str | None = Field(frozen=True)
 
     @property
@@ -76,10 +83,10 @@ class RunnerEvent(Event[EventObject], name='runner'):
         return injection
 
 
-class BotEngineEvent(Event[EventObject], name='funpaybotengine'): ...
+class BotEngineEvent(Event[EventObject], event_name='funpaybotengine'): ...
 
 
-class ExceptionEvent(BotEngineEvent[Exception], name='error'):
+class ExceptionEvent(BotEngineEvent[Exception], event_name='error'):
     event: Event[Any] = Field(frozen=True)
 
     @property
@@ -87,3 +94,17 @@ class ExceptionEvent(BotEngineEvent[Exception], name='error'):
         injection = super().event_context_injection
         injection.update({'on_event': self.event, 'exception': self.object})
         return injection
+
+
+class BotUnauthenticatedEvent(BotEngineEvent[float], event_name='unauthorized'):
+    delay: float
+
+    @property
+    def event_context_injection(self) -> dict[str, Any]:
+        injection = super().event_context_injection
+        injection.update({'delay': self.delay})
+        return injection
+
+
+class BotAuthenticatedEvent(BotEngineEvent[None], event_name='authorized'):
+    ...

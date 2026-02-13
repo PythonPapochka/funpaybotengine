@@ -14,13 +14,13 @@ from collections.abc import Iterator, AsyncGenerator
 from funpaybotengine.loggers import runner_logger
 from funpaybotengine.exceptions import UnauthorizedError, BotUnauthenticatedError
 from funpaybotengine.storage.base import Storage
-from funpaybotengine.runner.config import RunnerConfig
-from funpaybotengine.runner.event_collector import EventCollector
-from funpaybotengine.dispatching.events.base import RunnerEvent
-
+from .config import RunnerConfig, Backoff
+from .event_collector import EventCollector
+from funpaybotengine.dispatching.events import BotAuthenticatedEvent, BotUnauthenticatedEvent
 
 if TYPE_CHECKING:
     from funpaybotengine.client.bot import Bot
+    from funpaybotengine.dispatching.events import RunnerEvent, BotEngineEvent
 
 
 @dataclass
@@ -64,34 +64,59 @@ class Runner:
             config,
             session_storage=session_storage,
         )
+        backoff = Backoff(config.backoff_config)
 
         await collector.init_chats()
 
+        sleep_time: float | None = None
         while True:
             start = time.time()
+            result: list[RunnerEvent[Any] | BotEngineEvent[Any]] = []
 
             try:
                 result = await collector.get_events()
+                if backoff.counter:
+                    backoff.reset()
+                    runner_logger.info('Connection established. Continuing collecting events.')
+                    if config.on_unauthenticated_error_policy == 'event':
+                        result.insert(0, BotAuthenticatedEvent(object=None))
+
             except (BotUnauthenticatedError, UnauthorizedError) as e:
                 runner_logger.warning(
                     'Bot is unauthenticated (%s). Executing current policy %r.',
                     e.__class__.__name__,
                     config.on_unauthenticated_error_policy,
                 )
-                if config.on_unauthenticated_error_policy == 'event':
-                    ...
+
+                if config.on_unauthenticated_error_policy in ['event', 'ignore']:
+                    next(backoff)
+                    sleep_time = backoff.current_delay
+                    runner_logger.warning(
+                        'Current attempt: %d. Delay: %f.', backoff.counter, backoff.current_delay
+                    )
+                    if backoff.counter == 1 and config.on_unauthenticated_error_policy == 'event':
+                        result = [BotUnauthenticatedEvent(object=None, delay=backoff.current_delay)]
+
                 elif config.on_unauthenticated_error_policy == 'stop':
                     return
-                elif config.on_unauthenticated_error_policy == 'stop+event':
-                    return  # todo yield event
-                await _sleep(start, config.interval)
-                continue
+            except Exception:
+                next(backoff)
+                runner_logger.error(
+                    'Failed to collect events. Current attempt: %d. Delay: %f.',
+                    backoff.counter,
+                    backoff.current_delay, exc_info=True
+                )
+                sleep_time = backoff.current_delay
 
             events_stack = EventsStack(events=tuple(result))
             for i in events_stack:
                 yield i, events_stack
 
-            await _sleep(start, config.interval)
+            if sleep_time:
+                await asyncio.sleep(sleep_time)
+                sleep_time = None
+            else:
+                await _sleep(start, config.interval)
 
 
 async def _sleep(start_time: int | float, interval: int | float) -> None:
