@@ -14,9 +14,11 @@ from collections.abc import Iterator, AsyncGenerator
 from funpaybotengine.loggers import runner_logger
 from funpaybotengine.exceptions import UnauthorizedError, BotUnauthenticatedError
 from funpaybotengine.storage.base import Storage
-from .config import RunnerConfig, Backoff
-from .event_collector import EventCollector
 from funpaybotengine.dispatching.events import BotAuthenticatedEvent, BotUnauthenticatedEvent
+
+from .config import Backoff, RunnerConfig
+from .event_collector import EventCollector
+
 
 if TYPE_CHECKING:
     from funpaybotengine.client.bot import Bot
@@ -95,7 +97,9 @@ class Runner:
                         'Current attempt: %d. Delay: %f.', backoff.counter, backoff.current_delay
                     )
                     if backoff.counter == 1 and config.on_unauthenticated_error_policy == 'event':
-                        result = [BotUnauthenticatedEvent(object=None, delay=backoff.current_delay)]
+                        result = [
+                            BotUnauthenticatedEvent(object=None, delay=backoff.current_delay)
+                        ]
 
                 elif config.on_unauthenticated_error_policy == 'stop':
                     return
@@ -104,7 +108,8 @@ class Runner:
                 runner_logger.error(
                     'Failed to collect events. Current attempt: %d. Delay: %f.',
                     backoff.counter,
-                    backoff.current_delay, exc_info=True
+                    backoff.current_delay,
+                    exc_info=True,
                 )
                 sleep_time = backoff.current_delay
 

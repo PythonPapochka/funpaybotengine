@@ -4,9 +4,9 @@ from __future__ import annotations
 __all__ = ('RunnerConfig', 'BackoffConfig', 'Backoff')
 
 
+import asyncio
 from typing import Literal
 from dataclasses import dataclass
-import asyncio
 
 
 @dataclass(frozen=True)

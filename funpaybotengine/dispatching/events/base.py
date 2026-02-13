@@ -7,7 +7,7 @@ __all__ = (
     'BotEngineEvent',
     'ExceptionEvent',
     'BotUnauthenticatedEvent',
-    'BotAuthenticatedEvent'
+    'BotAuthenticatedEvent',
 )
 
 from typing import Any, Generic, TypeVar
@@ -106,5 +106,4 @@ class BotUnauthenticatedEvent(BotEngineEvent[float], event_name='unauthorized'):
         return injection
 
 
-class BotAuthenticatedEvent(BotEngineEvent[None], event_name='authorized'):
-    ...
+class BotAuthenticatedEvent(BotEngineEvent[None], event_name='authorized'): ...

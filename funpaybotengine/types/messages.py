@@ -216,7 +216,6 @@ class Message(FunPayObject, BaseModel):
 
         return info.context.get('chat_id') if info.context else None
 
-
     @field_validator('chat_name', mode='before')
     @classmethod
     def _get_chat_name_from_context(cls, value: Any, info: ValidationInfo) -> Any:
