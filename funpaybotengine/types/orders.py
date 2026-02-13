@@ -6,7 +6,8 @@ __all__ = ('OrderPreview', 'OrderPreviewsBatch')
 
 from typing import Any
 
-from pydantic import BaseModel, PrivateAttr, computed_field
+from pydantic import BaseModel, PrivateAttr
+from funpayparsers.parsers.utils import parse_date_string
 
 from funpaybotengine.types.base import FunPayObject
 from funpaybotengine.types.enums import OrderStatus, OrderPreviewType
@@ -18,7 +19,11 @@ class OrderPreview(FunPayObject, BaseModel):
 
     def model_post_init(self, context: dict[Any, Any]) -> None:
         super().model_post_init(context)
-        if context and context.get('order_preview_type') is not None:
+        if (
+            self.type is OrderPreviewType.UNKNOWN
+            and context
+            and context.get('order_preview_type') is not None
+        ):
             self._type = context['order_preview_type']
 
     id: str
@@ -42,12 +47,20 @@ class OrderPreview(FunPayObject, BaseModel):
     counterparty: UserPreview
     """Associated counterparty info."""
 
-    _type: OrderPreviewType = PrivateAttr(OrderPreviewType.UNKNOWN)
+    type: OrderPreviewType = OrderPreviewType.UNKNOWN
+    """Order preview type."""
 
-    @computed_field  # type: ignore[prop-decorator]
     @property
-    def type(self) -> OrderPreviewType:
-        return self._type
+    def timestamp(self) -> int:
+        """
+        Order timestamp.
+
+        ``0``, if an error occurred while parsing.
+        """
+        try:
+            return parse_date_string(self.date_text)
+        except ValueError:
+            return 0
 
 
 class OrderPreviewsBatch(FunPayObject):
@@ -114,32 +127,26 @@ class OrderPreviewsBatch(FunPayObject):
 
         return await method_coroutine
 
-    @computed_field  # type: ignore[prop-decorator]
     @property
     def order_id_filter(self) -> str | None:
         return self._order_id_filter
 
-    @computed_field  # type: ignore[prop-decorator]
     @property
     def buyer_username_filter(self) -> str | None:
         return self._buyer_username_filter
 
-    @computed_field  # type: ignore[prop-decorator]
     @property
     def status_filter(self) -> OrderStatus | str | None:
         return self._status_filter
 
-    @computed_field  # type: ignore[prop-decorator]
     @property
     def game_id_filter(self) -> int | None:
         return self._game_id_filter
 
-    @computed_field  # type: ignore[prop-decorator]
     @property
     def other_filters(self) -> dict[str, str] | None:
         return self._other_filters
 
-    @computed_field  # type: ignore[prop-decorator]
     @property
     def type(self) -> OrderPreviewType:
         return self._type
