@@ -630,7 +630,7 @@ class Bot:
     async def get_chat_history(
         self,
         chat_id: int | str,
-        before_message_id: int = -1,
+        before_message_id: int = 999999999999999999,
     ) -> list[Message]:
         """
         Retrieves the 100 most recent messages in a chat,

@@ -30,20 +30,20 @@ class GetChatHistory(FunPayMethod[list[Message]], BaseModel):
     chat_id: int | str
     """Chat ID."""
 
-    before_message_id: int = 99999999999
+    before_message_id: int = 999999999999999999
     """
     Message ID to paginate history **backwards from** (exclusive).
 
     Messages with IDs **less than** this one will be returned,
     i.e. history will be fetched in reverse order *before* this message.
     
-    Defaults to ``99999999999``
+    Defaults to ``999999999999999999``
     """
 
     def __init__(
         self,
         chat_id: int | str,
-        before_message_id: int = 99999999999,
+        before_message_id: int = 999999999999999999,
         locale: Language | None = None,
     ):
         """
