@@ -2,6 +2,7 @@ from __future__ import annotations
 
 
 __all__ = [
+    'NewEventsPack',
     'ChatChangedEvent',
     'NewMessageEvent',
     'OrderEvent',
@@ -38,9 +39,12 @@ from funpaybotengine.types.chat import PrivateChatPreview
 from funpaybotengine.types.orders import OrderPreview
 from funpaybotengine.types.reviews import Review
 from funpaybotengine.types.messages import Message
+from funpaybotengine.types.pages.order_page import OrderPage
 
-from .base import RunnerEvent
-from ...types.pages import OrderPage
+from .base import RunnerEvent, BotEngineEvent
+
+
+class NewEventsPack(BotEngineEvent[str], event_name='new_events_pack'): ...
 
 
 class ChatChangedEvent(RunnerEvent[PrivateChatPreview], event_name='chat_changed'):

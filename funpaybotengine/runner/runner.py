@@ -17,6 +17,7 @@ from funpaybotengine.storage.base import Storage
 from funpaybotengine.dispatching.events import BotAuthenticatedEvent, BotUnauthenticatedEvent
 
 from .config import Backoff, RunnerConfig
+from ..dispatching import NewEventsPack
 from .event_collector import EventCollector
 
 
@@ -27,7 +28,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class EventsStack:
-    events: tuple[RunnerEvent[Any], ...]
+    events: tuple[RunnerEvent[Any] | BotEngineEvent[Any], ...]
     data: dict[Any, Any] = field(default_factory=dict)
     id: str = field(init=False, default='')
 
@@ -113,7 +114,11 @@ class Runner:
                 )
                 sleep_time = backoff.current_delay
 
-            events_stack = EventsStack(events=tuple(result))
+            events_stack = EventsStack(events=())
+            if not backoff.counter:
+                result.insert(0, NewEventsPack(object=events_stack.id))
+            events_stack.events = tuple(result)
+
             for i in events_stack:
                 yield i, events_stack
 

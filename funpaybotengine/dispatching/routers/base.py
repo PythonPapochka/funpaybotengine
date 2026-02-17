@@ -8,68 +8,127 @@ from typing import cast
 
 from eventry.asyncio.router import Router as BaseRouter
 
+from funpaybotengine.dispatching import events
 from funpaybotengine.dispatching.handlers.handler_manager import HandlerManager
 
 
-_events = {
-    'chat_changed',
-    'new_message',
-    'new_sale',
-    'sale_closed_by_admin',
-    'sale_closed',
-    'sale_partially_refunded',
-    'sale_refunded',
-    'sale_reopened',
-    'sale_status_changed',
-    'new_purchase',
-    'purchase_closed_by_admin',
-    'purchase_closed',
-    'purchase_partially_refunded',
-    'purchase_refunded',
-    'purchase_reopened',
-    'purchase_status_changed',
-    'new_review',
-    'review_changed',
-    'review_deleted',
-    'new_review_response',
-    'review_response_changed',
-    'review_response_deleted',
-    'error',
-}
-
-
 class Router(BaseRouter):
-    on_chat_changed: HandlerManager
-    on_new_message: HandlerManager
-    on_new_sale: HandlerManager
-    on_sale_status_changed: HandlerManager
-    on_sale_closed: HandlerManager
-    on_sale_closed_by_admin: HandlerManager
-    on_sale_refunded: HandlerManager
-    on_sale_partially_refunded: HandlerManager
-    on_sale_reopened: HandlerManager
-    on_new_purchase: HandlerManager
-    on_purchase_status_changed: HandlerManager
-    on_purchase_closed: HandlerManager
-    on_purchase_closed_by_admin: HandlerManager
-    on_purchase_refunded: HandlerManager
-    on_purchase_partially_refunded: HandlerManager
-    on_purchase_reopened: HandlerManager
-    on_new_review: HandlerManager
-    on_review_changed: HandlerManager
-    on_review_deleted: HandlerManager
-    on_new_review_response: HandlerManager
-    on_review_response_changed: HandlerManager
-    on_review_response_deleted: HandlerManager
-    on_error: HandlerManager
-
     def __init__(self, name: str | None = None) -> None:
         super().__init__(name=name or f'Router{id(self)}')
         self.set_default_handler_manager(HandlerManager(self, 'default', None))
 
-        for name in _events:
-            manager = self._add_handler_manager(HandlerManager(self, f'on_{name}', name))
-            setattr(self, f'on_{name}', manager)
+        self.on_chat_changed = self._add_handler_manager(
+            HandlerManager(self, 'on_chat_changed', events.ChatChangedEvent.__event_name__)
+        )
+        self.on_new_message = self._add_handler_manager(
+            HandlerManager(self, 'on_new_message', events.NewMessageEvent.__event_name__)
+        )
+        self.on_new_sale = self._add_handler_manager(
+            HandlerManager(self, 'on_new_sale', events.NewSaleEvent.__event_name__)
+        )
+        self.on_sale_status_changed = self._add_handler_manager(
+            HandlerManager(
+                self, 'on_sale_status_changed', events.SaleStatusChangedEvent.__event_name__
+            )
+        )
+        self.on_sale_closed = self._add_handler_manager(
+            HandlerManager(self, 'on_sale_closed', events.SaleClosedEvent.__event_name__)
+        )
+        self.on_sale_closed_by_admin = self._add_handler_manager(
+            HandlerManager(
+                self, 'on_sale_closed_by_admin', events.SaleClosedByAdminEvent.__event_name__
+            )
+        )
+        self.on_sale_refunded = self._add_handler_manager(
+            HandlerManager(self, 'on_sale_refunded', events.SaleRefundedEvent.__event_name__)
+        )
+        self.on_sale_partially_refunded = self._add_handler_manager(
+            HandlerManager(
+                self,
+                'on_sale_partially_refunded',
+                events.SalePartiallyRefundedEvent.__event_name__,
+            )
+        )
+        self.on_sale_reopened = self._add_handler_manager(
+            HandlerManager(self, 'on_sale_reopened', events.SaleReopenedEvent.__event_name__)
+        )
+        self.on_new_purchase = self._add_handler_manager(
+            HandlerManager(self, 'on_new_purchase', events.NewPurchaseEvent.__event_name__)
+        )
+        self.on_purchase_status_changed = self._add_handler_manager(
+            HandlerManager(
+                self,
+                'on_purchase_status_changed',
+                events.PurchaseStatusChangedEvent.__event_name__,
+            )
+        )
+        self.on_purchase_closed = self._add_handler_manager(
+            HandlerManager(self, 'on_purchase_closed', events.PurchaseClosedEvent.__event_name__)
+        )
+        self.on_purchase_closed_by_admin = self._add_handler_manager(
+            HandlerManager(
+                self,
+                'on_purchase_closed_by_admin',
+                events.PurchaseClosedByAdminEvent.__event_name__,
+            )
+        )
+        self.on_purchase_refunded = self._add_handler_manager(
+            HandlerManager(
+                self, 'on_purchase_refunded', events.PurchaseRefundedEvent.__event_name__
+            )
+        )
+        self.on_purchase_partially_refunded = self._add_handler_manager(
+            HandlerManager(
+                self,
+                'on_purchase_partially_refunded',
+                events.PurchasePartiallyRefundedEvent.__event_name__,
+            )
+        )
+        self.on_purchase_reopened = self._add_handler_manager(
+            HandlerManager(
+                self, 'on_purchase_reopened', events.PurchaseReopenedEvent.__event_name__
+            )
+        )
+        self.on_new_review = self._add_handler_manager(
+            HandlerManager(self, 'on_new_review', events.NewReviewEvent.__event_name__)
+        )
+        self.on_review_changed = self._add_handler_manager(
+            HandlerManager(self, 'on_review_changed', events.ReviewChangedEvent.__event_name__)
+        )
+        self.on_review_deleted = self._add_handler_manager(
+            HandlerManager(self, 'on_review_deleted', events.ReviewDeletedEvent.__event_name__)
+        )
+        self.on_new_review_response = self._add_handler_manager(
+            HandlerManager(
+                self, 'on_new_review_response', events.NewReviewResponseEvent.__event_name__
+            )
+        )
+        self.on_review_response_changed = self._add_handler_manager(
+            HandlerManager(
+                self,
+                'on_review_response_changed',
+                events.ReviewResponseChangedEvent.__event_name__,
+            )
+        )
+        self.on_review_response_deleted = self._add_handler_manager(
+            HandlerManager(
+                self,
+                'on_review_response_deleted',
+                events.ReviewResponseDeletedEvent.__event_name__,
+            )
+        )
+        self.on_error = self._add_handler_manager(HandlerManager(self, 'on_error', 'error'))
+        self.on_unauthenticated = self._add_handler_manager(
+            HandlerManager(
+                self, 'on_unauthenticated', events.BotUnauthenticatedEvent.__event_name__
+            )
+        )
+        self.on_authenticated = self._add_handler_manager(
+            HandlerManager(self, 'on_authenticated', events.BotAuthenticatedEvent.__event_name__)
+        )
+        self.on_new_events_pack = self._add_handler_manager(
+            HandlerManager(self, 'on_new_events_pack', events.NewEventsPack.__event_name__)
+        )
 
     @property
     def on_event(self) -> HandlerManager:
