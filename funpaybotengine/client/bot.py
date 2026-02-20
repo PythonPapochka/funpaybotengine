@@ -878,7 +878,7 @@ class Bot:
         if (
             not skip_locale_check
             and self._locale
-            and self._locale != Language.get_by_lang_code(result.locale)
+            and self._locale != Language.from_lang_code(result.locale)
         ):
             result = await self._on_locale_mismatch_hook(method, self, result)
 

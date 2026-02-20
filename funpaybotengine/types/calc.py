@@ -46,7 +46,7 @@ class MethodResult(FunPayObject, BaseModel):
 
     @property
     def currency(self) -> Currency:
-        return Currency.get_by_character(self.unit)
+        return Currency.from_character(self.unit)
 
 
 class CalcResult(FunPayObject, BaseModel):

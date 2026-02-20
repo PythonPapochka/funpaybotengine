@@ -24,7 +24,7 @@ async def force_locale_hook(
     response: Response[R],
 ) -> Response[R]:
     async with lock:
-        if bot.locale != Language.get_by_lang_code(response.locale):
+        if bot.locale != Language.from_lang_code(response.locale):
             await bot.update(change_locale=bot._locale)
     return await method.execute(as_=bot)
 

@@ -37,8 +37,6 @@ class GetMainPage(FunPayMethod[MainPage], BaseModel):
             parser_cls=MainPageParser,
             allow_anonymous=True,
             allow_uninitialized=True,
-            data={'setlocale': change_locale.value.appdata_alias}
-            if change_locale is not None
-            else {},
+            data={'setlocale': change_locale.appdata_alias} if change_locale is not None else {},
             change_locale=change_locale,
         )

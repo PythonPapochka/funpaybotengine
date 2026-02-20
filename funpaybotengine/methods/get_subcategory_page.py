@@ -31,7 +31,7 @@ class GetSubcategoryPage(FunPayMethod[SubcategoryPage], BaseModel):
 
     def __init__(self, type: SubcategoryType, subcategory_id: int, locale: Language | None = None):
         super().__init__(
-            url=f'{type.value.url_alias}/{subcategory_id}/',
+            url=f'{type.url_alias}/{subcategory_id}/',
             method=HTTPMethod.GET,
             allow_anonymous=True,
             allow_uninitialized=True,
