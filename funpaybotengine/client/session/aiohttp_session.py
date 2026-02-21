@@ -189,7 +189,7 @@ class AioHttpSession(BaseSession):
         if method_url.startswith('/'):
             method_url = method_url[1:]
 
-        url = f'{locale.value.url_alias}/{method_url}'
+        url = f'{locale.url_alias}/{method_url}'
 
         if not session._base_url:
             return url
