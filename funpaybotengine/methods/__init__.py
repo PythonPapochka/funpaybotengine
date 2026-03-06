@@ -12,6 +12,7 @@ from .check_banned import *
 from .raise_offers import *
 from .upload_image import *
 from .delete_review import *
+from .get_reviews import *
 from .get_chat_page import *
 from .get_main_page import *
 from .get_purchases import *
