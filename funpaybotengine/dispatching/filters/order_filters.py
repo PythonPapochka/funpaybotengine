@@ -7,13 +7,14 @@ __all__ = ('FinalOrderStatusFilter',)
 from typing import TYPE_CHECKING, Any
 
 from funpaybotengine.types.enums import MessageType, OrderStatus
+from funpaybotengine.dispatching.events.builtin_events import NewMessageEvent
 
 from .base import Filter
 
 
 if TYPE_CHECKING:
     from funpaybotengine.dispatching.events.base import Event
-    from funpaybotengine.dispatching.events.builtin_events import OrderEvent, NewMessageEvent
+    from funpaybotengine.dispatching.events.builtin_events import OrderEvent
 
 
 _message_type_to_order_status_mapping = {
