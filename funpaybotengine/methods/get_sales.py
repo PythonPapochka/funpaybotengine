@@ -3,6 +3,7 @@ from __future__ import annotations
 
 __all__ = ('GetSales',)
 
+
 from pydantic import BaseModel
 from funpayparsers.types import Language
 from funpayparsers.parsers import OrderPreviewsParser

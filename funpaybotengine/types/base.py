@@ -15,7 +15,6 @@ class FunPayObject(BindableObject, BaseModel):
     """Base class for all FunPay-parsed objects."""
 
     model_config = ConfigDict(
-        frozen=True,
         validate_assignment=True,
         arbitrary_types_allowed=True,
         populate_by_name=True,

@@ -22,9 +22,9 @@ class OrderPreview(FunPayObject, BaseModel):
         if (
             self.type is OrderPreviewType.UNKNOWN
             and context
-            and context.get('order_preview_type') is not None
+            and isinstance(context.get('order_preview_type'), OrderPreviewType)
         ):
-            self._type = context['order_preview_type']
+            self.type = context['order_preview_type']
 
     id: str
     """Order ID."""
