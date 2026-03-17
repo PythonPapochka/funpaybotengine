@@ -9,9 +9,11 @@ from pydantic import BaseModel
 from funpayparsers.types import Language
 from funpayparsers.parsers import OfferFieldsParser
 
+from funpaybotengine.exceptions.method_exceptions import InvalidOfferFieldsError
 from funpaybotengine.methods.base import FunPayMethod
 from funpaybotengine.types.offers import OfferFields
 from funpaybotengine.client.session import HTTPMethod, RawResponse
+import json
 
 
 class SaveOfferFields(FunPayMethod[bool], BaseModel):
@@ -38,8 +40,31 @@ class SaveOfferFields(FunPayMethod[bool], BaseModel):
             offer_fields=offer_fields,
         )
 
-    async def parse_result(self, response: RawResponse[Any]) -> bool:
-        return True
+    async def parse_result(self, response: RawResponse[Any]) -> bool | dict[str, Any]:
+        try:
+            return json.loads(response.raw_response)
+        except json.decoder.JSONDecodeError:
+            return True
 
-    async def transform_result(self, parsing_result: Any, response: RawResponse[Any]) -> bool:
-        return True
+    async def transform_result(
+        self,
+        parsing_result: bool | dict[str, Any],
+        response: RawResponse[Any]
+    ) -> bool:
+        if isinstance(parsing_result, bool):
+            return parsing_result
+
+
+        if not parsing_result.get('error'):
+            return True
+
+        error_msg = str(parsing_result.get('msg', '')) or str(parsing_result.get('error'))
+        fields: list[list[str, str]] = parsing_result.get('errors')
+        try:
+            fields_dict = {field: error for field, error in fields}
+        except Exception:
+            fields_dict = {}
+
+        raise InvalidOfferFieldsError(error_msg, fields_dict)
+
+
