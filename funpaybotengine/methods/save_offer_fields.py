@@ -35,6 +35,7 @@ class SaveOfferFields(FunPayMethod[bool], BaseModel):
             url=url,
             method=HTTPMethod.POST,
             data=offer_fields.fields_dict,
+            headers={'X-Requested-With': 'XMLHttpRequest'},
             parser_cls=OfferFieldsParser,
             locale=locale,
             offer_fields=offer_fields,
@@ -66,5 +67,3 @@ class SaveOfferFields(FunPayMethod[bool], BaseModel):
             fields_dict = {}
 
         raise InvalidOfferFieldsError(error_msg, fields_dict)
-
-
