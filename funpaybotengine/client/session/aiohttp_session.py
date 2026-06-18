@@ -89,6 +89,10 @@ class AioHttpSession(BaseSession):
             if bot.phpsessid and not skip_session_cookies:
                 session.cookie_jar.update_cookies({'PHPSESSID': bot.phpsessid})
 
+        with suppress(BotNotInitializedError):
+            if bot.golden_seal and not skip_session_cookies:
+                session.cookie_jar.update_cookies({'golden_seal': bot.golden_seal})
+
     async def make_request(
         self,
         method: FunPayMethod[MethodReturnType],

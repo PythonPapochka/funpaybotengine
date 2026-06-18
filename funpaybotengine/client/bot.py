@@ -143,6 +143,7 @@ class Bot:
         update_categories: bool = True,
     ) -> None:
         self._golden_key = golden_key
+        self._golden_seal: str | None = None
         self._csrf_token: str | None = None
         self._phpsessid: str | None = phpsessid
         self._logout_token: str | None = None
@@ -202,6 +203,10 @@ class Bot:
         Golden key (token).
         """
         return self._golden_key
+
+    @property
+    def golden_seal(self) -> str | None:
+        return self._golden_seal
 
     @property
     def csrf_token(self) -> str:
@@ -901,6 +906,9 @@ class Bot:
             self._phpsessid = result.cookies['PHPSESSID']
             self._session_updated_at = int(time.time())
 
+        if 'golden_seal' in result.cookies and not skip_update:
+            self._golden_seal = result.cookies['golden_seal']
+
         return result
 
     async def update(self, change_locale: Language | None = None) -> Self:
@@ -918,6 +926,7 @@ class Bot:
 
         self._csrf_token = page_obj.app_data.csrf_token
         self._phpsessid = result.cookies.get('PHPSESSID')
+        self._golden_seal = result.cookies.get('golden_seal')
         self._logout_token = page_obj.header.logout_token
 
         if not self._locale or change_locale is not None:
