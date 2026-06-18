@@ -13,6 +13,7 @@ __all__ = (
     'PaymentOption',
 )
 
+from datetime import datetime
 
 from pydantic import BaseModel
 
@@ -156,6 +157,17 @@ class RaiseOffersResponse(FunPayObject, BaseModel):
 
     msg: str
     """Status message."""
+
+    wait: int
+    """How long to wait until next raise is available (in seconds)."""
+
+    unlock_at: str
+    """String representation of the time when the next raise is available."""
+
+    @property
+    def unlock_at_datetime(self) -> datetime:
+        """Datetime object of the time when the next raise is available."""
+        return datetime.fromisoformat(self.unlock_at)
 
 
 class PaymentOption(FunPayObject):
