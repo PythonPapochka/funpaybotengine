@@ -27,6 +27,7 @@ from funpaybotengine.types import (
     PrivateChatPreview,
     TransactionPreviewsBatch,
     CurrentlyViewingOfferInfo,
+    RaiseOffersResponse
 )
 from funpaybotengine.utils import (
     random_runner_tag,
@@ -309,7 +310,7 @@ class Bot:
     async def mute_chat(self, chat_id: int, mute: bool) -> bool:
         return (await MuteChat(chat_id=chat_id, mute=mute).execute(self)).response_obj
 
-    async def raise_offers(self, category_id: int, *subcategory_ids: int) -> bool:
+    async def raise_offers(self, category_id: int, *subcategory_ids: int) -> RaiseOffersResponse:
         if not subcategory_ids:
             category = await self.storage.get_category(category_id)
             if category is None:
